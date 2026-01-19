@@ -36,11 +36,12 @@ from wpilib import SmartDashboard, Field2d, RobotBase
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
 from wpimath.geometry import Pose2d, Rotation2d
-from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModuleState, \
+from wpimath.kinematics import ChassisSpeeds, SwerveModuleState, \
     SwerveModulePosition
 from wpimath.units import degrees, inchesToMeters, rotationsToRadians, meters_per_second, radians_per_second
 
 from constants import USE_PYKIT, JOYSTICK_DEADBAND
+from field.field import FIELD_Y_SIZE, FIELD_X_SIZE
 from field.field import RED_TEST_POSE, BLUE_TEST_POSE
 from generated.tuner_constants import TunerConstants
 from generated.tuner_constants import TunerSwerveDrivetrain
@@ -698,8 +699,19 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         log_it = self._robot.counter % 20 == 0
 
+        # Since simulation, limit it to the field of play
         pose = self.pose
-        self.gyro.sim_yaw = pose.rotation().degrees()
+
+        # self.gyro.sim_yaw = pose.rotation().degrees()     # Not saving this yet.
+
+        # Limit it to the field size (manually)
+        robot_x_offset = kwargs.get("robot_x_offset", .4)
+        robot_y_offset = kwargs.get("robot_y_offset", .4)
+        x = min(FIELD_X_SIZE - robot_x_offset, max(robot_x_offset, pose.x))
+        y = min(FIELD_Y_SIZE - robot_y_offset, max(robot_y_offset, pose.y))
+
+        if x != pose.x or y != pose.y:
+            self.pose = Pose2d(x, y, pose.rotation())
 
         return amperes_used
 

@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>navx</w>
+      <w>pathplanner</w>
     </words>
   </dictionary>
 </component>
