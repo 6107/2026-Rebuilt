@@ -168,7 +168,7 @@ if PHOTONLIB_SUPPORTED:
 
             self.skippedTags.clear()
             now = Timer.getFPGATimestamp()
-            robotPose = self.drivetrain.get_pose()
+            robotPose = self.drivetrain.pose
             learningRate = self.LEARNING_RATE * self.learningRateMult.getSelected()
             intersectionReady = True
 

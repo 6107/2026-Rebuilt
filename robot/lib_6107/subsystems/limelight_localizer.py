@@ -49,9 +49,9 @@ class LimelightLocalizer(Subsystem):
     def __init__(self, container, drivetrain, flipIfRed=False):
         super().__init__()
 
-        assert hasattr(drivetrain, "getHeading"), "drivetrain must have getHeading() for localizer to work"
+        assert hasattr(drivetrain, "heading"), "drivetrain must haveheading() for localizer to work"
         assert hasattr(drivetrain, "adjustOdometry"), "drivetrain must have adjustOdometry() for localizer to work"
-        assert hasattr(drivetrain, "get_pose"), "drivetrain must have get_pose() for localizer to work"
+        assert hasattr(drivetrain, "pose"), "drivetrain must have pose for localizer to work"
         assert hasattr(drivetrain, "getTurnRate"), "drivetrain must have getTurnRate() for localizer to work"
 
         self._robot = container.robot
@@ -112,8 +112,8 @@ class LimelightLocalizer(Subsystem):
             return
 
         learningRate: float = LEARNING_RATE * self.learningRateMult.getSelected()
-        odometryPos: Pose2d = self.drivetrain.get_pose()
-        heading: Rotation2d = self.drivetrain.getHeading()
+        odometryPos: Pose2d = self.drivetrain.pose
+        heading: Rotation2d = self.drivetrain.heading()
         rotationSpeed: float = self.drivetrain.getTurnRate()  # rotation speed in degrees per second
         assert heading is not None
 

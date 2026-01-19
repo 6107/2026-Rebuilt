@@ -15,7 +15,7 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 import math
-from typing import Optional
+from typing import Optional, Any
 
 from wpilib import RobotBase
 from wpilib.simulation import SimDeviceSim
@@ -39,9 +39,10 @@ class NavX(Gyro):
     """
     gyro_type = "navX"
 
-    def __init__(self, is_reversed: bool):
+    def __init__(self, is_reversed: bool, inst: Optional[Any] = None):
         super().__init__(is_reversed)
-        self._gyro = navx.AHRS.create_spi()
+
+        self._gyro = inst or navx.AHRS.create_spi()
         self._sim_gyro: Optional[SimDeviceSim] = None
         self._is_simulation = RobotBase.isSimulation()
         self._calibrated = False

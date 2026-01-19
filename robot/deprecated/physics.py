@@ -34,7 +34,6 @@ import os
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import getDeployDirectory
 
-from frc_2026.field import *
 from robot import MyRobot
 
 logger = logging.getLogger(__name__)

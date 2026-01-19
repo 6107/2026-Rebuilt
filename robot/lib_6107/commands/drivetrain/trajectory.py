@@ -27,8 +27,8 @@ from commands2 import InstantCommand
 from wpilib import SmartDashboard, DriverStation
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 
-from frc_2026.subsystems.swervedrive.constants import DriveConstants, AutoConstants
-from frc_2026.subsystems.swervedrive.drivesubsystem2025 import DriveSubsystem2025 as DriveSubsystem
+from subsystems.swervedrive.constants import DriveConstants, AutoConstants
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint
@@ -134,7 +134,7 @@ class JerkyTrajectory(commands2.Command):
         # find the waypoint nearest to the current location: we want to skip all the waypoints before it
         nearest, distance, nh = None, None, None
 
-        location = self.drivetrain.get_pose().translation()
+        location = self.drivetrain.pose.translation()
         if mustFlip:  # if flipping the field for red team, flip robot location too
             location, _ = _flipWaypoint((location, None))
 
@@ -220,7 +220,7 @@ class JerkyTrajectory(commands2.Command):
         else:
             command = SwerveToPoint(
                 point.x, point.y, heading, drivetrain=self.drivetrain, speed=self.speed, slowDownAtFinish=slowdown,
-                rateLimit=not last
+                rate_limit=not last
             )
 
         log = lambda: SmartDashboard.putString("command/c" + self.__class__.__name__, f"next: {point.x}, {point.y}")
@@ -272,7 +272,7 @@ class SwerveTrajectory(JerkyTrajectory):
         # Add kinematics to ensure max speed is actually obeyed
         config.setKinematics(DriveConstants.DRIVE_KINEMATICS)
 
-        currentPose = self.drivetrain.get_pose()
+        currentPose = self.drivetrain.pose
         currentPoint, currentHeading = currentPose.translation(), currentPose.rotation()
         if endHeading is None: endHeading = currentHeading
 
@@ -313,7 +313,7 @@ class SwerveTrajectory(JerkyTrajectory):
             self.drivetrain.get_pose,  # Functional interface to feed supplier
             DriveConstants.DRIVE_KINEMATICS,
             driveController,
-            self.drivetrain.setModuleStates,
+            lambda desired_states: self.drivetrain.set_module_states(desired_states),
             (self.drivetrain,),
             desiredRotation=lambda: endHeading
         )

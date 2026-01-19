@@ -26,7 +26,7 @@ import commands2
 from wpilib import Timer
 from wpimath.geometry import Rotation2d
 
-from frc_2026.subsystems.swervedrive.drivesubsystem2025 import DriveSubsystem2025 as DriveSubsystem
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection, AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 
@@ -92,7 +92,7 @@ class FollowObject(commands2.Command):
 
     def makeSubcommand(self, directionInfo):
         direction, x, y, size = directionInfo
-        degreesFromTarget = (self.drivetrain.get_pose().rotation() - direction).degrees()
+        degreesFromTarget = (self.drivetrain.pose.rotation() - direction).degrees()
         stepSeconds = self.initialStepSeconds
         speed = self.speed
 
@@ -126,7 +126,7 @@ class FollowObject(commands2.Command):
             self.subcommand.end(interrupted)
             self.subcommand = None
 
-        self.drivetrain.arcadeDrive(0, 0)
+        self.drivetrain.stop()
 
     def isFinished(self) -> bool:
         return self.finished
@@ -167,7 +167,7 @@ class FollowObject(commands2.Command):
 
         # 3. otherwise we are not done: pick a target direction for the robot to turn towards (and go)
         directionToObjectCenter = Rotation2d.fromDegrees(-x)
-        direction = self.drivetrain.get_pose().rotation().rotateBy(directionToObjectCenter)
+        direction = self.drivetrain.pose.rotation().rotateBy(directionToObjectCenter)
         return direction, x, y, size
 
 

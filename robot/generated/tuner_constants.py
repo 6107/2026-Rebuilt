@@ -78,7 +78,8 @@ class TunerConstants:
 
     # Theoretical free speed (m/s) at 12 V applied output;
     # This needs to be tuned to your individual robot
-    speed_at_12_volts: units.meters_per_second = 4.54
+    # speed_at_12_volts: units.meters_per_second = 4.54
+    speed_at_12_volts: units.meters_per_second = 2
 
     # Every 1 rotation of the azimuth results in _couple_ratio drive motor turns;
     # This may need to be tuned to your individual robot
@@ -230,7 +231,7 @@ class TunerConstants:
         Creates a CommandSwerveDrivetrain instance.
         This should only be called once in your robot program.
         """
-        from frc_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem as CommandSwerveDrivetrain
+        from subsystems.swervedrive.drivesubsystem import DriveSubsystem as CommandSwerveDrivetrain
 
         modules = [TunerConstants.front_left, TunerConstants.front_right, TunerConstants.back_left,
                    TunerConstants.back_right]

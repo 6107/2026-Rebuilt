@@ -66,8 +66,5 @@ requires = [
 
 # List of paths to include
 include_paths = [
-    "util",
-    "deploy",
-    "frc_2026",
-    "lib_6107"
+
 ]

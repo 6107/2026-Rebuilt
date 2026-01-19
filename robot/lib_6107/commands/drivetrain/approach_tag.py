@@ -115,7 +115,7 @@ class ApproachTag(commands2.Command):
         # setting the target heading in a way that works for all cases
         self.targetDegrees = specificHeadingDegrees
         if specificHeadingDegrees is None:
-            self.targetDegrees = lambda: self.drivetrain.getHeading().degrees()
+            self.targetDegrees = lambda: self.drivetrain.heading.degrees()
         elif not callable(specificHeadingDegrees):
             self.targetDegrees = lambda: specificHeadingDegrees
 
@@ -177,7 +177,7 @@ class ApproachTag(commands2.Command):
 
         targetDegrees = self.targetDegrees()
         if targetDegrees is None:
-            targetDegrees = self.drivetrain.getHeading().degrees()
+            targetDegrees = self.drivetrain.heading.degrees()
 
         self.targetDirection = Rotation2d.fromDegrees(targetDegrees)
         self.tReachedGlidePath = 0.0  # time when reached the glide path
@@ -219,7 +219,7 @@ class ApproachTag(commands2.Command):
 
         # good ways to finish
         elif self.tReachedFinalApproach != 0:
-            length = (self.drivetrain.get_pose().translation() - self.xyReachedFinalApproach).norm()
+            length = (self.drivetrain.pose.translation() - self.xyReachedFinalApproach).norm()
             if now > self.tReachedFinalApproach + self.finalApproachSeconds:
                 self.finished = f"approached within {now - self.tReachedFinalApproach}s, drove {length}m"
 
@@ -229,7 +229,7 @@ class ApproachTag(commands2.Command):
         return True
 
     def end(self, interrupted: bool):
-        self.drivetrain.arcadeDrive(0, 0)
+        self.drivetrain.stop()
         if interrupted:
             SmartDashboard.putString("command/c" + self.__class__.__name__, "interrupted")
         else:
@@ -265,7 +265,7 @@ class ApproachTag(commands2.Command):
             if self.finalApproachSeconds > 0:
                 completedPercentage = (now - self.tReachedFinalApproach) / self.finalApproachSeconds
                 if self.finalApproachMinDistance > 0:
-                    completedDistance = (self.drivetrain.get_pose().translation() - self.xyReachedFinalApproach).norm()
+                    completedDistance = (self.drivetrain.pose.translation() - self.xyReachedFinalApproach).norm()
                     if completedDistance < self.finalApproachMinDistance:
                         completedPercentage = 0.0  # if min distance is not met, don't even slow down
                 fwdSpeed = self.finalApproachSpeed * max((0.0, 1.0 - completedPercentage))
@@ -294,10 +294,10 @@ class ApproachTag(commands2.Command):
                 rotationSpeed *= max(0.0, 1 - max(visionOld, closeToEdge))
 
         # 5. drive!
-        if self.reverse:
-            self.drivetrain.drive(-fwdSpeed, -leftSpeed, rotationSpeed, fieldRelative=False, rateLimit=False)
+        if self.reverse:     # TODO: Make sure parameters are meters_per_second and radians_per_second
+            self.drivetrain.drive(-fwdSpeed, -leftSpeed, rotationSpeed, field_relative=False, rate_limit=False)
         else:
-            self.drivetrain.drive(fwdSpeed, leftSpeed, rotationSpeed, fieldRelative=False, rateLimit=False)
+            self.drivetrain.drive(fwdSpeed, leftSpeed, rotationSpeed, field_relative=False, rate_limit=False)
 
         # 6. debug
         state = self.getState()
@@ -308,7 +308,7 @@ class ApproachTag(commands2.Command):
 
     def getGyroBasedRotationSpeed(self):
         # 1. how many degrees are left to turn?
-        currentDirection = self.drivetrain.getHeading()
+        currentDirection = self.drivetrain.heading
         rotationRemaining = self.targetDirection - currentDirection
         degreesRemaining = rotationRemaining.degrees()
         # (optimize: do not turn left 350 degrees if you can just turn right -10 degrees, and vice versa)
@@ -367,7 +367,7 @@ class ApproachTag(commands2.Command):
         if self.tReachedGlidePath != 0 and self.tReachedFinalApproach == 0 and robotX > 0:
             SmartDashboard.putString("command/c" + self.__class__.__name__, "reached final approach")
             self.tReachedFinalApproach = now
-            self.xyReachedFinalApproach = self.drivetrain.get_pose().translation()
+            self.xyReachedFinalApproach = self.drivetrain.pose.translation()
             print(f"final approach starting from {self.xyReachedFinalApproach}")
 
         # if we already reached the glide path, and we want nonzero final approach (after reaching desired size)
@@ -523,7 +523,7 @@ class ApproachManually(commands2.Command):
         # setting the target heading in a way that works for all cases
         self.targetDegrees = specificHeadingDegrees
         if specificHeadingDegrees is None:
-            self.targetDegrees = lambda: self.drivetrain.getHeading().degrees()
+            self.targetDegrees = lambda: self.drivetrain.heading.degrees()
         elif not callable(specificHeadingDegrees):
             self.targetDegrees = lambda: specificHeadingDegrees
 
@@ -580,7 +580,7 @@ class ApproachManually(commands2.Command):
         return False  # never
 
     def end(self, interrupted: bool):
-        self.drivetrain.arcadeDrive(0, 0)
+        self.drivetrain.stop()
 
     def execute(self):
         now = Timer.getFPGATimestamp()
@@ -606,14 +606,14 @@ class ApproachManually(commands2.Command):
             rotationSpeed *= max(0.25, 1.0 - closeToEdge)
 
         # 5. drive!
-        if self.reverse:
-            self.drivetrain.drive(-fwdSpeed, -leftSpeed, rotationSpeed, fieldRelative=False, rateLimit=True)
+        if self.reverse:     # TODO: Make sure parameters are meters_per_second and radians_per_second
+            self.drivetrain.drive(-fwdSpeed, -leftSpeed, rotationSpeed, field_relative=False, rate_limit=True)
         else:
-            self.drivetrain.drive(fwdSpeed, leftSpeed, rotationSpeed, fieldRelative=False, rateLimit=True)
+            self.drivetrain.drive(fwdSpeed, leftSpeed, rotationSpeed, field_relative=False, rate_limit=True)
 
     def getGyroBasedRotationSpeed(self):
         # 1. how many degrees are left to turn?
-        currentDirection = self.drivetrain.getHeading()
+        currentDirection = self.drivetrain.heading
         rotationRemaining = self.targetDirection - currentDirection
         degreesRemaining = rotationRemaining.degrees()
         # (optimize: do not turn left 350 degrees if you can just turn right -10 degrees, and vice versa)

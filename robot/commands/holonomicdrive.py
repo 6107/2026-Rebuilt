@@ -32,7 +32,7 @@ class HolonomicDrive(commands2.Command):
     """
 
     def __init__(self, robot_container, drivetrain, forwardSpeed, leftSpeed, rotationSpeed, deadband=0,
-                 field_relative: Optional[bool] = True, rateLimit: bool = False, square: bool = False):
+                 field_relative: Optional[bool] = True, rate_limit: bool = False, square: bool = False):
         """
         Drive the robot at `driveSpeed` and `rotationSpeed` until this command is terminated.
         """
@@ -41,7 +41,7 @@ class HolonomicDrive(commands2.Command):
         self.robot = robot_container.robot
         self.container = robot_container
 
-        self.forwardSpeed = forwardSpeed
+        self.forwardSpeed = forwardSpeed     # TODO: Make sure parameters are meters_per_second and radians_per_second
         if not callable(forwardSpeed):
             self.forwardSpeed = lambda: forwardSpeed
 
@@ -57,7 +57,7 @@ class HolonomicDrive(commands2.Command):
         self.deadband = deadband
 
         self.drivetrain = drivetrain
-        self.rate_limit = rateLimit
+        self.rate_limit = rate_limit
         self.square = square
 
         self.field_relative = field_relative
@@ -83,6 +83,7 @@ class HolonomicDrive(commands2.Command):
             logger.debug(
                 f"HolonomicDrive command: forward={forward_speed}, left={left_speed}, rotation={left_speed}, deadband={self.deadband}, flipped: {flipped}")
 
+        # TODO: Make sure parameters are meters_per_second and radians_per_second
         self.drivetrain.drive(applyDeadband(forward_speed, self.deadband),
                               applyDeadband(left_speed, self.deadband),
                               applyDeadband(rotation_speed, self.deadband),

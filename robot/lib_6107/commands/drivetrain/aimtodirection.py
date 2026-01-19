@@ -27,7 +27,7 @@ import commands2
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 
-from frc_2026.subsystems.swervedrive.constants import AutoConstants
+from subsystems.swervedrive.constants import AutoConstants
 
 
 class AimToDirectionConstants:
@@ -53,7 +53,7 @@ class AimToDirection(commands2.Command):
         # setting the target angle in a way that works for all cases
         self.targetDegrees = degrees
         if degrees is None:
-            self.targetDegrees = lambda: self.drivetrain.getHeading().degrees()
+            self.targetDegrees = lambda: self.drivetrain.heading.degrees()
         elif not callable(degrees):
             self.targetDegrees = lambda: degrees
 
@@ -63,7 +63,7 @@ class AimToDirection(commands2.Command):
 
     def execute(self):
         # 1. how many degrees are left to turn?
-        currentDirection = self.drivetrain.getHeading()
+        currentDirection = self.drivetrain.heading
         rotationRemaining = self.targetDirection - currentDirection
         degreesRemaining = rotationRemaining.degrees()
 
@@ -85,12 +85,12 @@ class AimToDirection(commands2.Command):
 
         # 3. act on it! if target angle is on the right, turn right
         if degreesRemaining > 0:
-            self.drivetrain.arcadeDrive(self.fwdSpeed, +turnSpeed)
+            self.drivetrain.arcade_drive(self.fwdSpeed, +turnSpeed)
         else:
-            self.drivetrain.arcadeDrive(self.fwdSpeed, -turnSpeed)  # otherwise, turn left
+            self.drivetrain.arcade_drive(self.fwdSpeed, -turnSpeed)  # otherwise, turn left
 
     def end(self, interrupted: bool):
-        self.drivetrain.arcadeDrive(0, 0)
+        self.drivetrain.stop()
         if interrupted:
             SmartDashboard.putString("command/c" + self.__class__.__name__, "interrupted")
 
@@ -98,7 +98,7 @@ class AimToDirection(commands2.Command):
         if self.fwdSpeed != 0:
             return False  # if someone wants us to drive forward while aiming, then we are never finished
 
-        currentDirection = self.drivetrain.getHeading()
+        currentDirection = self.drivetrain.heading
         rotationRemaining = self.targetDirection - currentDirection
         degreesRemaining = rotationRemaining.degrees()
 

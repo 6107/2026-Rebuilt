@@ -205,7 +205,7 @@ class PhotonTagCameraSim(Subsystem):
     def periodic(self) -> None:
         now = Timer.getFPGATimestamp()
 
-        cameraPose: Pose2d = self.drivetrain.get_pose()
+        cameraPose: Pose2d = self.drivetrain.pose
         cameraPose = cameraPose.transformBy(self.locationOnDrivetrain)
 
         # 1. if camera is connected, process the camera results

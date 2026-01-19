@@ -26,9 +26,9 @@ from commands2 import CommandScheduler
 from commands2.command import Command
 from wpilib import Timer, RobotBase, DriverStation, Field2d, SmartDashboard
 
-from frc_2026 import constants
-from frc_2026.constants import USE_PYKIT
-from frc_2026.robotcontainer import RobotContainer
+import constants
+from constants import USE_PYKIT
+from robotcontainer import RobotContainer
 # from lib_6107.timedcommandloggedrobot import TimedCommandLoggedRobot
 # from util.telemetry import Telemetry
 from version import VERSION
@@ -182,12 +182,11 @@ class MyRobot(MyRobotBase):
         Users should override this method for initialization code which will be
         called each time the robot enters disabled mode.
         """
-        logger.debug("called disabledInit")
-        self.container.disablePIDSubsystems()
-
         for subsystem in self.container.subsystems:
             if hasattr(subsystem, "stop") and callable(getattr(subsystem, "stop")):
                 subsystem.stop()
+
+        self.container.disablePIDSubsystems()
 
         self.disabledTimer.reset()
         self.disabledTimer.start()
@@ -203,7 +202,7 @@ class MyRobot(MyRobotBase):
         logger.debug("called disabledPeriodic")
 
         if self.disabledTimer.hasElapsed(constants.WHEEL_LOCK_TIME):
-            self.container.setMotorBrake(False)
+            self.container.robot_drive.set_motor_brake(False)
             self.disabledTimer.stop()
             self.disabledTimer.reset()
 
@@ -232,7 +231,7 @@ class MyRobot(MyRobotBase):
         self.container.set_start_time()
 
         # Stop what we are doing...
-        self.container.setMotorBrake(True)
+        self.container.robot_drive.set_motor_brake(True)
 
         # Validate who we are working for. This may not be valid until autonomous or teleop init
         if not self.match_started:
@@ -309,6 +308,8 @@ class MyRobot(MyRobotBase):
         for subsystem in self.container.subsystems:
             if hasattr(subsystem, "stop") and callable(getattr(subsystem, "stop")):
                 subsystem.stop()
+
+            self.container.robot_drive.set_straight()
 
     def testInit(self) -> None:
         """

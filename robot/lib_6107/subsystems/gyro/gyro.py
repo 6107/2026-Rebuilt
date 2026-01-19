@@ -15,14 +15,26 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 import math
-from typing import Optional
+from typing import Optional, Any
 
+from pyfrc.physics.core import PhysicsInterface
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
-from wpimath.units import degrees, degrees_per_second
+from wpimath.units import degrees, degrees_per_second, hertz
 
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 
+try:
+    import navx
+    NAVX_SUPPORTED = True
+except ImportError:
+    NAVX_SUPPORTED = False
+
+try:
+    from phoenix6.hardware import pigeon2
+    PIGEON2_SUPPORTED = True
+except ImportError:
+    PIGEON2_SUPPORTED = False
 
 class Gyro(GyroIO):
     """
@@ -34,9 +46,35 @@ class Gyro(GyroIO):
     def __init__(self, is_reversed: bool) -> None:
         super().__init__()
 
+        self._gyro = None
         self._reversed = is_reversed
         self._sim_gyro: Optional[Gyro] = None
-        self._physics_controller: Optional['PhysicsInterface'] = None
+        self._physics_controller: Optional[PhysicsInterface] = None
+
+    @property
+    def gyro(self) -> Any:
+        """
+        Get the underlying Gyro/IMU object, if any.
+        """
+        return self._gyro
+
+    @staticmethod
+    def create(gyro_type: str, is_reversed: bool,
+               device_id: Optional[int] = -1,
+               update_frequency: Optional[hertz] = -1, inst: Optional[Any] = None) -> Optional[Gyro]:
+
+        match gyro_type.lower():
+            case "pigeon2":
+                if PIGEON2_SUPPORTED:
+                    from lib_6107.subsystems.gyro.pigeon2 import Pigeon2
+                    return Pigeon2(device_id, is_reversed, update_frequency, inst=inst)
+
+            case "navx":
+                if NAVX_SUPPORTED:
+                    from lib_6107.subsystems.gyro.navx import NavX
+                    return NavX(is_reversed, inst=inst)
+
+        return None
 
     def initialize(self) -> None:
         """

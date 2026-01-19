@@ -175,10 +175,6 @@ class ModuleConstants:
     MIN_DRIVING_SPEED = 0.01  # Meters per second
 
 
-class OIConstants:
-    DRIVE_DEADBAND = 0.05
-
-
 
 class AutoConstants:
     USE_SQRT_CONTROL = True  # improves arrival time and precision for simple driving commands

@@ -29,13 +29,14 @@
 # Examples can be found at https://github.com/robotpy/examples
 import inspect
 import json
+import logging
 import os
 
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import getDeployDirectory
 
-from frc_2026.field import *
 from robot import MyRobot
+from field.field import RED_TEST_POSE, BLUE_TEST_POSE
 
 logger = logging.getLogger(__name__)
 

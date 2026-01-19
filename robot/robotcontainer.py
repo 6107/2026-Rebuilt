@@ -20,14 +20,18 @@ import platform
 import time
 from typing import List, Optional, Callable, Dict, Any
 
+from commands2.sysid import SysIdRoutine
+
+from wpimath.geometry import Rotation2d
+from commands2.button import Trigger
 from commands2 import Subsystem, Command, RunCommand, InstantCommand, cmd, button
 from phoenix6 import swerve
 from wpilib import RobotBase, XboxController, SmartDashboard, SendableChooser, Field2d, DriverStation
 from wpimath.units import rotationsToRadians
 
-from frc_2026 import constants
-from frc_2026.generated.tuner_constants import TunerConstants
-from frc_2026.subsystems.constants import FRONT_CAMERA_TYPE, CAMERA_TYPE_LIMELIGHT, \
+import constants
+from generated.tuner_constants import TunerConstants
+from subsystems.constants import FRONT_CAMERA_TYPE, CAMERA_TYPE_LIMELIGHT, \
     CAMERA_TYPE_PHOTONVISION, FRONT_CAMERA_POSE_AND_HEADING, REAR_CAMERA_TYPE
 from lib_6107.util.phoenix6_telemetry import Telemetry
 from lib_6107.commands.camera.follow_object import FollowObject, StopWhen
@@ -70,22 +74,6 @@ class RobotContainer:
         self._max_angular_rate = rotationsToRadians(0.75)  # 3/4 of a rotation per second max angular velocity
         self._logger = Telemetry(self._max_speed)
 
-        # Setting up bindings for necessary control of the Phoenix6 swerve drive platform
-        self._drive = (
-            swerve.requests.FieldCentric()
-            .with_deadband(self._max_speed * 0.1)
-            .with_rotational_deadband(self._max_angular_rate * 0.1)  # Add a 10% deadband
-            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE)
-        # Use open-loop control for drive motors
-        )
-        self._brake = swerve.requests.SwerveDriveBrake()
-        self._point = swerve.requests.PointWheelsAt()
-        self._forward_straight = (
-            swerve.requests.RobotCentric()
-            .with_drive_request_type(
-                swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
-            )
-        )
         # Alliance support
         self._is_red_alliance: bool = False  # Coordinate system based off of blue being to the 'left'
         self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
@@ -201,7 +189,7 @@ class RobotContainer:
                 subsystem.dashboard_initialize()
 
         # Configure default command for driving using joystick sticks
-        field_relative = self.robot_drive.field_relative
+        field_relative = self.robot_drive._field_relative
 
         # MacOS fixup
         right_axis_x = XboxController.Axis.kRightX
@@ -218,7 +206,7 @@ class RobotContainer:
         #                            rotationSpeed=lambda: -self.driver_controller.getRawAxis(right_axis_x),
         #                            deadband=OIConstants.DRIVE_DEADBAND,
         #                            field_relative=field_relative,
-        #                            rateLimit=True,
+        #                            rate_limit=True,
         #                            square=True)
         #
         # self.robot_drive.setDefaultCommand(drive_cmd)
@@ -320,22 +308,12 @@ class RobotContainer:
             # Drivetrain will execute this command periodically
             self.robot_drive.apply_request(
                 lambda: (
-                    self._drive.with_velocity_x(
-                        -self.driver_controller.getLeftY() * self._max_speed
-                    )  # Drive forward with negative Y (forward)
-                    .with_velocity_y(
-                        -self.driver_controller.getLeftX() * self._max_speed
-                    )  # Drive left with negative X (left)
-                    .with_rotational_rate(
-                        -self.driver_controller.getRightX() * self._max_angular_rate
-                    )  # Drive counterclockwise with negative X (left)
+                    self.robot_drive.drive_request.with_velocity_x(-self.driver_controller.getLeftY() * self._max_speed)
+                    .with_velocity_y(-self.driver_controller.getLeftX() * self._max_speed)
+                    .with_rotational_rate(-self.driver_controller.getRightX() * self._max_angular_rate)
                 )
             )
         )
-        from commands2.sysid import SysIdRoutine
-
-        from wpimath.geometry import Rotation2d
-        from commands2.button import Trigger
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
         idle = swerve.requests.Idle()
@@ -343,10 +321,10 @@ class RobotContainer:
             self.robot_drive.apply_request(lambda: idle).ignoringDisable(True)
         )
 
-        self.driver_controller.a().whileTrue(self.robot_drive.apply_request(lambda: self._brake))
+        self.driver_controller.a().whileTrue(self.robot_drive.apply_request(lambda: self.robot_drive.brake_request))
         self.driver_controller.b().whileTrue(
             self.robot_drive.apply_request(
-                lambda: self._point.with_module_direction(
+                lambda: self.robot_drive.point_request.with_module_direction(
                     Rotation2d(-self.driver_controller.getLeftY(), -self.driver_controller.getLeftX())
                 )
             )
@@ -354,12 +332,12 @@ class RobotContainer:
 
         self.driver_controller.povUp().whileTrue(
             self.robot_drive.apply_request(
-                lambda: self._forward_straight.with_velocity_x(0.5).with_velocity_y(0)
+                lambda: self.robot_drive.forward_straight_request.with_velocity_x(0.5).with_velocity_y(0)
             )
         )
         self.driver_controller.povDown().whileTrue(
             self.robot_drive.apply_request(
-                lambda: self._forward_straight.with_velocity_x(-0.5).with_velocity_y(0)
+                lambda: self.robot_drive.forward_straight_request.with_velocity_x(-0.5).with_velocity_y(0)
             )
         )
 
@@ -432,14 +410,11 @@ class RobotContainer:
         #       above). Eventually need to abstract this.
 
     def disablePIDSubsystems(self) -> None:
-        """Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
-        This should be called on robot disable to prevent integral windup."""
-
-        logger.debug("*** called disablePIDSubsystems")
-        self.setMotorBrake(True)
-
-    def setMotorBrake(self, brake: bool) -> None:
-        self.robot_drive.setMotorBrake(brake)
+        """
+        Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
+        This should be called on robot disable to prevent integral windup.
+        """
+        self.robot_drive.set_motor_brake(True)
 
     def getAutonomousCommand(self) -> Command:
         """
@@ -497,16 +472,16 @@ class RobotContainer:
 
     def getAutonomousLeftBlue(self) -> Command:
         setStartPose = ResetXY(x=0.783, y=6.686, heading_degrees=+60, drivetrain=self.robot_drive)
-        driveForward = RunCommand(lambda: self.robot_drive.arcadeDrive(xSpeed=1.0, rot=0.0), self.robot_drive)
-        stop = InstantCommand(lambda: self.robot_drive.arcadeDrive(0, 0))
+        driveForward = RunCommand(lambda: self.robot_drive.arcade_drive(xSpeed=1.0, rot=0.0), self.robot_drive)
+        stop = InstantCommand(lambda: self.robot_drive.stop())
 
         command = setStartPose.andThen(driveForward.withTimeout(1.0)).andThen(stop)
         return command
 
     def getAutonomousLeftRed(self) -> Command:
         setStartPose = ResetXY(x=15.777, y=4.431, heading_degrees=-120, drivetrain=self.robot_drive)
-        driveForward = RunCommand(lambda: self.robot_drive.arcadeDrive(xSpeed=1.0, rot=0.0), self.robot_drive)
-        stop = InstantCommand(lambda: self.robot_drive.arcadeDrive(0, 0))
+        driveForward = RunCommand(lambda: self.robot_drive.arcade_drive(xSpeed=1.0, rot=0.0), self.robot_drive)
+        stop = InstantCommand(lambda: self.robot_drive.stop())
 
         command = setStartPose.andThen(driveForward.withTimeout(2.0)).andThen(stop)
         return command

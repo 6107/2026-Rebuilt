@@ -36,7 +36,7 @@ class ResetXY(Command):
         self.addRequirements(drivetrain)
 
     def initialize(self):
-        self.drivetrain.resetOdometry(self.position)
+        self.drivetrain.pose = self.position
 
     def isFinished(self) -> bool:
         return True  # this is an instant command, it finishes right after it initialized

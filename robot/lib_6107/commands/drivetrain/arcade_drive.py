@@ -49,7 +49,8 @@ class ArcadeDrive(commands2.Command):
     def execute(self):
         driveSpeed = self.driveSpeed()  # get the drive speed from the joystick or wherever it comes from
         rotationSpeed = self.rotationSpeed()  # get the turn speed from the joystick or wherever it comes from
-        self.drivetrain.arcadeDrive(driveSpeed, rotationSpeed, assumeManualInput=self.assumeManualInput)
+        self.drivetrain.arcade_drive(driveSpeed, rotationSpeed, assume_manual_input=self.assumeManualInput,
+                                     field_relative=True)
 
     def end(self, interrupted: bool):
-        self.drivetrain.arcadeDrive(0, 0)  # stop at the end
+        self.drivetrain.stop()  # stop at the end

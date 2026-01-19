@@ -24,7 +24,7 @@ from phoenix6.hardware import pigeon2
 from phoenix6.sim.pigeon2_sim_state import Pigeon2SimState
 from wpilib import SmartDashboard, RobotBase
 from wpimath.geometry import Rotation2d
-from wpimath.units import degrees, degrees_per_second
+from wpimath.units import degrees, degrees_per_second, hertz
 
 from lib_6107.constants import RADIANS_PER_DEGREE
 from lib_6107.subsystems.gyro.gyro import Gyro, GyroIO
@@ -38,12 +38,20 @@ class Pigeon2(Gyro):
     """
     gyro_type = "Pigeon2"
 
-    def __init__(self, device_id: int, is_reversed: bool, update_frequency: int) -> None:
+    def __init__(self, device_id: int, is_reversed: bool, update_frequency: hertz, inst: Optional[Pigeon2] = None) -> None:
+        if inst is not None:
+            # Supplied by operator. For Pigeon2, use the Pigeon 2 calibration tool in the CTRE Tuner X
+            # to set the orientation.
+            assert isinstance(inst, pigeon2.Pigeon2), f"Invalid object type past in as gyro instance: {type(inst)}"
+            is_reversed = False
+
+        # Initialize base class
         super().__init__(is_reversed)
 
-        self._gyro: pigeon2.Pigeon2 = pigeon2.Pigeon2(device_id)
+        self._gyro: pigeon2.Pigeon2 = inst or pigeon2.Pigeon2(device_id)
         self._sim_gyro: Optional[pigeon2.Pigeon2] = None
         self._sim_gyro_state: Optional[Pigeon2SimState] = None
+        self._instance_supplied = inst is not None
 
         # Note: Default pigeon2 config has compass disabled. We want it that way as well.
         config: Pigeon2Configuration = Pigeon2Configuration()
@@ -59,23 +67,26 @@ class Pigeon2(Gyro):
     def initialize(self) -> None:
         """
         Perform initial steps to get your gyro ready
-
-        TODO: See about maybe updating faster than the base frequency. Perhaps twice as
-              fast from the update_hz value. This may provide a little better results if
-              the robot periodic call skews with respect to the Pigeon2 updates.
         """
-        self.reset()
+        if not self._instance_supplied:
+            # Only initialize if this class did the initial initialization of the Pigeon2 object
 
-        status = BaseStatusSignal.set_update_frequency_for_all(self._update_hz,
-                                                               self._yaw,
-                                                               self._yaw_velocity)
-        if status != StatusCode.OK:
-            logger.warning(f"{self.gyro_type}: Error during gyro frequency update: {status}")
+            self.reset()
+            if self._update_hz > 0.0:
+                # TODO: See about maybe updating faster than the base frequency. Perhaps twice as
+                #       fast from the update_hz value. This may provide a little better results if
+                #       the robot periodic call skews with respect to the Pigeon2 updates.
 
-        status = self._gyro.optimize_bus_utilization()
+                status = BaseStatusSignal.set_update_frequency_for_all(self._update_hz,
+                                                                       self._yaw,
+                                                                       self._yaw_velocity)
+                if status != StatusCode.OK:
+                    logger.warning(f"{self.gyro_type}: Error during gyro frequency update: {status}")
 
-        if status != StatusCode.OK:
-            logger.warning(f"{self.gyro_type}: Error during gyro bus optimization: {status}")
+            status = self._gyro.optimize_bus_utilization()
+
+            if status != StatusCode.OK:
+                logger.warning(f"{self.gyro_type}: Error during gyro bus optimization: {status}")
 
     @property
     def calibrated(self) -> bool:

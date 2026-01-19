@@ -27,9 +27,9 @@ import commands2
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d, Translation2d
 
-from frc_2026.subsystems.swervedrive.constants import AutoConstants
-from frc_2026.subsystems.swervedrive.constants import DriveConstants
-from frc_2026.subsystems.swervedrive.drivesubsystem2025 import DriveSubsystem2025 as DriveSubsystem
+from subsystems.swervedrive.constants import AutoConstants
+from subsystems.swervedrive.constants import DriveConstants
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 
 
@@ -70,7 +70,7 @@ class GoToPoint(commands2.Command):
             self.finishDirection = self.finishDirection.rotateBy(GoToPoint.REVERSE_DIRECTION)
 
     def initialize(self):
-        self.initialPosition = self.drivetrain.get_pose().translation()
+        self.initialPosition = self.drivetrain.pose.translation()
         if self.finishDirection is not None:
             self.desiredEndDirection = self.finishDirection
         else:
@@ -84,7 +84,7 @@ class GoToPoint(commands2.Command):
 
     def execute(self):
         # 1. to which direction we should be pointing?
-        currentPose = self.drivetrain.get_pose()
+        currentPose = self.drivetrain.pose
         currentDirection = currentPose.rotation()
         currentPoint = currentPose.translation()
         targetDirectionVector = self.targetPosition - currentPoint
@@ -96,10 +96,10 @@ class GoToPoint(commands2.Command):
 
         # 2. if we are pointing in a very wrong direction (more than 45 degrees away), rotate away without moving
         if degreesRemaining > 45 and not self.pointingInGoodDirection:
-            self.drivetrain.arcadeDrive(0.0, rotateSpeed)
+            self.drivetrain.arcade_drive(0.0, rotateSpeed)
             return
         elif degreesRemaining < -45 and not self.pointingInGoodDirection:
-            self.drivetrain.arcadeDrive(0.0, -rotateSpeed)
+            self.drivetrain.arcade_drive(0.0, -rotateSpeed)
             return
 
         if not self.pointingInGoodDirection:
@@ -145,18 +145,18 @@ class GoToPoint(commands2.Command):
 
         # 6. if we need to be turning *right* while driving, use negative rotation speed
         if degreesRemaining < 0:
-            self.drivetrain.arcadeDrive(translateSpeed, -rotateSpeed)
+            self.drivetrain.arcade_drive(translateSpeed, -rotateSpeed)
         else:  # otherwise, use positive
-            self.drivetrain.arcadeDrive(translateSpeed, +rotateSpeed)
+            self.drivetrain.arcade_drive(translateSpeed, +rotateSpeed)
 
     def end(self, interrupted: bool):
-        self.drivetrain.arcadeDrive(0, 0)
+        self.drivetrain.stop()
         if interrupted:
             SmartDashboard.putString("command/c" + self.__class__.__name__, "interrupted")
 
     def isFinished(self) -> bool:
         # 1. did we reach the point where we must move very slow?
-        currentPose = self.drivetrain.get_pose()
+        currentPose = self.drivetrain.pose
         currentPosition = currentPose.translation()
         distanceFromInitialPosition = self.initialPosition.distance(currentPosition)
 

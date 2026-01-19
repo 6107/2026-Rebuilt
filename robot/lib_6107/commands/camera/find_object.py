@@ -32,7 +32,7 @@ class FindObject(commands2.Command):
         # to find object, we will be running (wait + turn) + (wait + turn) ... in a long cycle, until object is detected
         wait = commands2.WaitCommand(waitSeconds)
         turn = AimToDirection(
-            degrees=lambda: self.drivetrain.getHeading().degrees() + turnDegrees,
+            degrees=lambda: self.drivetrain.heading.degrees() + turnDegrees,
             drivetrain=self.drivetrain,
             speed=turnSpeed
         )
