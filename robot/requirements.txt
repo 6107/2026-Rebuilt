@@ -20,7 +20,7 @@ robotpy-apriltag        == 2026.2.1
 robotpy-commands-v2     == 2026.2.1
 robotpy-pathplannerlib  >= 2026.1.1
 phoenix6                == 26.1.0
-# photonlibpy             > 2026.0.1
+photonlibpy             == 2026.1.1
 pyntcore                == 2026.2.1
 certifi                 == 2026.1.4
 pynetworktables         >= 2021.0.0
