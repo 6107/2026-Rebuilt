@@ -29,7 +29,7 @@ class BaseCommand(Command):
     """
     def __init__(self, target):
         super().__init__()
-        self.setName(self.getClassName())
+        self.setName(self.get_class_name())
 
         from robotcontainer import RobotContainer
         from subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -48,7 +48,7 @@ class BaseCommand(Command):
         self._log_level = logging.INFO if RobotBase.isSimulation() else logging.DEBUG
 
     @classmethod
-    def getClassName(cls) -> str:
+    def get_class_name(cls) -> str:
         return cls.__name__
 
     def initialize(self) -> None:

@@ -16,18 +16,19 @@
 # ------------------------------------------------------------------------ #
 #
 # Constants for source in this subdirectory will go here
+
 import math
 import os
-from enum import Enum
+from enum import Enum, IntEnum, unique
 
-from magicbot import tunable
 from wpilib import RobotBase
+from wpimath.geometry import Rotation2d, Translation3d
+from wpimath.trajectory import TrapezoidProfileRadians
 from wpimath.units import kilograms, lbsToKilograms, meters_per_second, meters, \
     seconds, radians_per_second, rotationsToRadians
 
-from wpimath.trajectory import TrapezoidProfileRadians
-
-from generated.tuner_constants import TunerConstants    # Use Tuner X constants if available
+from generated.tuner_constants import TunerConstants  # Use Tuner X constants if available
+from lib_6107.constants import *
 
 USE_PYKIT = False
 
@@ -81,6 +82,54 @@ TURN_CONSTANT = 6
 
 GYRO_REVERSED = False  # (affects field-relative driving)
 
+
+#################################################################
+# Other subsystem and device constants for this year's project
+
+@unique
+class DeviceID(IntEnum):
+    # Drivetrain and IMU is provided already via Tuner X
+    DRIVETRAIN_LEFT_FRONT_TURNING_ID = 21
+    DRIVETRAIN_LEFT_FRONT_DRIVING_ID = 22
+    DRIVETRAIN_LEFT_FRONT_ENCODER_ID = 31
+
+    DRIVETRAIN_RIGHT_FRONT_TURNING_ID = 23
+    DRIVETRAIN_RIGHT_FRONT_DRIVING_ID = 24
+    DRIVETRAIN_RIGHT_FRONT_ENCODER_ID = 32
+
+    DRIVETRAIN_LEFT_REAR_TURNING_ID = 25
+    DRIVETRAIN_LEFT_REAR_DRIVING_ID = 26
+    DRIVETRAIN_LEFT_REAR_ENCODER_ID = 33
+
+    DRIVETRAIN_RIGHT_REAR_TURNING_ID = 27
+    DRIVETRAIN_RIGHT_REAR_DRIVING_ID = 28
+    DRIVETRAIN_RIGHT_REAR_ENCODER_ID = 34
+
+    GYRO_DEVICE_ID = 35
+
+    # Shooter
+    SHOOTER_DEVICE_ID = 10
+
+    # Intake Subsystem
+    INTAKE_DEVICE_ID = 11
+
+
+if True:
+    FRONT_CAMERA_TYPE = CAMERA_TYPE_NONE
+    REAR_CAMERA_TYPE = CAMERA_TYPE_NONE
+else:
+    FRONT_CAMERA_TYPE = CAMERA_TYPE_LIMELIGHT
+    REAR_CAMERA_TYPE = CAMERA_TYPE_PHOTONVISION
+
+FRONT_CAMERA_POSE_AND_HEADING = {
+    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Heading": Rotation2d.fromDegrees(0.0)
+}
+
+REAR_CAMERA_POSE_AND_HEADING = {
+    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Heading": Rotation2d.fromDegrees(180.0)
+}
 ###############################################################################
 # OPENTelemetry Support
 

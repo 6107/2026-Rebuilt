@@ -20,30 +20,27 @@ import platform
 import time
 from typing import List, Optional, Callable, Dict, Any
 
-from commands2.sysid import SysIdRoutine
-
-from wpimath.geometry import Rotation2d
-from commands2.button import Trigger, CommandXboxController
 from commands2 import Subsystem, Command, RunCommand, InstantCommand, cmd, button
+from commands2.button import Trigger, CommandXboxController
+from commands2.sysid import SysIdRoutine
 from phoenix6 import swerve
 from wpilib import RobotBase, XboxController, SmartDashboard, SendableChooser, Field2d, DriverStation
-from wpimath.units import rotationsToRadians, meters_per_second, radians_per_second, degreesToRadians
+from wpimath.geometry import Rotation2d
+from wpimath.units import rotationsToRadians, meters_per_second, radians_per_second
 
 import constants
-
-from autonomous import pathplanner
-from generated.tuner_constants import TunerConstants
-from subsystems.constants import FRONT_CAMERA_TYPE, CAMERA_TYPE_LIMELIGHT, \
+from commands.autonomous import pathplanner
+from constants import FRONT_CAMERA_TYPE, CAMERA_TYPE_LIMELIGHT, \
     CAMERA_TYPE_PHOTONVISION, FRONT_CAMERA_POSE_AND_HEADING, REAR_CAMERA_TYPE
-from lib_6107.util.phoenix6_telemetry import Telemetry
+from generated.tuner_constants import TunerConstants
 from lib_6107.commands.camera.follow_object import FollowObject, StopWhen
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.commands.drivetrain.trajectory import SwerveTrajectory, JerkyTrajectory
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.limelight_camera import LimelightCamera
 from lib_6107.subsystems.limelight_localizer import LimelightLocalizer
+from lib_6107.util.phoenix6_telemetry import Telemetry
 
 try:
     from lib_6107.subsystems.photon_localizer import PhotonLocalizer, PHOTONLIB_SUPPORTED
@@ -78,7 +75,7 @@ class RobotContainer:
         self._logger = Telemetry(self._max_speed)
 
         # Alliance support
-        self._is_red_alliance: bool = False  # Coordinate system based off of blue being to the 'left'
+        self._is_red_alliance: bool = RobotBase.isSimulation()  # Coordinate system based off of blue being to the 'left'
         self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
         self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
 
@@ -144,7 +141,7 @@ class RobotContainer:
         self.robot_drive = TunerConstants.create_drivetrain(self, **drive_kwargs)
 
         # Init the Auto chooser.  PathPlanner init will fill in our choices
-        self._auto_chooser = pathplanner.configure_auto_builder(self.robot_drive, self,"")
+        self._auto_chooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
 
         if FRONT_CAMERA_TYPE == CAMERA_TYPE_LIMELIGHT:
             # TODO: Make pose and heading below as constants

@@ -8,15 +8,16 @@ import math
 from typing import Optional, Callable, Any
 
 from commands2 import Command
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
-from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+from pathplannerlib.auto import NamedCommands
 from wpilib import Timer, SmartDashboard, SendableChooser
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import seconds, meters, percent
 
-from pathplannerlib.auto import NamedCommands
-from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
+
 
 class Tunable:
     _choosers = {}
@@ -157,7 +158,7 @@ class ApproachTag(BaseCommand):
             return ApproachTag(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def isReady(self, min_required_object_size=0.3):
         return self._camera.hasDetection() and self._camera.getA() > min_required_object_size

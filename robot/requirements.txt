@@ -18,16 +18,16 @@
 robotpy                 == 2026.2.1   # Main module and CLI for the robotics platform
 robotpy-apriltag        == 2026.2.1
 robotpy-commands-v2     == 2026.2.1
-robotpy-pathplannerlib  >= 2026.1.1
-robotpy-cli             >= 2026.0.1
+robotpy-pathplannerlib  == 2026.1.1
+robotpy-cli             == 2026.0.1
 phoenix6                == 26.1.0
 photonlibpy             == 2026.1.1
 pyntcore                == 2026.2.1
 certifi                 == 2026.1.4
-pynetworktables         >= 2021.0.0
+pynetworktables         == 2021.0.0
 
-robotpy-pykit           >= 1.0.2
-robotpy-pykit-watch     >= 1.0.0
+robotpy-pykit           == 1.0.2
+robotpy-pykit-watch     == 1.0.0
 
 # ###############################################################################
 # # Following are for OpenTelemetry support. None of the files below

@@ -19,7 +19,6 @@ import json
 import logging
 import math
 import os
-
 from collections import OrderedDict
 from typing import Callable
 from typing import Tuple, Optional, List, Dict, Sequence, Any
@@ -33,13 +32,13 @@ from pykit.autolog import autolog_output, autologgable_output
 from pykit.logger import Logger
 from wpilib import DriverStation, Notifier, RobotController
 from wpilib import SmartDashboard, Field2d, RobotBase
+from wpilib import getDeployDirectory
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
 from wpimath.geometry import Pose2d, Rotation2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModuleState, \
     SwerveModulePosition
 from wpimath.units import degrees, rotationsToRadians, meters_per_second, radians_per_second, meters
-from wpilib import getDeployDirectory
 
 from constants import USE_PYKIT, JOYSTICK_DEADBAND, MAX_SPEED, GYRO_REVERSED, WHEEL_RADIUS, WHEEL_CIRCUMFERENCE
 from field.field import FIELD_Y_SIZE, FIELD_X_SIZE
@@ -138,6 +137,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self._container = container
         self._robot = container.robot
         self._physics_controller = None
+        self._last_pose: Optional[Pose2d] = None
 
         # Camera/localizer defaults
         self.front_camera = None
@@ -515,18 +515,15 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         Change in alliance occurred before match started. If simulation is
         supported, then 'physics.py' handles this.
         """
-        # TODO: Need to coordinate the value below with our default for red or blue and which location
-        initial_pose = Pose2d(constants.START_X,
-                              constants.START_Y,
-                              Rotation2d.fromDegrees(self.gyro.yaw))
+        if not RobotBase.isSimulation():
+            return Pose2d(0, 0, 0)
 
-        if RobotBase.isSimulation():
+        initial_pose = Pose2d(0, 0, Rotation2d.fromDegrees(self.gyro.yaw))
+        if location in (1, 2, 3):
             # Use test subsystem settings if simulation
             initial_pose = RED_TEST_POSE[location] if is_red else BLUE_TEST_POSE[location]
-            self.pose = initial_pose
 
-        # TODO: Do we also need to update what we provide the pathplanner staring locaiont
-
+        self.pose = initial_pose
         return initial_pose
 
     def dashboard_initialize(self) -> None:
@@ -543,12 +540,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         divisor = 10 if self._robot.isEnabled() else 20
         update_dash = self._robot.counter % divisor == 0
 
-        if update_dash:
-            pose = self.pose
-
-            SmartDashboard.putNumber("Drivetrain/x", pose.x)
-            SmartDashboard.putNumber("Drivetrain/y", pose.y)
-            SmartDashboard.putNumber("Drivetrain/heading", pose.rotation().degrees())
+        if update_dash and self._last_pose is not None:
+            SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
+            SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
+            SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
 
             self.gyro.dashboard_periodic()
 
@@ -631,7 +626,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         # Update the odometry in the periodic block
         # TODO: For pheonix6 library, just need to pass in vision measurements
-        self.field.setRobotPose(self.pose)
+        self._last_pose = self.pose
+
+        if self._last_pose is not None:
+            self.field.setRobotPose(self._last_pose)
 
         # Update SmartDashboard for this subsystem
         self.dashboard_periodic()
@@ -643,10 +641,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self._physics_controller = physics_controller
 
         self.gyro.sim_init(physics_controller)
-
-        # set up the initial location of the robot on the field
-        self._alliance_change(self._container.is_red_alliance,
-                              self._container.alliance_location)
 
     def simulationPeriodic(self, **kwargs) -> Optional[float]:
         """
@@ -673,7 +667,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
          # log_it = self._robot.counter % 20 == 0
 
-        # Since simulation, limit it to the field of play
+        # Since simulation, limit it to the field of play.
         pose = self.pose
 
         # self.gyro.sim_yaw = pose.rotation().degrees()     # Not saving this yet.
@@ -814,33 +808,19 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         # wheel_radius: meters = WHEEL_RADIUS
         wheel_circumference: meters = WHEEL_CIRCUMFERENCE
 
-        try:
-            # private VelocityTorqueCurrentFOC m_velocitySetter = new VelocityTorqueCurrentFOC(0);
-            for index, module in enumerate(self.modules):
-                drive_motor = module.drive_motor
-                steer_motor = module.steer_motor
+        for index, module in enumerate(self.modules):
+            drive_motor = module.drive_motor
+            steer_motor = module.steer_motor
 
-                state: SwerveModuleState = module_states[index]
-                state.optimize(module.get_current_state().angle)
+            state: SwerveModuleState = module_states[index]
+            state.optimize(module.get_current_state().angle)
 
-                # Convert linear speed (m/s) to wheel rotations per second (RPS)
-                wheel_rps = state.speed / wheel_circumference
-                angle_to_set = (state.angle.degrees() / 360.0) * ticks_per_revolution
+            # Convert linear speed (m/s) to wheel rotations per second (RPS)
+            wheel_rps = state.speed / wheel_circumference
+            angle_to_set = (state.angle.degrees() / 360.0) * ticks_per_revolution
 
-                steer_motor.set_control(angle_setter.with_position(angle_to_set))
-                drive_motor.set_control(velocity_setter.with_velocity(wheel_rps))
-
-        except Exception as _e:
-            pass
-
-    # public void apply(SwerveModuleState state) {
-    #     var optimized = SwerveModuleState.optimize(state, m_internalState.angle);
-    #
-    #     double angleToSetDeg = optimized.angle.getRotations();
-    #     m_steerMotor.setControl(m_angleSetter.withPosition(angleToSetDeg));
-    #     double velocityToSet = optimized.speedMetersPerSecond * m_driveRotationsPerMeter;
-    #     m_driveMotor.setControl(m_velocitySetter.withVelocity(velocityToSet));
-    # }
+            steer_motor.set_control(angle_setter.with_position(angle_to_set))
+            drive_motor.set_control(velocity_setter.with_velocity(wheel_rps))
 
     @property
     def drive_scale_factor(self) -> float:

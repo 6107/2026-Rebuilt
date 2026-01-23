@@ -24,6 +24,14 @@ from math import pi
 DEFAULT_ROBOT_FREQUENCY = 1.0 / 50
 
 ######################################################################
+# Subsystem related constants
+
+CAMERA_TYPE_NONE = ""
+CAMERA_TYPE_LIMELIGHT = "Limelight"  # Currently Limelight 2 only
+CAMERA_TYPE_PHOTONVISION = "PhotonVision"
+
+
+######################################################################
 # Math
 RADIANS_PER_REVOLUTION = 2 * pi
 DEGREES_PER_REVOLUTION = 360.0

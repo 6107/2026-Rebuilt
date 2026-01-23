@@ -17,13 +17,12 @@
 #
 #  Drivetrain specific Command template
 #
-import logging
-from typing import Optional
 
 from commands2 import Command
-
 from pathplannerlib.auto import NamedCommands
+
 from lib_6107.commands.command import BaseCommand
+
 
 class DriveTrainCommandTemplate(BaseCommand):  # change the name for your command
     """
@@ -44,7 +43,7 @@ class DriveTrainCommandTemplate(BaseCommand):  # change the name for your comman
             return DriveTrainCommandTemplate(drivetrain, **kwargs)      # TODO: Rename this too
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self) -> None:
         """

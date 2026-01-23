@@ -23,13 +23,11 @@
 #  may need in your project.
 #
 
-import logging
-from typing import Optional
-
 from commands2 import Command
+from pathplannerlib.auto import NamedCommands
+
 from lib_6107.commands.command import BaseCommand
 
-from pathplannerlib.auto import NamedCommands
 
 class CommandTemplate(BaseCommand):  # change the name for your command
     """
@@ -50,7 +48,7 @@ class CommandTemplate(BaseCommand):  # change the name for your command
             return CommandTemplate(container, **kwargs)      # TODO: Rename this too
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self) -> None:
         """

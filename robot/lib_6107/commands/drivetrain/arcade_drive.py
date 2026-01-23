@@ -18,11 +18,11 @@
 
 from typing import Optional
 
+from pathplannerlib.auto import NamedCommands
 from wpimath.units import meters_per_second, radians_per_second
 
-from pathplannerlib.auto import NamedCommands
-from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 from lib_6107.commands.command import BaseCommand
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class ArcadeDrive(BaseCommand):
@@ -57,7 +57,7 @@ class ArcadeDrive(BaseCommand):
             return ArcadeDrive(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self):
         super().initialize()

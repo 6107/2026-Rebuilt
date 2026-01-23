@@ -10,6 +10,7 @@ from typing import Optional
 
 import commands2
 
+
 class CommandGroupTemplate(commands2.SequentialCommandGroup):
     """
     TODO: Describe this class here

@@ -21,22 +21,19 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 
+import math
 from typing import Optional
 
-import math
-
 from commands2 import Command
+from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d, Translation2d
 
-from subsystems.swervedrive.constants import AutoConstants
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
-
-from pathplannerlib.auto import NamedCommands
-from subsystems.swervedrive.drivesubsystem import DriveSubsystem
-
 from constants import MAX_SPEED
 from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+from subsystems.swervedrive.constants import AutoConstants
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class GoToPointConstants:
@@ -89,7 +86,7 @@ class GoToPoint(BaseCommand):
             return GoToPoint(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self):
         super().initialize()

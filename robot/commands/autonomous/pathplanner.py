@@ -17,33 +17,28 @@
 
 import logging
 import os
-
-from pathplannerlib.auto import RobotConfig
-from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
-
-from wpilib import DriverStation
-from wpimath.units import degreesToRadians
-from wpimath.kinematics import ChassisSpeeds
 from typing import Optional
 
 from commands2 import cmd
 from commands2.sysid import SysIdRoutine
 from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.auto import RobotConfig
+from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
 from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
-from wpilib import SendableChooser, getDeployDirectory
-
 from pykit.logger import Logger
+from wpilib import DriverStation, SendableChooser, getDeployDirectory
+from wpimath.kinematics import ChassisSpeeds
+from wpimath.units import degreesToRadians
 
-from constants import USE_PYKIT
-from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 from commands.intake.intake_commands import IntakeCollectFuel
-
-from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
+from constants import USE_PYKIT
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.approach_tag import ApproachTag
+from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint, SwerveMove
+from subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 logger = logging.getLogger(__name__)
 

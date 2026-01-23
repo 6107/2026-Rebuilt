@@ -24,14 +24,14 @@ import math
 from typing import Callable, Optional
 
 from commands2 import Command
+from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 
+from lib_6107.commands.command import BaseCommand
 from subsystems.swervedrive.constants import AutoConstants
 from subsystems.swervedrive.drivesubsystem import DriveSubsystem
-from lib_6107.commands.command import BaseCommand
 
-from pathplannerlib.auto import NamedCommands
 
 class AimToDirectionConstants:
     kP = 0.001  # 0.002 is the default, but you must calibrate this to your robot
@@ -75,7 +75,7 @@ class AimToDirection(BaseCommand):
             return AimToDirection(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self):
         super().initialize()

@@ -18,10 +18,11 @@
 from typing import Optional
 
 from commands2 import Command, Subsystem
+from pathplannerlib.auto import NamedCommands
 from wpimath.units import revolutions_per_minute
 
-from pathplannerlib.auto import NamedCommands
 from lib_6107.commands.command import BaseCommand
+
 
 class IntakeCollectFuel(BaseCommand):  # change the name for your command
     """
@@ -44,7 +45,7 @@ class IntakeCollectFuel(BaseCommand):  # change the name for your command
             return IntakeCollectFuel(container, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self) -> None:
         """

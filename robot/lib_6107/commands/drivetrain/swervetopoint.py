@@ -25,15 +25,14 @@ import math
 from typing import Optional, Callable
 
 from commands2 import Command
+from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d, Translation2d, Pose2d
 from wpimath.units import degrees, meters
 
+from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
-
-from pathplannerlib.auto import NamedCommands
-from lib_6107.commands.command import BaseCommand
 
 
 class SwerveToPoint(BaseCommand):
@@ -78,7 +77,7 @@ class SwerveToPoint(BaseCommand):
             return SwerveToPoint(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self):
         super().initialize()
@@ -214,7 +213,7 @@ class SwerveMove(BaseCommand):
             return SwerveMove(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.getClassName(), command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self):
         super().initialize()
