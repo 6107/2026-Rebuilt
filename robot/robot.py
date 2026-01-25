@@ -25,17 +25,18 @@ from typing import Optional
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
-from wpilib import Timer, RobotBase, DriverStation, Field2d, SmartDashboard
-
+from networktables import NetworkTables
 from pathplannerlib.pathfinding import Pathfinding, LocalADStar
+from wpilib import Timer, RobotBase, DriverStation, Field2d, SmartDashboard
+from wpimath.units import seconds
 
 import constants
 from constants import USE_PYKIT
+from lib_6107.util.statistics import RobotStatistics
 from robotcontainer import RobotContainer
 # from lib_6107.timedcommandloggedrobot import TimedCommandLoggedRobot
 # from util.telemetry import Telemetry
 from version import VERSION
-from lib_6107.util.statistics import RobotStatistics
 
 if USE_PYKIT:
     # pykit & AdvantageScope support
@@ -73,12 +74,14 @@ class MyRobot(MyRobotBase):
 
         self._container: Optional[RobotContainer] = None
         self._autonomous_command: Optional[Command] = None
+        self._auto_end_started = False
         self._time_and_joystick_replay = None
 
         self.disabledTimer: Timer = Timer()
 
         self.field: Optional[wpilib.Field2d] = None
         self._stats: RobotStatistics = RobotStatistics()
+        self._network_tables_server = None  # Simulation only
 
         # Visualization and pose support
         self.match_started = False  # Set true on Autonomous or Teleop init
@@ -98,6 +101,9 @@ class MyRobot(MyRobotBase):
         initialization code.
         """
         logger.info("robotInit: entry")
+
+        if RobotBase.isSimulation():
+            self._network_tables_server = NetworkTables.initialize(server="127.0.0.1")
 
         # Set up logging
         if USE_PYKIT:
@@ -275,6 +281,7 @@ class MyRobot(MyRobotBase):
             self.container.check_alliance()
             self.match_started = True
 
+        self._auto_end_started = False
         self._autonomous_command = self.container.get_autonomous_command()
 
         if self._autonomous_command:
@@ -290,8 +297,22 @@ class MyRobot(MyRobotBase):
         """
         start = time.monotonic()
 
+        if not self._auto_end_started:
+            remaining: seconds = DriverStation.getMatchTime()
 
-        self._stats.add("auto", time.monotonic() - start)
+            if 0 < remaining <= constants.AUTONOMOUS_END_TRIGGER_TIME:
+                self._auto_end_started = True
+                end_command = self.container.get_autonomous_end_game_command()
+
+                if end_command is not None:
+                    logger.info(f"triggering autonomous end command: {end_command.getName}, {remaining} seconds left")
+
+                    self._autonomous_command.cancel()
+                    self._autonomous_command = end_command
+                    # Run it
+                    end_command.schedule()
+
+            self._stats.add("auto", time.monotonic() - start)
 
     def autonomousExit(self) -> None:
         """

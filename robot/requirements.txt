@@ -22,6 +22,7 @@ robotpy-pathplannerlib  == 2026.1.1
 robotpy-cli             == 2026.0.1
 phoenix6                == 26.1.0
 photonlibpy             == 2026.1.1
+robotpy-cscore          == 2026.2.1
 pyntcore                == 2026.2.1
 certifi                 == 2026.1.4
 pynetworktables         == 2021.0.0

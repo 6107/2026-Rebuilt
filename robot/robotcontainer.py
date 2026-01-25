@@ -19,7 +19,7 @@ import logging
 import time
 from typing import List, Optional, Callable, Dict, Any
 
-from commands2 import Subsystem, Command, RunCommand, InstantCommand, cmd, button
+from commands2 import Subsystem, Command, RunCommand, PrintCommand, InstantCommand, cmd, button
 from commands2.button import Trigger, CommandXboxController
 from commands2.sysid import SysIdRoutine
 from phoenix6 import swerve
@@ -29,27 +29,19 @@ from wpimath.units import rotationsToRadians, meters_per_second, radians_per_sec
 
 import constants
 from commands.autonomous import pathplanner
-from constants import FRONT_CAMERA_TYPE, CAMERA_TYPE_LIMELIGHT, \
-    CAMERA_TYPE_PHOTONVISION, FRONT_CAMERA_POSE_AND_HEADING, REAR_CAMERA_TYPE
+from constants import (FRONT_CAMERA_TYPE, FRONT_CAMERA_POSE_AND_HEADING, REAR_CAMERA_TYPE,
+                       REAR_CAMERA_POSE_AND_HEADING, LEFT_CAMERA_TYPE, LEFT_CAMERA_POSE_AND_HEADING,
+                       RIGHT_CAMERA_TYPE, RIGHT_CAMERA_POSE_AND_HEADING,
+                       )
+from field.field_2026 import RebuiltField as Field
 from generated.tuner_constants import TunerConstants
 from lib_6107.commands.camera.follow_object import FollowObject, StopWhen
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.commands.drivetrain.trajectory import SwerveTrajectory, JerkyTrajectory
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
-from lib_6107.subsystems.limelight_camera import LimelightCamera
-from lib_6107.subsystems.limelight_localizer import LimelightLocalizer
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.phoenix6_telemetry import Telemetry
-
-try:
-    from lib_6107.subsystems.photon_localizer import PhotonLocalizer, PHOTONLIB_SUPPORTED
-    from lib_6107.subsystems.photonvision_camera import PhotonVisionCamera
-    PHOTONLIB_SUPPORTED=True
-
-except ImportError:
-    PHOTONLIB_SUPPORTED = False
-
-# TODO: path planner stuff needed?
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +69,12 @@ class RobotContainer:
         self._is_red_alliance: bool = RobotBase.isSimulation()  # Coordinate system based off of blue being to the 'left'
         self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
         self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
+        #
+        # red_or_blue = NetworkTables.getTable("NetworkTables").getEntry("FMSInfo/IsRedAlliance")
+        # red_or_blue.addListener(self._on_alliance_change, NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
+        #
+        # red_or_blue = NetworkTables.getTable("NetworkTables").getEntry("FMSInfo/StationNumber")
+        # red_or_blue.addListener(self._on_alliance_change, NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
 
         # The driver's controller
         self.driver_controller = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
@@ -90,73 +88,26 @@ class RobotContainer:
         ########################################################
         # Subsystem initialization
         #
-        #   VISION
-        #
-        camera_subsystems = []
-        self.localizer = None
-        self.vision_odometry = False
         period = robot.getPeriod() or DEFAULT_ROBOT_FREQUENCY
 
-        drive_kwargs: Dict[str, Any] = {
-            "pykit": {
-                "Update Frequency": 1.0 / period
-            }
-        }
-        if FRONT_CAMERA_TYPE == CAMERA_TYPE_PHOTONVISION and PHOTONLIB_SUPPORTED:
-            self.front_camera = PhotonVisionCamera(self, name="front-camera")
-
-        elif FRONT_CAMERA_TYPE == CAMERA_TYPE_LIMELIGHT:
-            self.front_camera = LimelightCamera(self, name="front-camera")
-
-        else:
-            self.front_camera = None
-
-        if REAR_CAMERA_TYPE == CAMERA_TYPE_PHOTONVISION and PHOTONLIB_SUPPORTED:
-            self.rear_camera = PhotonVisionCamera(self, name="rear-camera")
-
-        elif REAR_CAMERA_TYPE == CAMERA_TYPE_LIMELIGHT:
-            self.rear_camera = LimelightCamera(self, name="rear-camera")
-
-        else:
-            self.rear_camera = None
-
-        if self.front_camera or self.rear_camera:
-            # Primary camera
-            drive_kwargs["Cameras"] = {}
-
-            if self.front_camera:
-                drive_kwargs["Cameras"]["Front"] = {
-                    "Camera": self.front_camera
-                }
-                camera_subsystems.append(self.front_camera)
-
-            if self.rear_camera:
-                drive_kwargs["Cameras"]["Rear"] = {
-                    "Camera": self.rear_camera
-                }
-                camera_subsystems.append(self.rear_camera)
-
+        ##########################################
+        #  Drivetrain
+        #
         # self.robot_drive = DriveSubsystem(self, **drive_kwargs)
-        self.robot_drive = TunerConstants.create_drivetrain(self, **drive_kwargs)
+        self.robot_drive = TunerConstants.create_drivetrain(self)
 
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         self._auto_chooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+        self._auto_end_chooser = SendableChooser()
 
-        if FRONT_CAMERA_TYPE == CAMERA_TYPE_LIMELIGHT:
-            # TODO: Make pose and heading below as constants
-            self.localizer = LimelightLocalizer(self, self.robot_drive)
-            self.localizer.addCamera(self.front_camera,
-                                     cameraPoseOnRobot=FRONT_CAMERA_POSE_AND_HEADING["Pose"],
-                                     cameraHeadingOnRobot=FRONT_CAMERA_POSE_AND_HEADING["Heading"])
-            drive_kwargs["Cameras"]["Front"]["Localizer"] = self.localizer
-            camera_subsystems.append(self.localizer)
+        ##########################################
+        #   VISION
+        #
+        self._cameras: Dict[str, Any] = {}
+        # self._localizer: Optional[Subsystem] = None
+        self._field: Field = Field()
 
-        elif FRONT_CAMERA_TYPE == CAMERA_TYPE_PHOTONVISION and PHOTONLIB_SUPPORTED:
-            self.localizer = PhotonLocalizer(self, self.robot_drive, "2025-reefscape.json")
-            drive_kwargs["Cameras"]["Front"]["Localizer"] = self.localizer
-
-        else:
-            self.localizer = None
+        camera_subsystems = self._init_vision_subsystems()
 
         # Now save off our subsystems. The robot core code will already call the periodic() function
         # as needed, but having our own list (iterated in order) allows us to move much of
@@ -164,6 +115,7 @@ class RobotContainer:
 
         self.subsystems: List[Subsystem] = camera_subsystems + [
             self.robot_drive,
+            # TODO: Intake, Climber, Shooter, Fuel Feeder here
         ]
         ########################################################
         # Configure the button bindings
@@ -193,6 +145,10 @@ class RobotContainer:
             if hasattr(subsystem, "dashboard_initialize") and callable(getattr(subsystem,
                                                                                "dashboard_initialize")):
                 subsystem.dashboard_initialize()
+        #########################################################
+        # Specific commands based on time remaining
+
+        self._autonomous_end_game_command = None
 
         # TODO: Currently we are always field centric wrt commands and using Pathplanner
         # # Configure default command for driving using joystick sticks
@@ -289,8 +245,10 @@ class RobotContainer:
     def set_start_time(self) -> None:  # call in teleopInit and autonomousInit in the robot
         self.start_time = time.time()
 
-    def get_enabled_time(
-            self) -> float:  # call when we want to know the start/elapsed time for status and debug messages
+    def get_elapsed_time(self) -> float:
+        """
+        Called when we want to know the start/elapsed time for status and debug messages
+        """
         return time.time() - self.start_time
 
     def elapsed_time(self) -> float:
@@ -416,6 +374,27 @@ class RobotContainer:
         #       XboxController may be used directly (such as in the default drive command
         #       above). Eventually need to abstract this.
 
+    def _init_vision_subsystems(self) -> List[Subsystem]:
+
+        camera_subsystems = []
+
+        for label, camera_type, pose, localizer in (("front", FRONT_CAMERA_TYPE, FRONT_CAMERA_POSE_AND_HEADING, False),
+                                                    ("rear", REAR_CAMERA_TYPE, REAR_CAMERA_POSE_AND_HEADING, False),
+                                                    ("left", LEFT_CAMERA_TYPE, LEFT_CAMERA_POSE_AND_HEADING, False),
+                                                    ("right", RIGHT_CAMERA_TYPE, RIGHT_CAMERA_POSE_AND_HEADING, False)):
+
+            camera_subsystem, localizer_subsystem = VisionSubsystem.create(camera_type, label,
+                                                                           self._field, localizer, pose,
+                                                                           self.robot_drive)
+            if camera_subsystem is not None:
+                camera_subsystems.append(camera_subsystem)
+                self._cameras[label] = camera_subsystem
+
+            if localizer_subsystem is not None:
+                camera_subsystems.append(localizer_subsystem)
+
+        return camera_subsystems
+
     def disablePIDSubsystems(self) -> None:
         """
         Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
@@ -429,6 +408,12 @@ class RobotContainer:
         """
         command = self._auto_chooser.getSelected()
         return command
+
+    def get_autonomous_end_game_command(self) -> Optional[Command]:
+        """
+        :returns: the command to run at the end of autonomous
+        """
+        return self._auto_end_chooser.getSelected()
 
     def configure_speed_limiter(self):
         """
@@ -452,26 +437,27 @@ class RobotContainer:
 
         TODO:  THIS IS JUST A TEST.  USE PATHPLANNER FOR ALL AUTONOMOUS MODE PATHS
         """
-        self._auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing())
+        self._auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
         self._auto_chooser.addOption("trajectory example", self.get_autonomous_trajectory_example())
         self._auto_chooser.addOption("left blue", self.get_autonomous_left_blue())
         self._auto_chooser.addOption("left red", self.get_autonomous_left_red())
 
-        # If vision based odometry is supported, add in their auto commands
-        if self.vision_odometry:
-            # TODO: would be a good thing to add into kwargs passed in or do something with
-            #       the subsystems class we want to derive
-            self._auto_chooser.addOption("Approach tag", self.getApproachTagCommand)
+        # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
+        self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
 
         SmartDashboard.putData("Chosen Auto", self._auto_chooser)
+        SmartDashboard.putData("Chosen Auto End Game", self._auto_end_chooser)
 
-    def get_do_nothing(self) -> Command:
+    def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
         """
         Have robot stop
 
         Makes a good default autonomous default while robot is still under test
         """
-        return InstantCommand(lambda: self.robot_drive.stop())
+        if stop:
+            return InstantCommand(lambda: self.robot_drive.stop())
+
+        return PrintCommand("Do-Nothing Command")
 
     def get_autonomous_left_blue(self) -> Command:
         set_start_pose = ResetXY(self.robot_drive, x=0.783, y=6.686, heading=60)
@@ -489,7 +475,7 @@ class RobotContainer:
         command = setStartPose.andThen(driveForward.withTimeout(2.0)).andThen(stop)
         return command
 
-    def getApproachTagCommand(self) -> Command:
+    def get_approach_tag_command(self) -> Command:
         # Approach until the tag takes up 8% of the screen, then drive just a little bit more
         # to compress the robot against the wall the tag is on.
 
@@ -527,7 +513,7 @@ class RobotContainer:
                                    stopAtEnd=True)  # to keep driving onto next command, set =False
         return command
 
-    def getTestCommand(self) -> Optional[Command]:
+    def get_test_command(self) -> Optional[Command]:
         """
         :returns: the command to run in test mode ("test dance") to exercise all subsystems
         """

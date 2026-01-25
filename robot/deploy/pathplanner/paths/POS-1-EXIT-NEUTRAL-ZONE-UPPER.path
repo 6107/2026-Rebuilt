@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.631152125279641,
-        "y": 5.967539149888143
+        "x": 6.117101732520268,
+        "y": 5.9705920304311615
       },
       "isLocked": true,
       "linkedName": "POS-1-UPPER-EXIT-START"
@@ -20,8 +20,8 @@
         "y": 5.967539149888143
       },
       "prevControl": {
-        "x": 2.8076179775280896,
-        "y": 5.9611011235955065
+        "x": 2.9856444534289452,
+        "y": 5.966124236696519
       },
       "nextControl": null,
       "isLocked": false,
@@ -41,13 +41,13 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
+    "velocity": 2.0,
     "rotation": -178.99491399474581
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
-    "velocity": 0,
+    "velocity": 2.0,
     "rotation": 180.0
   },
   "useDefaultConstraints": true

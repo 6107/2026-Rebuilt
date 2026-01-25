@@ -21,7 +21,7 @@ import math
 import os
 from collections import OrderedDict
 from typing import Callable
-from typing import Tuple, Optional, List, Dict, Sequence, Any
+from typing import Tuple, Optional, List, Sequence
 
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
@@ -41,13 +41,11 @@ from wpimath.kinematics import ChassisSpeeds, SwerveModuleState, \
 from wpimath.units import degrees, rotationsToRadians, meters_per_second, radians_per_second, meters
 
 from constants import USE_PYKIT, JOYSTICK_DEADBAND, MAX_SPEED, GYRO_REVERSED, WHEEL_RADIUS, WHEEL_CIRCUMFERENCE
-from field.field import FIELD_Y_SIZE, FIELD_X_SIZE
-from field.field import RED_TEST_POSE, BLUE_TEST_POSE
+from field.field_2026 import FIELD_Y_SIZE, FIELD_X_SIZE, RED_TEST_POSE, BLUE_TEST_POSE
 from generated.tuner_constants import TunerSwerveDrivetrain
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from lib_6107.subsystems.pykit.swervedrive_io import SwerveDriveIO
-from subsystems import constants
 from subsystems.swervedrive.constants import DriveConstants
 
 try:
@@ -127,8 +125,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
     _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(180)
     """Red alliance sees forward as 180 degrees (toward blue alliance wall)"""
 
-    def __init__(self, consts, modules, container: 'RobotContainer',
-                 **kwargs: Optional[Dict[str, Any]]) -> None:
+    def __init__(self, consts, modules, container: 'RobotContainer') -> None:
 
         # super().__init__(hardware.TalonFX, hardware.TalonFX, hardware.CANcoder, consts, modules)
         Subsystem.__init__(self)
@@ -143,16 +140,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self.front_camera = None
         self.vision_odometry = False
         self.field_relative = False  # Assume robot-relative to start with
-
-        cameras: Dict[str, Any] = kwargs.get("Cameras")
-        if cameras is not None and "Front" in cameras:
-            self.front_camera = cameras["Front"]["Camera"]
-
-            localizer = cameras["Front"].get("Localizer")
-            if localizer:
-                self.vision_odometry = True
-                self.field_relative = True
-                self.localizer = localizer
 
         # self.gyroOvershootFraction = 0.0
         # if not TimedCommandRobot.isSimulation():
@@ -216,18 +203,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         # The next attributes are set depending on if vision is unsupported for tracking the robot pose
         self._network_table_inst = None
-
-        if not self.vision_odometry or RobotBase.isSimulation():
-            # The robots movements are commanded based on the fixed coordinate system of the competition field
-            self.field_relative = True
-
-        else:
-            # The robots movements are commanded based on the robot's own orientation
-            self.field_relative = False
-            self._init_vision_odometry()
-
-            # self.field = self.quest_field
-            self._robot.field = self.quest_field
 
         # Check for any alliance change and return our initial pose
         self.pose = self._alliance_change(container.is_red_alliance,
@@ -547,34 +522,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
             self.gyro.dashboard_periodic()
 
-    def configure_button_bindings(self, driver, shooter) -> None:
-        """
-        Configure the driver and shooter joystick controls here
-        """
-        if self.front_camera is not None:
-            def turn_to_object() -> None:
-                """
-                This command is used to have the robot camera
-
-                If you want the robot to slowly chase that object... replace the 'self.rotate'
-                line below with: self.arcadeDrive(0.1, turn_speed)
-
-                """
-                x = self.front_camera.getX()
-                turn_speed = -0.01 * x
-                self.rotate(turn_speed)
-
-            # TODO: Make the button assignment come from a constants.py file / list somewhere.
-            #       so we can keep track what is assigned
-            # from lib_6107.commands.camera.turn_to_object import turn_to_object
-            #
-            # button = self.driverController.button(XboxController.Button.kB)
-            # button.whileTrue(RunCommand(turn_to_object, self))
-            # button.onFalse(InstantCommand(lambda: self.drive(0, 0, 0)
-            pass
-
-        pass  # TODO: Add me
-
     def periodic(self) -> None:
         enabled = self._robot.isEnabled()
         log_it = self._robot.counter % 20 == 0 and enabled
@@ -595,7 +542,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
                 self._has_applied_operator_perspective = True
 
         self.gyro.periodic(self._gyroInputs)
-        pass
 
         if USE_PYKIT:
             # TODO: FOLLOWING was from differential drive. change to SwerveDrive support

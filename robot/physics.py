@@ -36,8 +36,8 @@ import time
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import getDeployDirectory
 
+from field.field_2026 import RED_TEST_POSE, BLUE_TEST_POSE
 from robot import MyRobot
-from field.field import RED_TEST_POSE, BLUE_TEST_POSE
 
 logger = logging.getLogger(__name__)
 

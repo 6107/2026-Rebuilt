@@ -56,6 +56,11 @@ DRIVER_CONTROLLER_PORT = 0
 SHOOTER_CONTROLLER_PORT = 1
 
 #################################################################
+# Autonomous End Game Timing
+
+AUTONOMOUS_END_TRIGGER_TIME = 10
+
+#################################################################
 # Drive subsystem related constants
 #
 # Maximum speed of the robot in meters per second, used to limit acceleration.
@@ -113,13 +118,16 @@ class DeviceID(IntEnum):
     # Intake Subsystem
     INTAKE_DEVICE_ID = 11
 
-
 if True:
-    FRONT_CAMERA_TYPE = CAMERA_TYPE_NONE
+    FRONT_CAMERA_TYPE = CAMERA_TYPE_PHOTONVISION
     REAR_CAMERA_TYPE = CAMERA_TYPE_NONE
+    RIGHT_CAMERA_TYPE = CAMERA_TYPE_NONE
+    LEFT_CAMERA_TYPE = CAMERA_TYPE_NONE
 else:
     FRONT_CAMERA_TYPE = CAMERA_TYPE_LIMELIGHT
     REAR_CAMERA_TYPE = CAMERA_TYPE_PHOTONVISION
+    RIGHT_CAMERA_TYPE = CAMERA_TYPE_NONE
+    LEFT_CAMERA_TYPE = CAMERA_TYPE_NONE
 
 FRONT_CAMERA_POSE_AND_HEADING = {
     "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
@@ -130,6 +138,18 @@ REAR_CAMERA_POSE_AND_HEADING = {
     "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
     "Heading": Rotation2d.fromDegrees(180.0)
 }
+
+LEFT_CAMERA_POSE_AND_HEADING = {
+    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Heading": Rotation2d.fromDegrees(0.0)
+}
+
+RIGHT_CAMERA_POSE_AND_HEADING = {
+    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Heading": Rotation2d.fromDegrees(180.0)
+}
+
+
 ###############################################################################
 # OPENTelemetry Support
 

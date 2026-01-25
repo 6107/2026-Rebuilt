@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContainer',
-                           default_command: Optional[str] = "") -> SendableChooser:
+                           default_command: Optional[str] = "") -> Optional[SendableChooser]:
 
     # Register named commands first
     register_commands_and_triggers(drivetrain, container)
@@ -55,31 +55,31 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
     if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
         config = RobotConfig.fromGUISettings()
 
-        AutoBuilder.configure(
-            lambda: drivetrain.get_state().pose,    # Supplier of current robot pose
-            drivetrain.reset_pose,                  # Consumer for seeding pose against auto
-            lambda: drivetrain.get_state().speeds,  # Supplier of current robot speeds
+        AutoBuilder.configure(lambda: drivetrain.get_state().pose,  # Supplier of current robot pose
+                              drivetrain.reset_pose,  # Consumer for seeding pose against auto
+                              lambda: drivetrain.get_state().speeds,  # Supplier of current robot speeds
 
-            # Consumer of ChassisSpeeds and feedforwards to drive the robot
-            lambda speeds, feedforwards: drivetrain.set_control(
-                drivetrain.apply_robot_speeds
-                .with_speeds(ChassisSpeeds.discretize(speeds, 0.020))
-                .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
-                .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
-            ),
-            PPHolonomicDriveController(
-                # PID constants for translation
-                PIDConstants(10.0, 0.0, 0.0),
-                # PID constants for rotation
-                PIDConstants(7.0, 0.0, 0.0)
-            ),
-            config,
-            # Assume the path needs to be flipped for Red vs Blue, this is normally the case
-            lambda: (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
-            drivetrain  # Subsystem for requirements
-        )
+                              # Consumer of ChassisSpeeds and feedforwards to drive the robot
+                              lambda speeds, feedforwards: drivetrain.set_control(
+                                  drivetrain.apply_robot_speeds
+                                  .with_speeds(ChassisSpeeds.discretize(speeds, 0.020))
+                                  .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
+                                  .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
+                              ),
+                              PPHolonomicDriveController(
+                                  # PID constants for translation
+                                  PIDConstants(10.0, 0.0, 0.0),
+                                  # PID constants for rotation
+                                  PIDConstants(7.0, 0.0, 0.0)
+                              ),
+                              config,
+                              # Assume the path needs to be flipped for Red vs Blue, this is normally the case
+                              lambda: (
+                                                  DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
+                              drivetrain  # Subsystem for requirements
+                              )
         if USE_PYKIT:
-        # PathPlanner and AdvantageScope integration
+            # PathPlanner and AdvantageScope integration
             PathPlannerLogging.setLogActivePathCallback(lambda path: Logger.recordOutput("Odometry/Trajectory",
                                                                                          path))
             PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("Odometry/TrajectorySetpoint",
@@ -94,9 +94,8 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
         # Load in any Autonomous Commands into the chooser
         return AutoBuilder.buildAutoChooser(default_command)
 
-    else:
-        logger.error(f"PathPlanner settings {file_path} not found or is not readable")
-        logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
+    logger.error(f"PathPlanner settings {file_path} not found or is not readable")
+    logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
 
     return None
 

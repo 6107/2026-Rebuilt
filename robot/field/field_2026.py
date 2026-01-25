@@ -1,3 +1,4 @@
+
 # ------------------------------------------------------------------------ #
 #      o-o      o                o                                         #
 #     /         |                |                                         #
@@ -15,19 +16,22 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 #
-#   2026 - Rebuilt      (All measuments are in meters)
-#
+#   2026 - Rebuilt      (All measurements are in metric units)
+
 import logging
 import math
 
+from robotpy_apriltag import AprilTagField
 from wpimath.geometry import Pose2d, Rotation2d
-from wpimath.units import inchesToMeters
+from wpimath.units import inchesToMeters, meters
+
+from lib_6107.util.field import Field, FieldInfo
 
 # Setup Logging
 logger = logging.getLogger(__name__)
 
-FIELD_X_SIZE = 16.54
-FIELD_Y_SIZE = 8.07
+FIELD_X_SIZE = 16.54  # Field Length
+FIELD_Y_SIZE = 8.07  # Field Width
 CENTER_LINE = FIELD_X_SIZE / 2
 MID_FIELD = FIELD_Y_SIZE / 2
 
@@ -57,17 +61,8 @@ RED_TEST_POSE = {
 SIM_X_OFFSET_METERS = 0.140
 SIM_Y_OFFSET_METERS = 0.95
 
-# Add something with the AprilTags that are in this filed.  Call the drivetrain
-# SetDesiredAprilTags() function.
 
-json_file_path = '2026_field_layout.json'
-
-
-# import robotpy_apriltag
-#
-# robotpy_apriltag.AprilTagFieldLayout.loadField()
-
-class RebuiltField:
+class RebuiltField(Field):
     """
     This class supports BLUE/RED alliances.
 
@@ -80,15 +75,31 @@ class RebuiltField:
 
     All values are in meters
     """
+    _field_info: FieldInfo = tuple([
+        tuple(["Rebuilt (AndyMark)", AprilTagField.k2026RebuiltAndyMark, "2026-rebuilt-andymark.json"]),
+        tuple(["Rebuilt (Welded)", AprilTagField.k2026RebuiltWelded, "2026-rebuilt-welded.json"]),
+        tuple(["Custom", None, "2026-rebuilt-andymark.json"])
+    ])
 
-    @staticmethod
-    def in_blue_alliance_zone(x: float) -> bool:
+    def in_blue_alliance_zone(self, x: float) -> bool:
         return x < inchesToMeters(182.11)
 
-    @staticmethod
-    def in_red_alliance_zone(x: float) -> bool:
+    def in_red_alliance_zone(self, x: float) -> bool:
         return x > FIELD_X_SIZE - inchesToMeters(182.11)
 
-    @staticmethod
-    def in_neutral_zone(x: float) -> bool:
+    def in_neutral_zone(self, x: float) -> bool:
         return inchesToMeters(182.11) < x < FIELD_X_SIZE - inchesToMeters(182.11)
+
+    @property
+    def field_length(self) -> meters:
+        """
+        x maximum
+        """
+        return super().field_length or FIELD_X_SIZE
+
+    @property
+    def field_width(self) -> meters:
+        """
+        y maximum
+        """
+        return self._layout.getFieldWidth() or FIELD_Y_SIZE

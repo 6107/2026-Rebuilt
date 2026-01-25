@@ -66,12 +66,12 @@ class BaseCommand(Command):
             self._drivetrain: DriveSubsystem = self._target
             self._container: RobotContainer = self._target.container
 
-        self._start_time = round(self._container.get_enabled_time(), 2)
+        self._start_time = round(self._container.get_elapsed_time(), 2)
         logging.info(f"{self.getName()}: Started at {self._start_time}")
 
         SmartDashboard.putString(f"command/{self.getName()}", "running")
         SmartDashboard.putString("alert",
-                                 f"** Started {self.getName()} at {self._start_time - self._container.get_enabled_time():2.2f} s **")
+                                 f"** Started {self.getName()} at {self._start_time - self._container.get_elapsed_time():2.2f} s **")
 
     def end(self, interrupted: bool) -> None:
         """
@@ -82,7 +82,7 @@ class BaseCommand(Command):
 
         :param interrupted: whether the command was interrupted/canceled
         """
-        end_time = self._container.get_enabled_time()
+        end_time = self._container.get_elapsed_time()
         message = f"{self.getName()}: {'Interrupted' if interrupted else 'Ended'} at {end_time:.1f} s after {end_time - self._start_time:.1f} s"
         logging.info(message)
 

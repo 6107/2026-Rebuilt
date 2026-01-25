@@ -26,7 +26,7 @@ from commands2 import Subsystem
 from wpilib import SmartDashboard, SendableChooser, DriverStation
 from wpimath.geometry import Rotation2d, Translation3d, Pose2d, Translation2d
 
-from lib_6107.subsystems.limelight_camera import LimelightCamera
+from lib_6107.subsystems.vision.deprecated.limelight_camera import LimelightCamera
 
 logger = logging.getLogger(__name__)
 
