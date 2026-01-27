@@ -24,8 +24,8 @@ from enum import Enum, IntEnum, unique
 from wpilib import RobotBase
 from wpimath.geometry import Rotation2d, Translation3d
 from wpimath.trajectory import TrapezoidProfileRadians
-from wpimath.units import kilograms, lbsToKilograms, meters_per_second, meters, \
-    seconds, radians_per_second, rotationsToRadians
+from wpimath.units import kilograms, lbsToKilograms, meters, meters_per_second, radians_per_second, rotationsToRadians, \
+    seconds
 
 from generated.tuner_constants import TunerConstants  # Use Tuner X constants if available
 from lib_6107.constants import *
@@ -121,43 +121,74 @@ class DeviceID(IntEnum):
     INTAKE_DEVICE_ID = 11
 
 
+#################################################################################
+# IP Address Assignments.  Not used in code, but kept here for recording purposes
+#                          and are the 'At Home' assigned values
+TEAM = "61.07"
+
+ROBORIO_STATIC = f"10.{TEAM}.2"
+ROBOT_RADIO_STATIC = f"10.{TEAM}.1"
+AP_RADIO_STATIC = f"10.{TEAM}.4"
+
+DRIVER_STATION_STATIC = f"10.{TEAM}.3"
+
+PHOTONVISION_STATIC = f"10.{TEAM}.11"
+LIMELIGHT_STATIC = f"10.{TEAM}.12"
+LIMELIGHT_ALT_STATIC = f"10.{TEAM}.13"
+
+# mDNS (DNS names are case-insensitive)
+
+ROBORIO_MDMS = f"roboRIO-{TEAM}-frc.local"
+TEAM_LAPTOP_MDMS = f"{TEAM}-frc.local"
+CHIPS_LAPTOP_MDNS = ".local"
+
+PHOTONVISION_MDMS = "photonvision.local"  # TODO: Make unique, add team #
+LIMELIGHT_MDMS = "limelight.local"  # TODO: Make unique, add team #
+LIMELIGHT_ALT_MDMS = "limelight-alt.local"  # TODO: Make unique, add team #
+
+# USB
+ROBORIO_USB_STATIC = "172.22.11.2"
+
+#################################################################################
+# Camera configurations
+
 FRONT_CAMERA_INFO = {
-    "Type": CAMERA_TYPE_PHOTONVISION,
-    "Label": "front",
-    "Name": "PhotonVision",
-    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Type"   : CAMERA_TYPE_PHOTONVISION,
+    "Label"  : "front",
+    "Name"   : "PhotonVision",
+    "Pose"   : Translation3d(x=0.40, y=-0.15, z=0.5),
     "Heading": Rotation2d.fromDegrees(0.0),
     "Localizer": False
 }
 
 REAR_CAMERA_INFO = {
-    "Type": CAMERA_TYPE_NONE,
-    "Label": "rear",
-    "Name": "",
-    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Type"   : CAMERA_TYPE_NONE,
+    "Label"  : "rear",
+    "Name"   : "",
+    "Pose"   : Translation3d(x=0.40, y=-0.15, z=0.5),
     "Heading": Rotation2d.fromDegrees(180.0),
     "Localizer": False
 }
 
 LEFT_CAMERA_INFO = {
-    "Type": CAMERA_TYPE_NONE,
-    "Label": "left",
-    "Name": "",
-    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Type"   : CAMERA_TYPE_NONE,
+    "Label"  : "left",
+    "Name"   : "",
+    "Pose"   : Translation3d(x=0.40, y=-0.15, z=0.5),
     "Heading": Rotation2d.fromDegrees(0.0),
     "Localizer": False
 }
 
 RIGHT_CAMERA_INFO = {
-    "Type": CAMERA_TYPE_NONE,
-    "Label": "right",
-    "Name": "",
-    "Pose": Translation3d(x=0.40, y=-0.15, z=0.5),
+    "Type"   : CAMERA_TYPE_NONE,
+    "Label"  : "right",
+    "Name"   : "",
+    "Pose"   : Translation3d(x=0.40, y=-0.15, z=0.5),
     "Heading": Rotation2d.fromDegrees(180.0),
     "Localizer": False
 }
 
-###############################################################################
+#################################################################################
 # OPENTelemetry Support
 
 # OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", default="cyberjagzz")
