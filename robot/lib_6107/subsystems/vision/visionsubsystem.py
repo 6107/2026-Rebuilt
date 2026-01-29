@@ -16,13 +16,13 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Optional, Tuple, Dict, Any
+from typing import Any, Dict, Optional, Tuple
 
 from commands2 import Subsystem
-from ntcore import NetworkTableInstance
-from robotpy_apriltag import AprilTagFieldLayout, AprilTagField, AprilTagDetector
-from wpilib import RobotBase
-from wpimath.geometry import Transform3d, Rotation2d
+from ntcore import NetworkTable, NetworkTableInstance
+from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
+from wpilib import RobotBase, SmartDashboard
+from wpimath.geometry import Rotation2d, Transform3d
 from wpimath.units import degrees, percent
 
 import constants
@@ -64,22 +64,27 @@ class VisionTargetData:
 
 
 class VisionSubsystem(Subsystem):
-    def __init__(self, name: str, field: Field, transform: Transform3d, drivetrain: 'DriveSubsystem'):
+    def __init__(self, camera_name: str, field: Field, transform: Transform3d, drivetrain: 'DriveSubsystem'):
         super().__init__()
 
         # Load the initial field layout. This can be changed later at
         # the beginning of the Autonomous or Teleop periods
         self._april_tag_field: Optional[AprilTagField] = field.field
         self._field_layout: Optional[AprilTagFieldLayout] = field.layout
-        self._name = name
+        self._name = camera_name
+        self._robot = drivetrain.robot
 
         self._camera_transform: Transform3d = transform
         self._drivetrain: 'DriveSubsystem' = drivetrain
         self._is_simulation: bool = RobotBase.isSimulation()
 
+        # April tag setup
         self._tag_detector = AprilTagDetector()
         self._tag_detector.addFamily("tag16h5")
-        self._network_table: Optional[NetworkTableInstance] = None
+
+        # NetworkTable setup
+        nt_instance = NetworkTableInstance.getDefault()
+        self._network_table: NetworkTable = nt_instance.getTable(camera_name)
 
     @staticmethod
     def create(info: Dict[str, Any], field: Field,
@@ -88,7 +93,7 @@ class VisionSubsystem(Subsystem):
         camera_type = info.get("Type", constants.CAMERA_TYPE_NONE)
         localizer = info.get("Localizer")
         transform: Transform3d = info.get("Pose")
-        name = info.get("Name", camera_type)
+        camera_name = info.get("Name", camera_type)
         heading = info.get("Heading", Rotation2d.fromDegrees(0))
 
         camera_subsystem: Optional['VisionSubsystem'] = None
@@ -96,7 +101,8 @@ class VisionSubsystem(Subsystem):
 
         match camera_type:
             case constants.CAMERA_TYPE_LIMELIGHT:
-                pass
+                from lib_6107.subsystems.vision.limelightvision import LimelightVisionSubsystem
+                camera_subsystem = LimelightVisionSubsystem(camera_name, field, transform, drivetrain)
                 # self.localizer = LimelightLocalizer(self, self.robot_drive)
                 # self.localizer.addCamera(self.camera,
                 #                          cameraPoseOnRobot=pose["Pose"],
@@ -105,13 +111,13 @@ class VisionSubsystem(Subsystem):
             case constants.CAMERA_TYPE_PHOTONVISION:
                 try:
                     from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
-                    camera_subsystem = PhotonVisionSubsystem(name, field, transform, drivetrain)
+                    camera_subsystem = PhotonVisionSubsystem(camera_name, field, transform, drivetrain)
 
                     # if localizer:
                     #     pass # TODO: Need to support
                     #     localizer_subsystem = PhotonLocalizer(self, self.robot_drive, "2025-reefscape.json")
                 except ImportError as e:
-                    logger.error(f"PhotonVisionSubsystem not found, camera {name}: {e}")
+                    logger.error(f"PhotonVisionSubsystem not found, camera {camera_name}: {e}")
 
         return camera_subsystem, localizer_subsystem
 
@@ -128,3 +134,22 @@ class VisionSubsystem(Subsystem):
 
     def simulationPeriodic(self):
         pass  # For now  TODO: Can any of this be common
+
+    def dashboard_initialize(self) -> None:
+        """
+        Configure the SmartDashboard for this subsystem
+        """
+        # SmartDashboard.putData("Field", self.field)
+        SmartDashboard.putString('Camera/name', self._name)
+        # SmartDashboard.putString('Camera/type', "Limelight")
+
+    def dashboard_periodic(self) -> None:
+        """
+        Called from periodic function to update dashboard elements for this subsystem
+        """
+        divisor = 10 if self._robot.isEnabled() else 20
+        update_dash = self._robot.counter % divisor == 0
+
+        # if update_dash:
+        #     SmartDashboard.putString('Camera/heartbeat', "Alive" if self.heartbeating else "Dead")
+        #     SmartDashboard.putNumber('Camera/last-heartbeat', self.lastHeartbeatTime)

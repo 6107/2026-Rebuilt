@@ -22,7 +22,7 @@ from typing import Optional
 
 from commands2 import Subsystem
 from ntcore import NetworkTableInstance
-from wpilib import Timer, SmartDashboard
+from wpilib import SmartDashboard, Timer
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +72,6 @@ class LimelightCamera(Subsystem):
         # and we can then receive the localizer results from the camera back
         self.botPose = self.table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
         self.botPoseFlipped = self.table.getDoubleArrayTopic("botpose_orb_wpired").getEntry([])
-
-    def setPipeline(self, index: int):
-        self.pipelineIndexRequest.set(float(index))
-
-    def getPipeline(self) -> int:
-        return int(self.pipelineIndex.get(-1))
 
     def getA(self) -> float:
         return self.ta.get()

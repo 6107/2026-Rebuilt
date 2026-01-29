@@ -41,21 +41,21 @@ try:
             self._camera: PhotonCamera = PhotonCamera(name)
             self._latest_results: Optional[PhotonPipelineResult] = None
 
-            # self._sim_camera = TODO: More work her
+            # self._sim_camera = TODO: More work here
 
             # In simulation, load the field layout
+            # TODO: Is there a way to query existing field layout so we can possibly skip this
+            #       step?
             self._estimator: PhotonPoseEstimator = PhotonPoseEstimator(self._field_layout,
                                                                        self._camera_transform)
             # Register for field layout changes
             field.register_layout_callback(self._on_field_change)
 
-            nt = NetworkTableInstance.getDefault()
-            self._network_table = nt.getTable("photonvision").getSubTable(name)
-            pass
-
-        def _on_field_change(self, field: AprilTagField, layout: AprilTagFieldLayout) -> None:
-            logger.error(
-                f"{self._name}: PhotonVisionSubsystem._on_field_change: not yet implemented: {field}, {layout}")
+        def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
+            """
+            Operator selected a different field layout.
+            """
+            self._estimator.fieldTags = layout
 
         @property
         def latency(self) -> Optional[milliseconds]:
@@ -121,5 +121,5 @@ try:
             # Clear latest_results so we will get new results on the next pass
             self._latest_results = None
 
-except ImportError:
+except ImportError as _e:
     raise
