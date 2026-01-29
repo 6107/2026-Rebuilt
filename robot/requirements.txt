@@ -20,14 +20,18 @@ robotpy-apriltag        == 2026.2.1
 robotpy-commands-v2     == 2026.2.1
 robotpy-pathplannerlib  == 2026.1.2
 robotpy-cli             == 2026.0.1
-phoenix6                == 26.1.0
-photonlibpy             == 2026.1.1
+phoenix6                == 26.1.1
 robotpy-cscore          == 2026.2.1
 pyntcore                == 2026.2.1
 certifi                 == 2026.1.4
 pynetworktables         == 2021.0.0
 
-robotpy-pykit           == 1.0.2
+# Vision support
+photonlibpy             == 2026.1.1
+limelightlib-python     == 0.9.6
+
+# AdvantageKit support
+robotpy-pykit           == 1.0.3
 robotpy-pykit-watch     == 1.0.0
 
 # ###############################################################################

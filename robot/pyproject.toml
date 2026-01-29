@@ -48,8 +48,8 @@ components = [
     "commands2",
     "cscore",
     "navx",
-    "pathplannerlib",
-    "phoenix6",
+    "pathplannerlib==2026.1.2",
+    "phoenix6==2026.1.1",
     # "rev",
     # "romi",
     "sim",
@@ -60,8 +60,9 @@ components = [
 requires = [
     "pynetworktables",
     "photonlibpy==2026.1.1",
+    "limelightlib-python==0.9.6",
     "pyntcore",
-    "robotpy-pykit==1.0.2",
+    "robotpy-pykit==1.0.3",
     "robotpy-pykit-watch==1.0.0"
 ]
 
