@@ -47,7 +47,7 @@ class CameraState:
 
 
 class LimelightLocalizer(Subsystem):
-    def __init__(self, container, drivetrain, flipIfRed=False):
+    def __init__(self, container, drivetrain, flip_if_red = False):
         super().__init__()
 
         assert hasattr(drivetrain, "heading"), "drivetrain must haveheading() for localizer to work"
@@ -61,7 +61,7 @@ class LimelightLocalizer(Subsystem):
         from getpass import getuser
 
         self.username = getuser()
-        self.flipIfRed = flipIfRed
+        self.flipIfRed = flip_if_red
 
         self.learningRateMult = SendableChooser()
         self.learningRateMult.addOption("100%", 1.0)

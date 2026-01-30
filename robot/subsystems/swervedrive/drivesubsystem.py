@@ -21,27 +21,26 @@ import math
 import os
 from collections import OrderedDict
 from typing import Callable
-from typing import Tuple, Optional, List, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
-from phoenix6.swerve.requests import RobotCentric, FieldCentric
+from phoenix6.swerve.requests import FieldCentric, RobotCentric
 from phoenix6.swerve.swerve_module import SwerveModule
 from pykit.autolog import autolog_output, autologgable_output
 from pykit.logger import Logger
 from wpilib import DriverStation, Notifier, RobotController
-from wpilib import SmartDashboard, Field2d, RobotBase
+from wpilib import Field2d, RobotBase, SmartDashboard
 from wpilib import getDeployDirectory
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
 from wpimath.geometry import Pose2d, Rotation2d
-from wpimath.kinematics import ChassisSpeeds, SwerveModuleState, \
-    SwerveModulePosition
-from wpimath.units import degrees, rotationsToRadians, meters_per_second, radians_per_second, meters
+from wpimath.kinematics import ChassisSpeeds, SwerveModulePosition, SwerveModuleState
+from wpimath.units import degrees, meters, meters_per_second, radians_per_second, rotationsToRadians
 
-from constants import USE_PYKIT, JOYSTICK_DEADBAND, MAX_SPEED, GYRO_REVERSED, WHEEL_RADIUS, WHEEL_CIRCUMFERENCE
-from field.field_2026 import FIELD_Y_SIZE, FIELD_X_SIZE, RED_TEST_POSE, BLUE_TEST_POSE
+from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, USE_PYKIT, WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
+from field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
 from generated.tuner_constants import TunerSwerveDrivetrain
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
@@ -207,6 +206,22 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         # Check for any alliance change and return our initial pose
         self.pose = self._alliance_change(container.is_red_alliance,
                                           container.alliance_location)
+
+        # Set standard deviation for vision odometry to trust vision less if
+        # far away. Only takes effect if we call the addVisionMeasurement to
+        # provide a pose estimation.  Values could be:
+        #
+        #  High Confidence (Close/Multiple Tags):  (0.1,0.1,0.1) (meters, meters, radians).
+        #
+        #  Low Confidence (Far/Single Tag):         (0.5,0.5,99999) effectively ignoring vision
+        #                                           heading to rely on the gyro.
+        #
+        #  The call to 'addVisionMeasurement' can optionally have a standard deviation value, and
+        #  it remains in effect until another measurement std deviation is provided. We will start
+        #  with a high confidence since autonomous mode is heavily reliant on vision, and we
+        #  expect to traverse the 'bump' at least twice.
+
+        self.set_vision_measurement_std_devs((0.2, 0.2, 0.2))
 
         # # # TODO: SUPPORT PATHPLANNER
         # #

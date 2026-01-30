@@ -53,7 +53,7 @@ class LimelightCamera(Subsystem):
         self.lastHeartbeat = 0
         self.lastHeartbeatTime = 0
         self.heartbeating = False
-        self.ticked = False
+
 
         self.localizerSubscribed = False
 
@@ -72,6 +72,13 @@ class LimelightCamera(Subsystem):
         # and we can then receive the localizer results from the camera back
         self.botPose = self.table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
         self.botPoseFlipped = self.table.getDoubleArrayTopic("botpose_orb_wpired").getEntry([])
+
+    def setPipeline(self, index: int):
+        self.pipelineIndexRequest.set(float(index))
+        self.heartbeating = False  # wait until the next heartbeat before saying self.haveDetection == true
+
+    def getPipeline(self) -> int:
+        return int(self.pipelineIndex.get(-1))
 
     def getA(self) -> float:
         return self.ta.get()

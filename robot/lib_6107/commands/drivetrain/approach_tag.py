@@ -5,13 +5,13 @@
 #
 
 import math
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
 
 from commands2 import Command
 from pathplannerlib.auto import NamedCommands
-from wpilib import Timer, SmartDashboard, SendableChooser
+from wpilib import SendableChooser, SmartDashboard, Timer
 from wpimath.geometry import Rotation2d, Translation2d
-from wpimath.units import seconds, meters, percent
+from wpimath.units import meters, percent, seconds
 
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
@@ -488,7 +488,7 @@ class ApproachTag(BaseCommand):
                 if not self._ever_saw_object:
                     self._ever_saw_object = True
 
-        time_since_last_heartbeat = self._camera.getSecondsSinceLastHeartbeat()
+        time_since_last_heartbeat = self._camera.get_seconds_since_last_heartbeat()
         if time_since_last_heartbeat > self._frame_timeout:
             self._lost_tag = f"no camera heartbeat > {int(1000 * time_since_last_heartbeat)}ms"
 

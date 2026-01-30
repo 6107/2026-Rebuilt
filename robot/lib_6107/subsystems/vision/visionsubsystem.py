@@ -122,6 +122,10 @@ class VisionSubsystem(Subsystem):
         return camera_subsystem, localizer_subsystem
 
     @property
+    def name(self) -> str:
+        return self._name
+
+    @property
     def april_tag_field(self) -> AprilTagField:
         return self._april_tag_field
 
