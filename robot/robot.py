@@ -80,6 +80,7 @@ class MyRobot(MyRobotBase):
 
         self.field: Optional[wpilib.Field2d] = None
         self._stats: RobotStatistics = RobotStatistics()
+        self._is_simulation = RobotBase.isSimulation()
 
         self._network_tables_instance = NetworkTableInstance.getDefault()
 
@@ -102,9 +103,16 @@ class MyRobot(MyRobotBase):
         """
         logger.info("robotInit: entry")
 
-        # Start up our network tables client
-        self._network_tables_instance.startClient4("team-6107-robot")
-        self._network_tables_instance.setServerTeam(6107)
+        # TODO: Following is not needed by the robot during competition or in
+        #       simulation. Only if we are connecting another client (dashboard,..)
+        #       to the system.   Keeping code for now just in case.
+        # # Start up our network tables client and specify the server
+        # self._network_tables_instance.startClient4("team-6107-robot")
+        # if self._is_simulation:
+        #     self._network_tables_instance.setServer("localhost",
+        #                                             NetworkTableInstance.kDefaultPort4)
+        # else:
+        #     self._network_tables_instance.setServerTeam(6107)
 
         # Set up logging
         if USE_PYKIT:
@@ -149,7 +157,7 @@ class MyRobot(MyRobotBase):
 
             Logger.start()
         else:
-            if RobotBase.isSimulation():
+            if self._is_simulation:
                 logger.setLevel(logging.INFO)
 
                 # If this is a simulation, we need to silence joystick warnings
