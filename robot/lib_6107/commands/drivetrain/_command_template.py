@@ -55,7 +55,7 @@ class DriveTrainCommandTemplate(BaseCommand):  # change the name for your comman
 
     def execute(self) -> None:
         """
-        The main body of a command. Called repeatedly while the command is scheduled.
+        The initial subroutine of a command. Called once when the command is initially scheduled.
         """
         pass
 

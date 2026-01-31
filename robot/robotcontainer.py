@@ -30,11 +30,13 @@ from wpimath.units import meters_per_second, radians_per_second, rotationsToRadi
 
 import constants
 from commands.autonomous import pathplanner
+from commands.swervedrive.point_towards_location import PointTowardsLocation
 from constants import FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO
 from field.field_2026 import RebuiltField as Field
 from generated.tuner_constants import TunerConstants
 from lib_6107.commands.camera.follow_object import FollowObject, StopWhen
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
+from lib_6107.commands.drivetrain.track_tagged_command import TrackTagCommand
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.commands.drivetrain.trajectory import JerkyTrajectory, SwerveTrajectory
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
@@ -83,7 +85,7 @@ class RobotContainer:
         #       See https://github.com/robotpy/examples/blob/main/SwerveBot/robot.py for an example
 
         # Shooter's controller
-        self.controller_shooter: XboxController = XboxController(constants.SHOOTER_CONTROLLER_PORT)  # On USB-port
+        self.shooter_controller: XboxController = XboxController(constants.SHOOTER_CONTROLLER_PORT)  # On USB-port
 
         ########################################################
         # Subsystem initialization
@@ -120,7 +122,7 @@ class RobotContainer:
         ########################################################
         # Configure the button bindings
         for controller, is_driver in ((self.driver_controller, True),
-                                      (self.controller_shooter, False)):
+                                      (self.shooter_controller, False)):
             if isinstance(controller, CommandXboxController):
                 self.configure_button_bindings_xbox(controller, is_driver)
             else:
@@ -264,11 +266,11 @@ class RobotContainer:
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
         if is_driver:
-            return self._configure_operator_button_bindings_xbox(controller)
+            return self._configure_driver_button_bindings_xbox(controller)
 
         return self._configure_shooter_button_bindings_xbox(controller)
 
-    def _configure_operator_button_bindings_xbox(self, controller: CommandXboxController) -> None:
+    def _configure_driver_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
         Use this method to define your button->command mappings. Buttons can be created by
         instantiating a :GenericHID or one of its subclasses (Joystick or XboxController),
@@ -290,8 +292,8 @@ class RobotContainer:
                              the ForwardPerspectiveValue.OPERATOR_PERSPECTIVE perspective
         RB == Right Bumper
 
-        LT == Left Trigger  - Rotate (in-place) toward best AprilTag
-        RT == Right Trigger - Follow the best AprilTag around the room
+        LT == Left Trigger  - Rotate (in-place) toward best AprilTag. Stop when trigger released.
+        RT == Right Trigger - Follow the best AprilTag around the room. Stop when trigger released.
 
         A == A Button (Bottom) - Brake
         B == B Button (Right)  - Align all wheels in direction of the left-stick Y value
@@ -318,43 +320,49 @@ class RobotContainer:
             self.robot_drive.apply_request(lambda: idle).ignoringDisable(True)
         )
         # Left Trigger - Rotate (in-place) toward best AprilTag.
-        print("TODO: More commands please")
-        # self.driver_controller.leftTrigger(threshold=0.25).whileTrue(
-        #     Ai
-        # )
+        def turn_to_object():
+            x = self.camera.getX()
+            print(f"x={x}")
+            turn_speed = -0.005 * x
+            self.robot_drive.rotate(turn_speed)
+
+        controller.leftTrigger(threshold=0.25).whileTrue(RunCommand(turn_to_object,
+                                                                    self.robot_drive))
+        controller.leftTrigger(threshold=0.25).onFalse(InstantCommand(lambda: self.robot_drive.stop()))
+
         # Right Trigger - Follow the best AprilTag around the room
 
         # A Button - Brake
-        self.driver_controller.a().whileTrue(
+        controller.a().whileTrue(
             self.robot_drive.apply_request(lambda: self.robot_drive.brake_request)
         )
         # B Button - Align all wheels in the direction of the left stick Y value
-        self.driver_controller.b().whileTrue(
+        controller.b().whileTrue(
             self.robot_drive.apply_request(
                 lambda: self.robot_drive.point_at_request.with_module_direction(
-                    Rotation2d(-self.driver_controller.getLeftY(),
-                               -self.driver_controller.getLeftX())
+                    Rotation2d(-controller.getLeftY(),
+                               -controller.getLeftX())
                 )
             )
         )
         # Y Button - Reset x/y to defaults and heading to 'North' (0 degrees)
-        self.driver_controller.b().whileTrue(
+        controller.b().whileTrue(
             ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0)
         )
         # POV-UP: Drive forward at 1/2 speed
-        self.driver_controller.povUp().whileTrue(
+        controller.povUp().whileTrue(
             self.robot_drive.apply_request(
                 lambda: self.robot_drive.forward_straight_request.with_velocity_x(0.5).with_velocity_y(0)
             )
         )
         # POV-DOWN: Drive backwards at 1/2 speed
-        self.driver_controller.povDown().whileTrue(
+        controller.povDown().whileTrue(
             self.robot_drive.apply_request(
                 lambda: self.robot_drive.forward_straight_request.with_velocity_x(-0.5).with_velocity_y(0)
             )
         )
         # Left Bumper - reset the field-centric heading on left bumper press
-        self.driver_controller.leftBumper().onTrue(
+        controller.leftBumper().onTrue(
             self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
         )
         # Start Button
@@ -363,21 +371,67 @@ class RobotContainer:
         # Back Buttons (complex.  TODO Investigate these)
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
-        (self.driver_controller.back() & self.driver_controller.y()).whileTrue(
+        (controller.back() & controller.y()).whileTrue(
             self.robot_drive.sys_id_dynamic(SysIdRoutine.Direction.kForward)
         )
-        (self.driver_controller.back() & self.driver_controller.x()).whileTrue(
+        (controller.back() & controller.x()).whileTrue(
             self.robot_drive.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
         )
-        (self.driver_controller.start() & self.driver_controller.y()).whileTrue(
+        (controller.start() & controller.y()).whileTrue(
             self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
         )
-        (self.driver_controller.start() & self.driver_controller.x()).whileTrue(
+        (controller.start() & controller.x()).whileTrue(
             self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
         )
 
     def _configure_shooter_button_bindings_xbox(self, controller: CommandXboxController) -> None:
-        pass
+        """
+        Use this method to define your button->command mappings. Buttons can be created by
+        instantiating a :GenericHID or one of its subclasses (Joystick or XboxController),
+        and then passing it to a JoystickButton.
+
+        LS == Left Stick    -
+        RS == Right Stick   -
+
+        LSB == Left Stick Button
+        RSB == Right Stick Button
+
+        D-Pad == Directional Pad
+                - Up
+                - Right
+                - Down
+                - Left
+
+        LB == Left Bumper
+        RB == Right Bumper
+
+        LT == Left Trigger  - Keep robot shooter pointing toward our alliance hub (while pressed)
+        RT == Right Trigger - Follow an april tag around the room
+
+        A == A Button (Bottom) -
+        B == B Button (Right)  -
+        Y == Y Button (Top)    -
+        X == X Button (Left)   -
+
+        Start Button (three lines)  - Reset Gyro
+        Back Button
+        """
+        # Left trigger - create a command for keeping the robot nose pointed towards the hub
+        keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
+                                                         self._field.hub_location(False),
+                                                         self._field.hub_location(True))
+
+        # set up a condition for when to do this: do it when the joystick right trigger is pressed by more than 50%
+        when_left_trigger_pressed = controller.axisGreaterThan(XboxController.Axis.kLeftTrigger,
+                                                              threshold=0.5)
+        # connect the command to its trigger
+        when_left_trigger_pressed.whileTrue(keep_pointing_towards_hub)
+
+        # Right trigger - track an apriltag around the room
+        track_any_tag = TrackTagCommand(self.robot_drive, self._cameras["front"], 0)
+        right_trigger_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
+                                                           threshold=0.5)
+        right_trigger_pressed.whileTrue(track_any_tag)
 
     def configure_button_bindings_joystick(self, controller, is_driver: bool) -> None:
         """

@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------------ #
 #      o-o      o                o                                         #
 #     /         |                |                                         #
@@ -22,7 +21,7 @@ import logging
 import math
 
 from robotpy_apriltag import AprilTagField
-from wpimath.geometry import Pose2d, Rotation2d
+from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import inchesToMeters, meters
 
 from lib_6107.util.field import Field, FieldInfo
@@ -32,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 FIELD_X_SIZE = 16.54  # Field Length
 FIELD_Y_SIZE = 8.07  # Field Width
-CENTER_LINE = FIELD_X_SIZE / 2
+
+CENTER_LINE = FIELD_X_SIZE / 2           # Divides the neutral zone
 MID_FIELD = FIELD_Y_SIZE / 2
 
 BLUE_START_LINE = inchesToMeters(182.11 - (47 / 2) - 2)
@@ -51,6 +51,9 @@ RED_TEST_POSE = {
     2: Pose2d(RED_START_LINE, 1.9, 0),
     3: Pose2d(RED_START_LINE, 7.3, 0)
 }
+
+BLUE_HUB_X_OFFSET = inchesToMeters(182.11)
+RED_HUB_X_OFFSET = FIELD_X_SIZE - BLUE_HUB_X_OFFSET
 
 # In simulation, the software will not enforce a maximum field
 # size, so this needs to be accounted for so the robot stays on
@@ -103,3 +106,9 @@ class RebuiltField(Field):
         y maximum
         """
         return self._layout.getFieldWidth() or FIELD_Y_SIZE
+
+    def hub_location(self, is_red_alliance: bool) -> Translation2d:
+        if is_red_alliance:
+            return Translation2d(x=self.field_length - BLUE_HUB_X_OFFSET, y=MID_FIELD)
+
+        return Translation2d(x=BLUE_HUB_X_OFFSET, y=MID_FIELD)
