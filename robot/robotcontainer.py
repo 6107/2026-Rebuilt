@@ -17,25 +17,26 @@
 
 import logging
 import time
-from typing import List, Optional, Callable, Dict, Any
+from typing import Any, Callable, Dict, List, Optional
 
-from commands2 import Subsystem, Command, RunCommand, PrintCommand, InstantCommand, cmd, button
-from commands2.button import Trigger, CommandXboxController
+from commands2 import button, cmd, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
+from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
+from ntcore import Event, NetworkTableInstance
 from phoenix6 import swerve
-from wpilib import RobotBase, XboxController, SmartDashboard, SendableChooser, Field2d, DriverStation
+from wpilib import DriverStation, Field2d, RobotBase, SendableChooser, SmartDashboard, XboxController
 from wpimath.geometry import Rotation2d
-from wpimath.units import rotationsToRadians, meters_per_second, radians_per_second
+from wpimath.units import meters_per_second, radians_per_second, rotationsToRadians
 
 import constants
 from commands.autonomous import pathplanner
-from constants import FRONT_CAMERA_INFO, REAR_CAMERA_INFO, LEFT_CAMERA_INFO, RIGHT_CAMERA_INFO
+from constants import FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO
 from field.field_2026 import RebuiltField as Field
 from generated.tuner_constants import TunerConstants
 from lib_6107.commands.camera.follow_object import FollowObject, StopWhen
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
-from lib_6107.commands.drivetrain.trajectory import SwerveTrajectory, JerkyTrajectory
+from lib_6107.commands.drivetrain.trajectory import JerkyTrajectory, SwerveTrajectory
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.phoenix6_telemetry import Telemetry
@@ -54,6 +55,8 @@ class RobotContainer:
         logger.debug("*** called container __init__")
         self.start_time = time.time()
         self.robot = robot
+        self.network_table = NetworkTableInstance.getDefault()
+
         self.simulation = RobotBase.isSimulation()
 
         # Phoenix6 max settings and telemetry support. During the actual drive command or the
@@ -67,12 +70,12 @@ class RobotContainer:
         self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
         self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
         #
-        # red_or_blue = NetworkTables.getTable("NetworkTables").getEntry("FMSInfo/IsRedAlliance")
-        # red_or_blue.addListener(self._on_alliance_change, NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
-        #
-        # red_or_blue = NetworkTables.getTable("NetworkTables").getEntry("FMSInfo/StationNumber")
-        # red_or_blue.addListener(self._on_alliance_change, NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
-
+        # TODO: Alliance changes do not seem to work here. Rely on old polling method
+        # prefixes = ["FMSInfo/IsRedAlliance", "FMSInfo/IsRedAlliance"]
+        # self.alliance_change_listener = NetworkTableListener.createListener(self.network_table,
+        #                                                                     prefixes,
+        #                                                                     EventFlags.kValueAll,
+        #                                                                     self._on_alliance_change)
         # The driver's controller
         self.driver_controller = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
 
@@ -239,6 +242,12 @@ class RobotContainer:
         """
         self._alliance_change_callbacks.append(callback)
 
+    def _on_alliance_change(self, event: Event, *args, **kwargs) -> None:
+        flags = event.flags
+        pass
+        pass
+        pass
+
     def set_start_time(self) -> None:  # call in teleopInit and autonomousInit in the robot
         self.start_time = time.time()
 
@@ -308,10 +317,11 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.robot_drive.apply_request(lambda: idle).ignoringDisable(True)
         )
-        # Left Trigger - Rotate (in-place) toward best AprilTag
-        self.driver_controller.leftTrigger(threshold=0.25).whileTrue(
-            Ai
-        )
+        # Left Trigger - Rotate (in-place) toward best AprilTag.
+        print("TODO: More commands please")
+        # self.driver_controller.leftTrigger(threshold=0.25).whileTrue(
+        #     Ai
+        # )
         # Right Trigger - Follow the best AprilTag around the room
 
         # A Button - Brake

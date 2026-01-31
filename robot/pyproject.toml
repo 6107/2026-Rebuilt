@@ -58,7 +58,6 @@ components = [
 
 # Other pip packages to install
 requires = [
-    "pynetworktables",
     "photonlibpy==2026.1.1",
     "limelightlib-python==0.9.6",
     "pyntcore",

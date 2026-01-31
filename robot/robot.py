@@ -25,16 +25,15 @@ from typing import Optional
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
-from networktables import NetworkTables
-from pathplannerlib.pathfinding import Pathfinding, LocalADStar
-from wpilib import Timer, RobotBase, DriverStation, Field2d, SmartDashboard
+from ntcore import NetworkTableInstance
+from pathplannerlib.pathfinding import LocalADStar, Pathfinding
+from wpilib import DriverStation, Field2d, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
 from constants import USE_PYKIT
 from lib_6107.util.statistics import RobotStatistics
 from robotcontainer import RobotContainer
-# from lib_6107.timedcommandloggedrobot import TimedCommandLoggedRobot
 # from util.telemetry import Telemetry
 from version import VERSION
 
@@ -81,7 +80,8 @@ class MyRobot(MyRobotBase):
 
         self.field: Optional[wpilib.Field2d] = None
         self._stats: RobotStatistics = RobotStatistics()
-        self._network_tables_server = None  # Simulation only
+
+        self._network_tables_instance = NetworkTableInstance.getDefault()
 
         # Visualization and pose support
         self.match_started = False  # Set true on Autonomous or Teleop init
@@ -102,8 +102,9 @@ class MyRobot(MyRobotBase):
         """
         logger.info("robotInit: entry")
 
-        if RobotBase.isSimulation():
-            self._network_tables_server = NetworkTables.initialize(server="127.0.0.1")
+        # Start up our network tables client
+        self._network_tables_instance.startClient4("team-6107-robot")
+        self._network_tables_instance.setServerTeam(6107)
 
         # Set up logging
         if USE_PYKIT:
@@ -193,6 +194,7 @@ class MyRobot(MyRobotBase):
         print("Robot Statistics:")
         self._stats.print("all", 1)
         print("========================================")
+        self._network_tables_instance.stopClient()
 
     def robotPeriodic(self) -> None:
         """

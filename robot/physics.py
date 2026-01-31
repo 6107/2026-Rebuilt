@@ -36,7 +36,7 @@ import time
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import getDeployDirectory
 
-from field.field_2026 import RED_TEST_POSE, BLUE_TEST_POSE
+from field.field_2026 import BLUE_TEST_POSE, RED_TEST_POSE
 from robot import MyRobot
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,10 @@ class PhysicsEngine:
 
         self._physics_controller = physics_controller
         self._robot: MyRobot = robot
+
+        # Start up network tables server. This will listen on all ports   TODO: See if this is needed in simulation
+        # inst = NetworkTableInstance.getDefault()
+        # inst.startServer()
 
         # Initialize our simulated subsystems
         for subsystem in robot.container.subsystems:

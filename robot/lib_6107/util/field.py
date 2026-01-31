@@ -17,9 +17,8 @@
 
 import logging
 import os
-from typing import Optional, Sequence, Tuple, List, Callable
+from typing import Callable, List, Optional, Sequence, Tuple
 
-from networktables import NetworkTables
 from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout
 from wpilib import getDeployDirectory, SendableChooser, SmartDashboard
 from wpimath.geometry import Pose3d
@@ -55,10 +54,12 @@ class Field:
             self._april_tag_chooser.addOption(field[0], field[1])
 
         SmartDashboard.putData("Field Selector", self._april_tag_chooser)
-        self._chooser_entry = NetworkTables.getTable("SmartDashboard").getEntry("Field Selector/active")
 
-        self._chooser_entry.addListener(self._on_field_changed,
-                                        NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
+        print("TODO: Support NT4 here3")
+        # self._chooser_entry = NetworkTables.getTable("SmartDashboard").getEntry("Field Selector/active")
+        #
+        # self._chooser_entry.addListener(self._on_field_changed,
+        #                                 NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
 
         # Map AprilTagField to backup file mapping
         self._file_map = {tag_field: file for _, tag_field, file in self._field_info}
