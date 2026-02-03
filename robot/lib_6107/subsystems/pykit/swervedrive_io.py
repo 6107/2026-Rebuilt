@@ -25,7 +25,6 @@ SwerveDriveIO provides  drive I/O to provide log information
 for AdvantageScope replay and simulation.
 """
 
-
 class SwerveDriveIO:
     @autolog
     @dataclass

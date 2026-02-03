@@ -30,6 +30,7 @@ class Telemetry:
         :type max_speed: units.meters_per_second
         """
         self._max_speed = max_speed
+        SignalLogger.set_path("telemetry")
         SignalLogger.start()
 
         # What to publish over networktables for telemetry

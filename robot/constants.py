@@ -30,7 +30,7 @@ from wpimath.units import kilograms, lbsToKilograms, meters, meters_per_second, 
 from generated.tuner_constants import TunerConstants  # Use Tuner X constants if available
 from lib_6107.constants import *
 
-USE_PYKIT = False
+USE_PYKIT = True
 
 
 class RobotModes(Enum):

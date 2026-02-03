@@ -73,7 +73,7 @@ class TunerConstants:
 
     # CAN bus that the devices are located on;
     # All swerve devices must share the same CAN bus
-    canbus = CANBus("rio", "./logs/example.hoot")
+    canbus = CANBus("rio", "./logs/canbus.hoot")
     # canbus = CANBus("canivore", "./logs/example.hoot")
 
     # Theoretical free speed (m/s) at 12 V applied output;

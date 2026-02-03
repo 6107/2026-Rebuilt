@@ -219,16 +219,8 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         #  it remains in effect until another measurement std deviation is provided. We will start
         #  with a high confidence since autonomous mode is heavily reliant on vision, and we
         #  expect to traverse the 'bump' at least twice.
-
         self.set_vision_measurement_std_devs((0.2, 0.2, 0.2))
 
-        # # # TODO: SUPPORT PATHPLANNER
-        # #
-        # #   TODO: If not done already, register for an alliance change callback. If something
-        # #         changes, can we update our  'pose_estimator above' and the settings below?
-        # #
-        # #   TODO: Is alliance settings in a match already in driverstation before we start and all this only matters during simulation?
-        #
         # robot_config = RobotConfig.fromGUISettings()
         #
         # # TODO: What do we need here with pathplanner and assuming pykit is also supported. Also if
@@ -338,7 +330,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         if utils.is_simulation():
             self._start_sim_thread()
-
 
     @property
     def robot(self) -> 'MyRobot':
@@ -488,10 +479,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
             left_ff = self.kS * sign(left_rad_per_s) + self.kV * left_rad_per_s
             right_ff = self.kS * sign(right_rad_per_s) + self.kV * right_rad_per_s
 
-            self.io.setVelocity(left_rad_per_s, right_rad_per_s, left_ff, right_ff)
+            self._inputs.setVelocity(left_rad_per_s, right_rad_per_s, left_ff, right_ff)
 
         def runOpenLoop(self, left_v: float, right_v: float) -> None:
-            self.io.setVoltage(left_v, right_v)
+            self._inputs.setVoltage(left_v, right_v)
 
         def sysIdQuasistatic(self, direction: SysIdRoutine.Direction):
             return self.sysid.quasistatic(direction)
