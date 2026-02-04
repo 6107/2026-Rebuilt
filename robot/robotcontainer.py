@@ -125,6 +125,10 @@ class RobotContainer:
         self.shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
 
         ##########################################
+        #   INDEXER
+        #
+
+        ##########################################
         #   INTAKE
         #
 

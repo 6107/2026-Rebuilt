@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/2026-Rebuilt.iml" filepath="$PROJECT_DIR$/.idea/2026-Rebuilt.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../CommandRevSwerve/.idea/CommandRevSwerve.iml" filepath="$PROJECT_DIR$/../CommandRevSwerve/.idea/CommandRevSwerve.iml" />
     </modules>
   </component>
 </project>
