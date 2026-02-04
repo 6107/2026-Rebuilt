@@ -31,7 +31,7 @@ from wpimath.units import meters_per_second, radians_per_second, rotationsToRadi
 import constants
 from commands.autonomous import pathplanner
 from commands.swervedrive.point_towards_location import PointTowardsLocation
-from constants import FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, DeviceID
+from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO
 from field.field_2026 import RebuiltField as Field
 from generated.tuner_constants import TunerConstants
 from lib_6107.commands.camera.follow_object import FollowObject, StopWhen
@@ -42,8 +42,7 @@ from lib_6107.commands.drivetrain.trajectory import JerkyTrajectory, SwerveTraje
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.phoenix6_telemetry import Telemetry
-
-from subsystems.shooter.rev_shooter import RevShooter as Shooter
+from subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
 
