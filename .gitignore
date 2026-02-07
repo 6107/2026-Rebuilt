@@ -231,3 +231,4 @@ robot/*.json
 /robot/ctre_sim/
 /vendordeps/WPILibNewCommands.json
 /robot/logs/
+/robot/pyLogs/
