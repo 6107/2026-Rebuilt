@@ -92,7 +92,7 @@ class TunerConstants:
     _invert_left_side = False
     _invert_right_side = True
 
-    _pigeon_id = 1
+    _pigeon_id = 22
 
     # These are only used for simulation
     _steer_inertia: units.kilogram_square_meter = 0.01
@@ -137,9 +137,9 @@ class TunerConstants:
     )
 
     # Front Left
-    _front_left_drive_motor_id = 2
-    _front_left_steer_motor_id = 3
-    _front_left_encoder_id = 4
+    _front_left_drive_motor_id = 10
+    _front_left_steer_motor_id = 11
+    _front_left_encoder_id = 18
     _front_left_encoder_offset: units.rotation = 0.15234375
     _front_left_steer_motor_inverted = True
     _front_left_encoder_inverted = False
@@ -148,9 +148,9 @@ class TunerConstants:
     _front_left_y_pos: units.meter = inchesToMeters(10)
 
     # Front Right
-    _front_right_drive_motor_id = 5
-    _front_right_steer_motor_id = 6
-    _front_right_encoder_id = 7
+    _front_right_drive_motor_id = 12
+    _front_right_steer_motor_id = 13
+    _front_right_encoder_id = 19
     _front_right_encoder_offset: units.rotation = -0.4873046875
     _front_right_steer_motor_inverted = True
     _front_right_encoder_inverted = False
@@ -159,9 +159,9 @@ class TunerConstants:
     _front_right_y_pos: units.meter = inchesToMeters(-10)
 
     # Back Left
-    _back_left_drive_motor_id = 8
-    _back_left_steer_motor_id = 9
-    _back_left_encoder_id = 10
+    _back_left_drive_motor_id = 14
+    _back_left_steer_motor_id = 15
+    _back_left_encoder_id = 20
     _back_left_encoder_offset: units.rotation = -0.219482421875
     _back_left_steer_motor_inverted = True
     _back_left_encoder_inverted = False
@@ -170,9 +170,9 @@ class TunerConstants:
     _back_left_y_pos: units.meter = inchesToMeters(10)
 
     # Back Right
-    _back_right_drive_motor_id = 11
-    _back_right_steer_motor_id = 12
-    _back_right_encoder_id = 13
+    _back_right_drive_motor_id = 16
+    _back_right_steer_motor_id = 17
+    _back_right_encoder_id = 21
     _back_right_encoder_offset: units.rotation = 0.17236328125
     _back_right_steer_motor_inverted = True
     _back_right_encoder_inverted = False

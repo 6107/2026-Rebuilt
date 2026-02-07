@@ -169,14 +169,15 @@ class RebuiltField(Field):
 
         return self._won_autonomous
 
+    # TODO: Maybe have the controllers 'rumble' when we transition
+    #       phases of the game.  Maybe small rumble 5 seconds to go
+
     @property
     def hub_active(self) -> bool:
         """
         Returns true if the active hub is the one we are scoring on.
 
         The active hub is determined by the match time and whether we won autonomous
-
-
         0-20 seconds: Autonomous, both hubs active
 
         21-110 seconds: Shift periods, only one hub active

@@ -1,0 +1,31 @@
+
+
+#  Follows WestWood 2026 startup.  Starting with 'sim'
+
+Startup:
+    MentorBot (main robot class) init is called
+        Records "Robot" as logger meta data
+        Does RobotMode 'match' (which we are in sim)
+        Starts the logger
+
+        Creates the RobotContainer()        # We create the robotcontainer during RobotInit
+
+            Creates all the subsystems      # **** Does something special if in replay?
+                                            #      sort of 'IO' init only...
+                DriveSubsystem
+                    sets  self.io = DriveIO()
+                    sets  self.inputs = DriveIO.DriveIOInputs()
+                    sets lots of initial values
+
+                    if simulation.
+                        creats a sim VelocityGetter. (NetworkTable subcription)   ***
+                        which is tied to the 'chassis speed' function that has an
+                        @autolog_output set
+            Register 'Alerts'
+            sets 'shiftAllerts set to true'
+
+    RobotInit() is called'
+        disables all livewindow telemetry
+        sets up Command auto-log capabilities for initialize finish and interrupt
+
+        sets up some pathplanner logging

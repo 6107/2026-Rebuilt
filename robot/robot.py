@@ -27,7 +27,8 @@ from commands2 import CommandScheduler
 from commands2.command import Command
 from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
-from wpilib import DriverStation, Field2d, RobotBase, SmartDashboard, Timer
+from phoenix6 import SignalLogger
+from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
@@ -71,6 +72,50 @@ class MyRobot(MyRobotBase):
         # Initialize our base class, choosing the default scheduler period
         super().__init__()
 
+        if USE_PYKIT:
+            Logger.recordMetadata("Robot", type(self).__name__)
+            Logger.recordMetadata("Team", "6107")
+            Logger.recordMetadata("Year", "2026")
+
+            match constants.ROBOT_MODE:
+                case constants.RobotModes.REAL:
+                    deploy_config = wpilib.deployinfo.getDeployData()
+
+                    if deploy_config is not None:
+                        Logger.recordMetadata("Deploy Host", deploy_config.get("deploy-host", ""))
+                        Logger.recordMetadata("Deploy User", deploy_config.get("deploy-user", ""))
+                        Logger.recordMetadata("Deploy Date", deploy_config.get("deploy-date", ""))
+                        Logger.recordMetadata("Code Path", deploy_config.get("code-path", ""))
+                        Logger.recordMetadata("Git Hash", deploy_config.get("git-hash", ""))
+                        Logger.recordMetadata("Git Branch", deploy_config.get("git-branch", ""))
+                        Logger.recordMetadata("Git Description", deploy_config.get("git-desc", ""))
+
+                    Logger.addDataReciever(NT4Publisher(True))
+                    Logger.addDataReciever(WPILOGWriter())
+
+                case constants.RobotModes.SIMULATION:
+                    Logger.addDataReciever(WPILOGWriter())
+                    Logger.addDataReciever(NT4Publisher(True))
+
+                case constants.RobotModes.REPLAY:
+                    #
+                    #  To run back a log file in replay mode, set the `LOG_PATH` environment variable
+                    #  and then run in simulation.
+                    #
+                    #  An example is to run the following:
+                    #
+                    #    LOG_PATH=/path/to/log/file.wpilog robotpy --main src sim
+                    #
+                    self.useTiming = False  # Disable timing in replay mode, run as fast as possible
+
+                    log_path = os.environ["LOG_PATH"]
+                    log_path = os.path.abspath(log_path)
+
+                    Logger.setReplaySource(WPILOGReader(log_path))
+                    Logger.addDataReciever(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
+
+            Logger.start()
+
         self._counter = 0  # Updated on each periodic call. Can be used to logging/smartdashboard updates
 
         self._container: Optional[RobotContainer] = None
@@ -103,8 +148,27 @@ class MyRobot(MyRobotBase):
         initialization code.
         """
         logger.info("robotInit: entry")
-
         super().robotInit()
+
+        if USE_PYKIT:
+            SignalLogger.enable_auto_logging(False)
+            LiveWindow.disableAllTelemetry()
+            # TODO: make period smaller
+            CommandScheduler.getInstance().setPeriod(0.5)  # 1/2s period for command scheduler wathdoc
+
+            command_count: dict[str, int] = {}
+
+            def logCommandFunction(command: Command, active: bool) -> None:
+                name = command.getName()
+                count = command_count.get(name, 0) + (1 if active else -1)
+                command_count[name] = count
+                Logger.recordOutput(f"Commands/{name}", count > 0)
+
+            scheduler = CommandScheduler.getInstance()
+
+            scheduler.onCommandInitialize(lambda c: logCommandFunction(c, True))
+            scheduler.onCommandFinish(lambda c: logCommandFunction(c, False))
+            scheduler.onCommandInterrupt(lambda c: logCommandFunction(c, False))
 
         # Set up logging
         self._logging_init()
@@ -130,70 +194,22 @@ class MyRobot(MyRobotBase):
         logger.info("robotInit: exit")
 
     def _logging_init(self):
-        if USE_PYKIT:
-            Logger.recordMetadata("Robot", "Team6107-2026")
+        match constants.ROBOT_MODE:
+            case constants.RobotModes.REAL:
+                logger.setLevel(logging.ERROR)  # Python logging
+                logging.getLogger("wpilib").setLevel(logging.ERROR)
+                logging.getLogger("commands2").setLevel(logging.ERROR)
 
-            match constants.ROBOT_MODE:
-                case constants.RobotModes.REAL:
-                    deploy_config = wpilib.deployinfo.getDeployData()
-                    if deploy_config is not None:
-                        # TODO: Look into how this is used wrt pykit or AdvantageScope
-                        Logger.recordMetadata("Deploy Host",
-                                              deploy_config.get("deploy-host", ""))
-                        Logger.recordMetadata("Deploy User",
-                                              deploy_config.get("deploy-user", ""))
-                        Logger.recordMetadata("Deploy Date",
-                                              deploy_config.get("deploy-date", ""))
-                        Logger.recordMetadata("Code Path",
-                                              deploy_config.get("code-path", ""))
-                        Logger.recordMetadata("Git Hash",
-                                              deploy_config.get("git-hash", ""))
-                        Logger.recordMetadata("Git Branch",
-                                              deploy_config.get("git-branch", ""))
-                        Logger.recordMetadata("Git Description",
-                                              deploy_config.get("git-desc", ""))
-                    Logger.addDataReciever(NT4Publisher(True))
-                    Logger.addDataReciever(WPILOGWriter())
-
-                    logger.setLevel(logging.ERROR)  # Python logging
-
-                case constants.RobotModes.SIMULATION:
-                    # TODO: logger.setLevel(logging.INFO)
-                    Logger.addDataReciever(WPILOGWriter())
-                    Logger.addDataReciever(NT4Publisher(True))
-                    DriverStation.silenceJoystickConnectionWarning(True)
-
-                    logger.setLevel(logging.INFO)  # Python logging
-
-                case constants.RobotModes.REPLAY:
-                    self.use_timing = False  # run as fast as possible
-                    log_path = os.environ["LOG_PATH"]
-                    log_path = os.path.abspath(log_path)
-
-                    print(f"Starting log from {log_path}")
-
-                    Logger.setReplaySource(WPILOGReader(log_path))
-                    Logger.addDataReciever(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
-
-                    logger.setLevel(logging.ERROR)  # Python logging
-
-            # Start up pykit/AdvantageScope logging
-            Logger.start()
-
-            CommandScheduler.getInstance().setPeriod(1)  # 1s period for command scheduler wa
-
-        else:
-            if self._is_simulation:
-                logger.setLevel(logging.INFO)
-
-                # If this is a simulation, we need to silence joystick warnings
-                logger.warning("Simulation detected. Silencing annoying JoyStick warnings")
+            case constants.RobotModes.SIMULATION:
                 DriverStation.silenceJoystickConnectionWarning(True)
-            else:
-                logger.setLevel(logging.ERROR)
+                logger.setLevel(logging.INFO)  # Python logging
+                logging.getLogger("wpilib").setLevel(logging.DEBUG)
+                logging.getLogger("commands2").setLevel(logging.DEBUG)
 
-            logging.getLogger("wpilib").setLevel(logging.DEBUG)
-            logging.getLogger("commands2").setLevel(logging.DEBUG)
+            case constants.RobotModes.REPLAY:
+                logger.setLevel(logging.ERROR)  # Python logging
+                logging.getLogger("wpilib").setLevel(logging.ERROR)
+                logging.getLogger("commands2").setLevel(logging.ERROR)
 
     def endCompetition(self):  # real signature unknown; restored from __doc__
         print("========================================")

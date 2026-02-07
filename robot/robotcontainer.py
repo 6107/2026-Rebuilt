@@ -21,14 +21,13 @@ import os
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-from commands2 import button, cmd, Command, CommandScheduler, InstantCommand, PrintCommand, RunCommand, Subsystem
+from commands2 import button, cmd, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
-from phoenix6 import SignalLogger
 from phoenix6 import swerve
-from wpilib import DriverStation, Field2d, getDeployDirectory, LiveWindow, RobotBase, SendableChooser, \
-    SmartDashboard, XboxController
+from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
+    XboxController
 from wpimath.geometry import Rotation2d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
@@ -44,7 +43,7 @@ from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.phoenix6_telemetry import Telemetry
-from pykit.logger import Logger
+from pykit.alertlogger import AlertLogger
 from subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
@@ -58,7 +57,7 @@ class RobotContainer:
     """
     def __init__(self, robot: 'MyRobot') -> None:
         # The robot's subsystems
-        logger.debug("*** called container __init__")
+
         self.start_time = time.time()
         self.robot = robot
         self.network_table = NetworkTableInstance.getDefault()
@@ -84,7 +83,7 @@ class RobotContainer:
         # The driver's controller
         self.driver_controller = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
 
-        # TODO: WPILib has a wpimath.fileter.SlewRateLimiter to make joystick more gentle.  Look into this
+        # TODO: WPILib has a wpimath.fileter.SlewRateLimiter to make joystick more gentle. Look into this
         #       See https://github.com/robotpy/examples/blob/main/SwerveBot/robot.py for an example
 
         # Shooter's controller
@@ -138,26 +137,24 @@ class RobotContainer:
         #
 
         ##########################################
+        #   ALERTS
+        #
+        if constants.USE_PYKIT:
+            AlertLogger.registerGroup("Alerts")
+
+        self.driverDisconnected = Alert("Driver controller disconnected (port 0)", Alert.AlertType.kWarning)
+        self.operatorDisconnected = Alert("Operator controller disconnected (port 1)", Alert.AlertType.kWarning)
+        self.deadInTheWaterAlert = Alert("No auto selected!!!", Alert.AlertType.kWarning)
+
+        # TODO: also maybe a vibrate...
+        self.shiftActiveAlert = Alert("SHIFT ACTIVE!", Alert.AlertType.kInfo)
+        self.shiftActiveAlert.set(True)
+
+        ##########################################
         #   TELEMETRY
         #
         if constants.USE_PYKIT:
-            SignalLogger.enable_auto_logging(False)
-            LiveWindow.disableAllTelemetry()
             self._logger = None
-
-            command_count: dict[str, int] = {}
-
-            def logCommandFunction(command: Command, active: bool) -> None:
-                name = command.getName()
-                count = command_count.get(name, 0) + (1 if active else -1)
-                command_count[name] = count
-                Logger.recordOutput(f"Commands/{name}", count > 0)
-
-            scheduler = CommandScheduler.getInstance()
-
-            scheduler.onCommandInitialize(lambda c: logCommandFunction(c, True))
-            scheduler.onCommandFinish(lambda c: logCommandFunction(c, False))
-            scheduler.onCommandInterrupt(lambda c: logCommandFunction(c, False))
         else:
             self._logger = Telemetry(self._max_speed)
 
@@ -621,6 +618,12 @@ class RobotContainer:
         #                     self.robot_drive.getFieldRelativeSpeeds(),
         #                     self.robot_drive.getModulePositions())
         #                     #Rotation2d(Timer.getTimestamp() / 20))  # Simulated turret rotation, just go spin
-        #
-        # self.updateAlerts()
-        # # Logger.recordOutput("Component Poses", RobotMechanism.getPoses())
+
+        self.updateAlerts()
+        # Logger.recordOutput("Component Poses", RobotMechanism.getPoses())
+
+    def updateAlerts(self):
+        self.driverDisconnected.set(not DriverStation.isJoystickConnected(0))
+        self.operatorDisconnected.set(not DriverStation.isJoystickConnected(1))
+
+        self.deadInTheWaterAlert.set(self._auto_chooser.getSelected() == self.get_do_nothing)
