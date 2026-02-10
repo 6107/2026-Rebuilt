@@ -234,6 +234,7 @@ class MyRobot(MyRobotBase):
         Default period is 20 mS.
         """
         start = time.monotonic()
+        self._counter += 1
 
         # This routine is called
         LogTracer.resetOuter("RobotPeriodic")
@@ -246,7 +247,6 @@ class MyRobot(MyRobotBase):
 
         LogTracer.recordTotal()
 
-        self._counter += 1
         # TODO: Can we drop our 'stats' once we have all this wonderful logging in place ?
         self._stats.add("periodic", time.monotonic() - start)
 

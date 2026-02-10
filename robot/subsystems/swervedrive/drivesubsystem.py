@@ -42,6 +42,7 @@ from field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TES
 from generated.tuner_constants import TunerSwerveDrivetrain
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
+from lib_6107.subsystems.pykit.robot_state import RobotState
 from subsystems.swervedrive.constants import DriveConstants
 from util.logtracer import LogTracer
 
@@ -821,6 +822,26 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         to communicate between them (it's less clear what the NT entry is there for, I think) LHACK 1/12/25
         """
         return [module.getDesiredState() for module in self._swerve_modules.values()]
+
+    @autolog_output(key="Robot/velocity")
+    def get_angular_velocity(self) -> radians_per_second:
+        return self.gyro.inputs.yaw_rate
+
+    @autolog_output(key="Robot/relSpeeds")
+    def get_robot_relative_speeds(self) -> ChassisSpeeds:
+        return DriveConstants.DRIVE_KINEMATICS.toChassisSpeeds(self.get_module_states())
+
+    @autolog_output(key="Robot/speeds")
+    def get_field_relative_speeds(self) -> ChassisSpeeds:
+        return ChassisSpeeds.fromRobotRelativeSpeeds(self.get_robot_relative_speeds(),
+                                                     RobotState.get_rotation())
+
+    @autolog_output(key="drive/swerve/real")
+    def get_module_states(self) -> Tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]:
+        return (self._swerve_modules["front-left"].getState(),
+                self._swerve_modules["front-right"].getState(),
+                self._swerve_modules["back-left"].getState(),
+                self._swerve_modules["back-right"].getState())
 
     ##########################################################
     # TODO: All the following are related to team 2429 and pathplanner. These have not been tested and

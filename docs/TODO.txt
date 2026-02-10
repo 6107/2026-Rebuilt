@@ -40,6 +40,8 @@ Do we need a different Autonomous MAX speed?
 
 Once logging works. Drop our 'stats' capability
 
+For AutoLogging, there is a 'units' see if that is useful
+
 =================================================================================
 # Here are some things that are outstanding (but not needed or may not have the time)
 

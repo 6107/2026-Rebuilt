@@ -26,6 +26,7 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
+from pykit.logger import Logger
 from pykit.alertlogger import AlertLogger
 from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
     XboxController
@@ -42,10 +43,12 @@ from generated.tuner_constants import TunerConstants
 from lib_6107.commands.camera.track_tag_command import TrackTagCommand
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
+from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
+
 
 class RobotContainer:
     """
@@ -591,14 +594,30 @@ class RobotContainer:
         return PrintCommand("Do-Nothing Command")
 
     def robotPeriodic(self) -> None:
-        # TODO:  Need to do our own gut check and save here.
-        pass
-        # RobotState.periodic(self.robot_drive.getRawRotation(),
-        #                     RobotController.getFPGATime() / 1e6,
-        #                     self.robot_drive.getAngularVelocity(),
-        #                     self.robot_drive.getFieldRelativeSpeeds(),
-        #                     self.robot_drive.getModulePositions())
-        #                     #Rotation2d(Timer.getTimestamp() / 20))  # Simulated turret rotation, just go spin
+        """
+        This is called from Robot.robotPeriodic() after the Phoenix6 signal updates
+        are requested.
+
+        Also remember that the SubSystem 'periodic' calls are from the CommandScheduler
+        run() method which is AFTER robotPeriodic returns
+
+        This should update the saved robot state that can then be used later by
+        any commands.
+        """
+        # Update all our I/O values. This periodic call will also call the pykit
+        # logger.
+        drive = self.robot_drive
+
+        RobotState.periodic(drive.pose,
+                            drive.gyro.inputs.yaw,
+                            drive.gyro.inputs.yaw_timestamp,
+                            drive.get_angular_velocity(),
+                            drive.get_field_relative_speeds(),
+                            drive.get_module_positions())
+        # TODO: Add more mechanisms as they get coded
+
+        Logger.recordOutput("Game/WonAuto", self._field.won_autonomous)
+        Logger.recordOutput("Game/HubActive", self._field.hub_active)
 
         self.update_alerts()
         #
