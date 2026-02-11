@@ -88,17 +88,17 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
         # controller = PPLTVController(1 / kwargs["pykit"]["Update Frequency"],
         #                              MAX_SPEED)
         # PathPlanner and AdvantageScope integration
-        # PathPlannerLogging.setLogActivePathCallback(lambda path: Logger.recordOutput("Odometry/Trajectory",
-        #                                                                              path))
-        # PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("Odometry/TrajectorySetpoint",
-        #                                                                              pose))
-
-        PathPlannerLogging.setLogCurrentPoseCallback(lambda pose: Logger.recordOutput("PathPlanner/CurrentPose",
-                                                                                      pose))
-        PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("PathPlanner/TargetPose",
+        PathPlannerLogging.setLogActivePathCallback(lambda path: Logger.recordOutput("Odometry/Trajectory",
+                                                                                     path))
+        PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("Odometry/TrajectorySetpoint",
                                                                                      pose))
-        PathPlannerLogging.setLogActivePathCallback(lambda poses: Logger.recordOutput("PathPlanner/CurrentPath",
-                                                                                      poses))
+
+        # PathPlannerLogging.setLogCurrentPoseCallback(lambda pose: Logger.recordOutput("PathPlanner/CurrentPose",
+        #                                                                               pose))
+        # PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("PathPlanner/TargetPose",
+        #                                                                              pose))
+        # PathPlannerLogging.setLogActivePathCallback(lambda poses: Logger.recordOutput("PathPlanner/CurrentPath",
+        #                                                                               poses))
         # TODO: Next relies upon PYKIT support
         SysIdRoutine(SysIdRoutine.Config(1, 7, 10,
                                          lambda state: Logger.recordOutput("Drive/SysIdState",

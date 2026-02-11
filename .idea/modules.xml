@@ -3,8 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/2026-Rebuilt.iml" filepath="$PROJECT_DIR$/.idea/2026-Rebuilt.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../AdvantageKit/.idea/AdvantageKit.iml" filepath="$PROJECT_DIR$/../AdvantageKit/.idea/AdvantageKit.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../westwood-2026-Rebuilt/.idea/westwood-2026-Rebuilt.iml" filepath="$PROJECT_DIR$/../westwood-2026-Rebuilt/.idea/westwood-2026-Rebuilt.iml" />
     </modules>
   </component>
 </project>

@@ -609,15 +609,18 @@ class RobotContainer:
         drive = self.robot_drive
 
         RobotState.periodic(drive.pose,
-                            drive.gyro.inputs.yaw,
+                            Rotation2d(drive.gyro.inputs.yaw),
+                            drive.get_robot_3d(drive.pose, Rotation2d(drive.gyro.inputs.yaw)),
                             drive.gyro.inputs.yaw_timestamp,
                             drive.get_angular_velocity(),
                             drive.get_field_relative_speeds(),
                             drive.get_module_positions())
         # TODO: Add more mechanisms as they get coded
 
-        Logger.recordOutput("Game/WonAuto", self._field.won_autonomous)
-        Logger.recordOutput("Game/HubActive", self._field.hub_active)
+        we_won = self._field.won_autonomous
+        if we_won is not None:
+            Logger.recordOutput("Game/WonAuto", we_won)
+            Logger.recordOutput("Game/HubActive", self._field.hub_active)
 
         self.update_alerts()
         #

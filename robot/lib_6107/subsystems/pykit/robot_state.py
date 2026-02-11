@@ -18,14 +18,12 @@
 from typing import Tuple
 
 from pykit.logger import Logger
-from wpilib import RobotBase
-from wpimath.geometry import Pose2d, Rotation2d
+from wpimath.geometry import Pose2d, Rotation2d, Pose3d, Rotation3d
 from wpimath.units import radians_per_second, seconds, meters
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Odometry, SwerveModulePosition
 
 from constants import DriveKinematics
 from util.logtracer import LogTracer
-
 
 ModulePositionType = Tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]
 
@@ -48,6 +46,7 @@ class RobotState:
     @classmethod
     def periodic(cls, pose: Pose2d,
                  heading: Rotation2d,
+                 pose3d: Pose3d,
                  heading_timestamp: seconds,
                  yaw_rate: radians_per_second,
                  field_relative_robot_velocity: ChassisSpeeds,
@@ -81,6 +80,10 @@ class RobotState:
                             position_delta.translation().norm() < cls.auto_distance_tolerance)
         Logger.recordOutput("Auto/RotationCorrect",
                             abs(position_delta.rotation().radians()) < cls.auto_rotation_tolerance)
+
+        # Alternatively, a Pose3d can be constructed directly from x, y, z, and a Rotation3
+        # Logger.recordOutput("Robot/Pose3d", pose3d)
+        Logger.recordOutput("Odometry/Robot", pose3d)
 
         # TODO: Should we log starting location in AutonomousInit?  Would that be metadata
 

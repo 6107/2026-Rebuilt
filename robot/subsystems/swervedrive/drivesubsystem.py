@@ -15,6 +15,7 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+
 import logging
 import math
 from collections import OrderedDict
@@ -27,11 +28,11 @@ from phoenix6 import SignalLogger, swerve, units, utils
 from phoenix6.swerve.requests import RobotCentric
 from pykit.autolog import autolog_output, autologgable_output
 from pykit.logger import Logger
-from wpilib import DriverStation, Notifier, RobotController
-from wpilib import Field2d, RobotBase, SmartDashboard
+from wpilib import DriverStation, Notifier, RobotController, Field2d, RobotBase, SmartDashboard
+from wpimath.geometry import Pose3d
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
-from wpimath.geometry import Pose2d, Rotation2d
+from wpimath.geometry import Pose2d, Rotation2d, Rotation3d
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModulePosition, SwerveModuleState
 from wpimath.units import degrees, meters, meters_per_second, radians_per_second, rotationsToRadians, \
     seconds
@@ -842,6 +843,12 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
                 self._swerve_modules["front-right"].getState(),
                 self._swerve_modules["back-left"].getState(),
                 self._swerve_modules["back-right"].getState())
+
+    #@autolog_output(key="drive/viz/Pose3d")
+    def get_robot_3d(self, pose: Pose2d, rotation: Rotation2d) -> Pose3d:
+
+        rotation3d = Rotation3d(0.0, 0.0, rotation.radians())  # roll and pitch set to 0.0
+        return Pose3d(pose.X(), pose.Y(), 0.0, rotation3d)
 
     ##########################################################
     # TODO: All the following are related to team 2429 and pathplanner. These have not been tested and

@@ -137,7 +137,7 @@ class CtreSwerveModule(SwerveModuleIO):
         self.updateInputs(self._inputs)
         LogTracer.record("UpdateInputs")
 
-        Logger.processInputs("Drive/Module" + self.name, self._inputs)
+        Logger.processInputs(f"Drive/Module-{self.name}", self._inputs)
         LogTracer.record("ProcessInputs")
         LogTracer.recordTotal()
 
