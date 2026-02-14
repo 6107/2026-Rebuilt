@@ -55,7 +55,7 @@ class Field:
 
         SmartDashboard.putData("Field Selector", self._april_tag_chooser)
 
-        print("TODO: Support NT4 here3")
+        print("TODO: Support NT4 here")
         # self._chooser_entry = NetworkTables.getTable("SmartDashboard").getEntry("Field Selector/active")
         #
         # self._chooser_entry.addListener(self._on_field_changed,

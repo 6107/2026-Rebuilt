@@ -18,17 +18,16 @@
 
 import logging
 import os
-from typing import Optional
-
 import sys
 import time
+from typing import Optional
+
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
 from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
 from phoenix6 import SignalLogger
-# pykit & AdvantageScope support
 from pykit.logger import Logger
 from pykit.networktables.nt4Publisher import NT4Publisher
 from pykit.wpilog.wpilogreader import WPILOGReader
@@ -51,10 +50,6 @@ else:
 # Setup Logging
 logger = logging.getLogger(__name__)
 
-
-def print_overrun_message(self):
-    """Prints a message when the main loop overruns."""
-    print("Loop overrun detected!")
 
 """
 The VM is configured to automatically run this class, and to call the functions corresponding to
