@@ -20,7 +20,7 @@ class TunerConstants:
         .with_k_i(0)
         .with_k_d(0.5)
         .with_k_s(0.1)
-        .with_k_v(1.91)
+        .with_k_v(2.49)
         .with_k_a(0)
         .with_static_feedforward_sign(
             signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
@@ -73,26 +73,24 @@ class TunerConstants:
 
     # CAN bus that the devices are located on;
     # All swerve devices must share the same CAN bus
-    canbus = CANBus("rio", "./logs/canbus.hoot")
-    # canbus = CANBus("canivore", "./logs/example.hoot")
+    canbus = CANBus("", "./logs/canbus.hoot")
 
     # Theoretical free speed (m/s) at 12 V applied output;
     # This needs to be tuned to your individual robot
-    # speed_at_12_volts: units.meters_per_second = 4.54
-    speed_at_12_volts: units.meters_per_second = 2
+    speed_at_12_volts: units.meters_per_second = 5.12
 
     # Every 1 rotation of the azimuth results in _couple_ratio drive motor turns;
     # This may need to be tuned to your individual robot
-    _couple_ratio = 3.8181818181818183
+    _couple_ratio = 3.857142857142857
 
-    _drive_gear_ratio = 7.363636363636365
-    _steer_gear_ratio = 15.42857142857143
-    _wheel_radius: units.meter = inchesToMeters(2.167)
+    _drive_gear_ratio = 6.026785714285714
+    _steer_gear_ratio = 26
+    _wheel_radius: units.meter = inchesToMeters(2)
 
     _invert_left_side = False
     _invert_right_side = True
 
-    _pigeon_id = 32
+    _pigeon_id = 22
 
     # These are only used for simulation
     _steer_inertia: units.kilogram_square_meter = 0.01
@@ -136,49 +134,51 @@ class TunerConstants:
         .with_drive_friction_voltage(_drive_friction_voltage)
     )
 
+
     # Front Left
-    _front_left_drive_motor_id = 10
-    _front_left_steer_motor_id = 11
-    _front_left_encoder_id = 18
-    _front_left_encoder_offset: units.rotation = 0.15234375
-    _front_left_steer_motor_inverted = True
+    _front_left_drive_motor_id = 11
+    _front_left_steer_motor_id = 12
+    _front_left_encoder_id = 21
+    _front_left_encoder_offset: units.rotation = -0.09521484375
+    _front_left_steer_motor_inverted = False
     _front_left_encoder_inverted = False
 
-    _front_left_x_pos: units.meter = inchesToMeters(10)
-    _front_left_y_pos: units.meter = inchesToMeters(10)
+    _front_left_x_pos: units.meter = inchesToMeters(11)
+    _front_left_y_pos: units.meter = inchesToMeters(11)
 
     # Front Right
-    _front_right_drive_motor_id = 12
-    _front_right_steer_motor_id = 13
-    _front_right_encoder_id = 19
-    _front_right_encoder_offset: units.rotation = -0.4873046875
-    _front_right_steer_motor_inverted = True
+    _front_right_drive_motor_id = 15
+    _front_right_steer_motor_id = 16
+    _front_right_encoder_id = 25
+    _front_right_encoder_offset: units.rotation = -0.463623046875
+    _front_right_steer_motor_inverted = False
     _front_right_encoder_inverted = False
 
-    _front_right_x_pos: units.meter = inchesToMeters(10)
-    _front_right_y_pos: units.meter = inchesToMeters(-10)
+    _front_right_x_pos: units.meter = inchesToMeters(11)
+    _front_right_y_pos: units.meter = inchesToMeters(-11)
 
     # Back Left
-    _back_left_drive_motor_id = 14
-    _back_left_steer_motor_id = 15
-    _back_left_encoder_id = 20
-    _back_left_encoder_offset: units.rotation = -0.219482421875
-    _back_left_steer_motor_inverted = True
+    _back_left_drive_motor_id = 18
+    _back_left_steer_motor_id = 17
+    _back_left_encoder_id = 27
+    _back_left_encoder_offset: units.rotation = 0.118896484375
+    _back_left_steer_motor_inverted = False
     _back_left_encoder_inverted = False
 
-    _back_left_x_pos: units.meter = inchesToMeters(-10)
-    _back_left_y_pos: units.meter = inchesToMeters(10)
+    _back_left_x_pos: units.meter = inchesToMeters(-11)
+    _back_left_y_pos: units.meter = inchesToMeters(11)
 
     # Back Right
-    _back_right_drive_motor_id = 16
-    _back_right_steer_motor_id = 17
-    _back_right_encoder_id = 21
-    _back_right_encoder_offset: units.rotation = 0.17236328125
-    _back_right_steer_motor_inverted = True
+    _back_right_drive_motor_id = 13
+    _back_right_steer_motor_id = 14
+    _back_right_encoder_id = 23
+    _back_right_encoder_offset: units.rotation = -0.1767578125
+    _back_right_steer_motor_inverted = False
     _back_right_encoder_inverted = False
 
-    _back_right_x_pos: units.meter = inchesToMeters(-10)
-    _back_right_y_pos: units.meter = inchesToMeters(-10)
+    _back_right_x_pos: units.meter = inchesToMeters(-11)
+    _back_right_y_pos: units.meter = inchesToMeters(-11)
+
 
     front_left = _constants_creator.create_module_constants(
         _front_left_steer_motor_id,
@@ -245,10 +245,10 @@ class TunerSwerveDrivetrain(swerve.SwerveDrivetrain[hardware.TalonFX, hardware.T
 
     @overload
     def __init__(
-            self,
-            drivetrain_constants: swerve.SwerveDrivetrainConstants,
-            modules: list[swerve.SwerveModuleConstants],
-            /,
+        self,
+        drivetrain_constants: swerve.SwerveDrivetrainConstants,
+        modules: list[swerve.SwerveModuleConstants],
+        /,
     ) -> None:
         """
         Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -266,11 +266,11 @@ class TunerSwerveDrivetrain(swerve.SwerveDrivetrain[hardware.TalonFX, hardware.T
 
     @overload
     def __init__(
-            self,
-            drivetrain_constants: swerve.SwerveDrivetrainConstants,
-            odometry_update_frequency: units.hertz,
-            modules: list[swerve.SwerveModuleConstants],
-            /,
+        self,
+        drivetrain_constants: swerve.SwerveDrivetrainConstants,
+        odometry_update_frequency: units.hertz,
+        modules: list[swerve.SwerveModuleConstants],
+        /,
     ) -> None:
         """
         Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -292,13 +292,13 @@ class TunerSwerveDrivetrain(swerve.SwerveDrivetrain[hardware.TalonFX, hardware.T
 
     @overload
     def __init__(
-            self,
-            drivetrain_constants: swerve.SwerveDrivetrainConstants,
-            odometry_update_frequency: units.hertz,
-            odometry_standard_deviation: tuple[float, float, float],
-            vision_standard_deviation: tuple[float, float, float],
-            modules: list[swerve.SwerveModuleConstants],
-            /,
+        self,
+        drivetrain_constants: swerve.SwerveDrivetrainConstants,
+        odometry_update_frequency: units.hertz,
+        odometry_standard_deviation: tuple[float, float, float],
+        vision_standard_deviation: tuple[float, float, float],
+        modules: list[swerve.SwerveModuleConstants],
+        /,
     ) -> None:
         """
         Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -328,22 +328,22 @@ class TunerSwerveDrivetrain(swerve.SwerveDrivetrain[hardware.TalonFX, hardware.T
 
     @overload
     def __init__(
-            self,
-            drivetrain_constants: swerve.SwerveDrivetrainConstants,
-            arg0: None,
-            arg1: None,
-            arg2: None,
-            arg3: None,
-            /,
+        self,
+        drivetrain_constants: swerve.SwerveDrivetrainConstants,
+        arg0: None,
+        arg1: None,
+        arg2: None,
+        arg3: None,
+        /,
     ) -> None: ...
 
     def __init__(
-            self,
-            drivetrain_constants: swerve.SwerveDrivetrainConstants,
-            arg0=None,
-            arg1=None,
-            arg2=None,
-            arg3=None,
+        self,
+        drivetrain_constants: swerve.SwerveDrivetrainConstants,
+        arg0=None,
+        arg1=None,
+        arg2=None,
+        arg3=None,
     ):
         swerve.SwerveDrivetrain.__init__(
             self,

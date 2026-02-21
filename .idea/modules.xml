@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/2026-Rebuilt.iml" filepath="$PROJECT_DIR$/.idea/2026-Rebuilt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../2026-tuner-x/.idea/2026-tuner-x.iml" filepath="$PROJECT_DIR$/../2026-tuner-x/.idea/2026-tuner-x.iml" />
     </modules>
   </component>
 </project>
