@@ -21,7 +21,7 @@ robotpy-commands-v2     == 2026.2.1
 robotpy-pathplannerlib  == 2026.1.2
 robotpy-cli             == 2026.0.1
 phoenix6                == 26.1.1
-robotpy-rev             == 2026.0.2
+robotpy-rev             == 2026.0.3
 robotpy-cscore          == 2026.2.1
 pyntcore                == 2026.2.1
 certifi                 == 2026.1.4
@@ -32,7 +32,7 @@ limelightlib-python     == 0.9.6
 chardet                 == 5.2.0
 
 # AdvantageKit support
-robotpy-pykit           == 1.0.3
+robotpy-pykit           == 1.0.4
 robotpy-pykit-watch     == 1.0.0
 
 # ###############################################################################
