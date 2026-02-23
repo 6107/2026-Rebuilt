@@ -33,11 +33,15 @@ class NeoMotorConstants:
 
 class DriveConstants:
     # Driving Parameters - Note that these are not the maximum capable speeds of
-    # the robot, rather the allowed maximum speeds
+    # the robot, rather the allowed maximum speeds.
+    #
+    # For slew rate, this controls joystick input so that a quick swing in one
+    # direction does not happen immediately. Values are units per second. For a
+    # joystick the voltage values are -1.0..1.0. So if rate was 2.0, it would take
+    # a full second to swing from full reverse to full forward.
 
-    DIRECTION_SLEW_RATE = 1.2  # radians per second
-    MAGNITUDE_SLEW_RATE = 1.8  # percent per second (1 = 100%)
-    ROTATIONAL_SLEW_RATE = 2.0  # percent per second (1 = 100%)
+    MAGNITUDE_SLEW_RATE = 4.0  # percent per second (1 = 100%)
+    ROTATIONAL_SLEW_RATE = 4.0  # percent per second (1 = 100%)
 
     # Chassis configuration
     TRACK_WIDTH = units.inchesToMeters(8.75 + 8.75)  # From YAGSL JSON offsets
@@ -78,61 +82,6 @@ class DriveConstants:
     REAR_RIGHT_ANGULAR_OFFSET = 99.404
     REAR_RIGHT_DRIVE_MOTOR_INVERTED = False
     REAR_RIGHT_TURNING_MOTOR_INVERTED = False
-
-
-
-#
-# class ModuleConstants:
-#     # WATCH OUT:
-#     #  - one or both of two constants below need to be flipped from True to False (by trial and error)
-#     #    depending on which swerve module you have (MK4i, MK4n, Rev, WCP, ThriftyBot, etc.)
-#     TURNING_ENCODER_INVERTED = False
-#     TURNING_MOTOR_INVERTED = False
-#
-#     # The MAXSwerve module can be configured with one of three pinion gears: 12T, 13T, or 14T.
-#     # This changes the drive speed of the module (a pinion gear with more teeth will result in a
-#     # robot that drives faster).
-#     DRIVING_MOTOR_PINION_TEETH = 14
-#
-#     # Calculations required for driving motor conversion factors and feed forward
-#     DRIVING_MOTOR_FREE_SPEED_RPS = NeoMotorConstants.FREE_SPEED_RPM / 60
-#
-#     # 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15 teeth on the bevel pinion
-#     DRIVING_MOTOR_REDUCTION = (45.0 * 22) / (DRIVING_MOTOR_PINION_TEETH * 15)
-#     DRIVE_WHEEL_FREE_SPEED_RPS = (DRIVING_MOTOR_FREE_SPEED_RPS * WHEEL_CIRCUMFERENCE) / DRIVING_MOTOR_REDUCTION
-#
-#     DRIVING_ENCODER_POSITION_FACTOR = WHEEL_CIRCUMFERENCE / DRIVING_MOTOR_REDUCTION  # meters
-#     DRIVING_ENCODER_VELOCITY_FACTOR = WHEEL_CIRCUMFERENCE / DRIVING_MOTOR_REDUCTION / 60.0  # meters per second
-#
-#     TURNING_ENCODER_POSITION_FACTOR = math.tau  # radian
-#     TURNING_ENCODER_VELOCITY_FACTOR = math.tau / 60.0  # radians per second
-#
-#     TURNING_ENCODER_POSITION_PID_MIN_INPUT = 0  # radian
-#     TURNING_ENCODER_POSITION_PID_MAX_INPUT = TURNING_ENCODER_POSITION_FACTOR  # radian
-#
-#     DrivingP = 0.04
-#     DrivingI = 0
-#     DrivingD = 0
-#     DrivingFF = 1 / DRIVE_WHEEL_FREE_SPEED_RPS
-#     DRIVING_MIN_OUTPUT = -1
-#     DRIVING_MAX_OUTPUT = 1
-#
-#     TurningP = 1  # can be dialed down if you see oscillations in the turning motor
-#     TurningI = 0
-#     TurningD = 0
-#     TurningFF = 0
-#     TURNING_MIN_OUTPUT = -1
-#     TURNING_MAX_OUTPUT = 1
-#
-#     # DrivingMotorIdleMode = SparkBase.IdleMode.kBrake
-#     # TurningMotorIdleMode = SparkBase.IdleMode.kBrake
-#
-#     DRIVING_MOTOR_CURRENT_LIMIT = 50  # amp
-#     TURNING_MOTOR_CURRENT_LIMIT = 20  # amp
-#
-#     MIN_DRIVING_SPEED = 0.01  # Meters per second
-
-
 
 class AutoConstants:
     USE_SQRT_CONTROL = True  # improves arrival time and precision for simple driving commands

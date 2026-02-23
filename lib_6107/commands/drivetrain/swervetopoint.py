@@ -49,8 +49,7 @@ class SwerveToPoint(BaseCommand):
                  y: Optional[meters] = 0,
                  heading: Optional[Rotation2d | degrees] = 0.0,
                  speed: Optional[float] = 1.0,
-                 slow_down_at_finish: Optional[bool] = True,
-                 rate_limit: Optional[bool] = False) -> None:
+                 slow_down_at_finish: Optional[bool] = True) -> None:
         super().__init__(drivetrain)
 
         self._target_pose = None
@@ -67,7 +66,6 @@ class SwerveToPoint(BaseCommand):
 
         self._speed = min(1.0, max(0.0, speed))
         self._stop = slow_down_at_finish
-        self._rate_limit = rate_limit
 
         self._initial_position = None
         self._initial_distance = None
@@ -143,7 +141,7 @@ class SwerveToPoint(BaseCommand):
         # now rotate xSpeed and ySpeed into robot coordinates
         speed = Translation2d(x=x_speed, y=y_speed).rotateBy(-self._drivetrain.heading)
 
-        self._drivetrain.drive(speed.x, speed.y, turning_speed, field_relative=False, rate_limit=self._rate_limit)
+        self._drivetrain.drive(speed.x, speed.y, turning_speed, field_relative=False)
 
     def isFinished(self) -> bool:
         """

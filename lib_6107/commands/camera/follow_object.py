@@ -103,11 +103,11 @@ class FollowObject(commands2.Command):
                 stepSeconds = atLeast(stepSeconds * slowdownFactor, FollowObject.MIN_STEP_SECONDS)
                 speed = atLeast(speed * slowdownFactor, FollowObject.MIN_SPEED)
 
-            drive = AimToDirection(direction.degrees(), self.drivetrain, fwd_speed=speed)
+            drive = AimToDirection(self.drivetrain, direction.degrees(), fwd_speed=speed)
             newSubcommand = drive.withTimeout(stepSeconds)  # correct timeout for the step
         else:
             # 2. otherwise, rotate if robot is pointing too far from the object (or if we aren't supposed to make steps)
-            turn = AimToDirection(direction.degrees(), self.drivetrain)
+            turn = AimToDirection(self.drivetrain, direction.degrees())
 
             newSubcommand = turn
 

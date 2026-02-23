@@ -232,7 +232,6 @@ class RobotContainer:
         #                            rotationSpeed=lambda: -self.driver_controller.getRawAxis(right_axis_x),
         #                            deadband=OIConstants.DRIVE_DEADBAND,
         #                            field_relative=field_relative,
-        #                            rate_limit=True,
         #                            square=True)
         #
         # self.robot_drive.setDefaultCommand(drive_cmd)
@@ -343,7 +342,7 @@ class RobotContainer:
         and then passing it to a JoystickButton.
 
         LS == Left Stick    - Robot direction on field. Fwd, Back, Left, Right (from operators perspective)
-        RS == Right Stick   - Robot rotation  <- Counter Clockwise  -> Clockwise
+        RS == Right Stick   - Robot rotation  <- Counter-Clockwise  -> Clockwise
 
         LSB == Left Stick Button
         RSB == Right Stick Button
@@ -369,13 +368,20 @@ class RobotContainer:
         Start Button (three lines)  - Reset Gyro
         Back Button
         """
+        x_limiter = self.robot_drive.x_drive_limiter
+        y_limiter = self.robot_drive.y_drive_limiter
+        turn_limiter = self.robot_drive.turn_limiter
+
         self.robot_drive.setDefaultCommand(
-            # Drivetrain will execute this command periodically
+            # Drivetrain will execute this command periodically. The slew rate limiters are
+            # applied to both the drive and turn aspects of the command.
             self.robot_drive.apply_request(
                 lambda: (
-                    self.robot_drive.drive_request.with_velocity_x(-self.driver_controller.getLeftY() * self.max_speed)
-                    .with_velocity_y(-self.driver_controller.getLeftX() * self.max_speed)
-                    .with_rotational_rate(-self.driver_controller.getRightX() * self.max_angular_rate)
+                    self.robot_drive.drive_request.with_velocity_x(
+                        x_limiter.calculate(-self.driver_controller.getLeftY() * self.max_speed))
+                    .with_velocity_y(y_limiter.calculate(-self.driver_controller.getLeftX() * self.max_speed))
+                    .with_rotational_rate(
+                        turn_limiter.calculate(-self.driver_controller.getRightX() * self.max_angular_rate))
                 )
             )
         )

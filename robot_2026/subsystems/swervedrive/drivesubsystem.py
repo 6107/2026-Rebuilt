@@ -186,11 +186,11 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
                                                  inst=self.pigeon2)
         self._gyro.initialize()
 
-        # TODO: Support slew rate and make adjustable. There is a parameter to 'drive()'
-        #       called rate limit that currently uses the rotation & magnitude limiter
-        # Slew rate filter variables and limiters for controlling lateral acceleration
-        self.magLimiter = SlewRateLimiter(DriveConstants.MAGNITUDE_SLEW_RATE)
-        self.rotLimiter = SlewRateLimiter(DriveConstants.ROTATIONAL_SLEW_RATE)
+        # Slew rate filter variables and limiters for controlling lateral acceleration. This is only used
+        # in teleop mode. Each input requires its own limiter.
+        self.x_drive_limiter = SlewRateLimiter(DriveConstants.MAGNITUDE_SLEW_RATE)
+        self.y_drive_limiter = SlewRateLimiter(DriveConstants.MAGNITUDE_SLEW_RATE)
+        self.turn_limiter = SlewRateLimiter(DriveConstants.ROTATIONAL_SLEW_RATE)
 
         # The next attributes are set depending on if vision is unsupported for tracking the robot pose
         self._network_table_inst = None
@@ -676,7 +676,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
     def drive(self, x_speed: meters_per_second, y_speed: meters_per_second,
               rotation: radians_per_second, field_relative: Optional[bool] = False,
-              rate_limit: Optional[bool] = False, square: Optional[bool] = False) -> None:
+              square: Optional[bool] = False) -> None:
         """
         Method to drive the robot using joystick info.
 
@@ -684,13 +684,9 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         :param y_speed:        Speed of the robot in the y direction (sideways).
         :param rotation:       Angular rate of the robot.
         :param field_relative: Whether the provided x and y speeds are relative to the field.
-        :param rate_limit:     Whether to enable rate limiting for smoother control.
         :param square:         Whether to square the inputs (useful for manual control)
         """
         if square:
-            raise NotImplementedError("TODO: Look at 2025 code if you need this")
-
-        if rate_limit:
             raise NotImplementedError("TODO: Look at 2025 code if you need this")
 
         # Scale is used during development      # TODO: Condition to skip/ignore in competition

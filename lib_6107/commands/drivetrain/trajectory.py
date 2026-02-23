@@ -121,7 +121,7 @@ class JerkyTrajectory(BaseCommand):
         if direction is not None:
             degrees = direction.degrees()
             log = lambda: SmartDashboard.putString(f"command/{self.getName()}", f"aim: {degrees}")
-            aim = AimToDirection(degrees, turn_speed=self.speed, drivetrain=self._drivetrain).beforeStarting(log)
+            aim = AimToDirection(self._drivetrain, degrees, turn_speed=self.speed).beforeStarting(log)
             commands.append(aim)
 
         # connect all these commands together and start
@@ -218,13 +218,10 @@ class JerkyTrajectory(BaseCommand):
         if not self.swerve or (not last and self.swerve == "last-point"):
             # use arcade drive, if we aren't allowed to use swerve (or not allowed to use swerve for non-end points)
             command = GoToPoint(
-                point.x, point.y, drivetrain=self._drivetrain, speed=self.speed, slow_down_at_finish=slowdown
-            )
+                point.x, point.y, drivetrain=self._drivetrain, speed=self.speed, slow_down_at_finish=slowdown)
         else:
             command = SwerveToPoint(
-                point.x, point.y, heading, drivetrain=self._drivetrain, speed=self.speed, slow_down_at_finish=slowdown,
-                rate_limit=not last
-            )
+                point.x, point.y, heading, drivetrain=self._drivetrain, speed=self.speed, slow_down_at_finish=slowdown)
 
         log = lambda: SmartDashboard.putString(f"command/{self.getName()}", f"next: {point.x}, {point.y}")
         return InstantCommand(log).andThen(command)

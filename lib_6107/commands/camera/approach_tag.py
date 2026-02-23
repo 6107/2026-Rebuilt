@@ -318,9 +318,9 @@ class ApproachTag(BaseCommand):
 
         # 5. drive!
         if self._reverse:     # TODO: Make sure parameters are meters_per_second and radians_per_second
-            self._drivetrain.drive(-fwd_speed, -left_speed, rotation_speed, field_relative=False, rate_limit=False)
+            self._drivetrain.drive(-fwd_speed, -left_speed, rotation_speed, field_relative=False)
         else:
-            self._drivetrain.drive(fwd_speed, left_speed, rotation_speed, field_relative=False, rate_limit=False)
+            self._drivetrain.drive(fwd_speed, left_speed, rotation_speed, field_relative=False)
 
         # 6. debug
         state = self.get_state()
@@ -690,9 +690,9 @@ class ApproachManually(Command):
 
         # 5. drive!
         if self.reverse:     # TODO: Make sure parameters are meters_per_second and radians_per_second
-            self._drivetrain.drive(-fwdSpeed, -leftSpeed, rotation_speed, field_relative=False, rate_limit=True)
+            self._drivetrain.drive(-fwdSpeed, -leftSpeed, rotation_speed, field_relative=False)
         else:
-            self._drivetrain.drive(fwdSpeed, leftSpeed, rotation_speed, field_relative=False, rate_limit=True)
+            self._drivetrain.drive(fwdSpeed, leftSpeed, rotation_speed, field_relative=False)
 
     def get_gyro_based_rotation_speed(self):
         # 1. how many degrees are left to turn?

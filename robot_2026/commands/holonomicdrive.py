@@ -32,7 +32,7 @@ class HolonomicDrive(commands2.Command):
     """
 
     def __init__(self, robot_container, drivetrain, forwardSpeed, leftSpeed, rotationSpeed, deadband=0,
-                 field_relative: Optional[bool] = True, rate_limit: bool = False, square: bool = False):
+                 field_relative: Optional[bool] = True, square: bool = False):
         """
         Drive the robot at `driveSpeed` and `rotationSpeed` until this command is terminated.
         """
@@ -57,7 +57,6 @@ class HolonomicDrive(commands2.Command):
         self.deadband = deadband
 
         self.drivetrain = drivetrain
-        self.rate_limit = rate_limit
         self.square = square
 
         self.field_relative = field_relative
@@ -87,7 +86,7 @@ class HolonomicDrive(commands2.Command):
         self.drivetrain.drive(applyDeadband(forward_speed, self.deadband),
                               applyDeadband(left_speed, self.deadband),
                               applyDeadband(rotation_speed, self.deadband),
-                              self.field_relative, self.rate_limit, self.square)
+                              self.field_relative, self.square)
 
     def end(self, interrupted: bool):
         self.drivetrain.stop()  # stop immediately if command is ending
