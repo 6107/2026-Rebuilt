@@ -252,8 +252,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
                 self,
             ),
         )
-        """SysId routine for characterizing translation. This is used to find PID gains for the drive motors."""
-
+        """
+        SysId routine for characterizing translation. This is used to find PID gains for 
+        the drive motors.
+        """
         self._sys_id_routine_steer = SysIdRoutine(
             SysIdRoutine.Config(
                 # Use default ramp rate (1 V/s) and timeout (10 s)
@@ -273,8 +275,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
                 self,
             ),
         )
-        """SysId routine for characterizing steer. This is used to find PID gains for the steer motors."""
-
+        """
+        SysId routine for characterizing steer. This is used to find PID gains for 
+        the steer motors.
+        """
         self._sys_id_routine_rotation = SysIdRoutine(
             SysIdRoutine.Config(
                 # This is in radians per second², but SysId only supports "volts per second"
@@ -305,11 +309,12 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         """
         SysId routine for characterizing rotation.
         This is used to find PID gains for the FieldCentricFacingAngle HeadingController.
-        See the documentation of swerve.requests.SysIdSwerveRotation for info on importing the log to SysId.
+        See the documentation of swerve.requests.SysIdSwerveRotation for info on importing the 
+        log to SysId.
+        
+        The SysId routine to test
         """
-
         self._sys_id_routine_to_apply = self._sys_id_routine_translation
-        """The SysId routine to test"""
 
         if utils.is_simulation():
             self._start_sim_thread()

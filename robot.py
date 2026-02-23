@@ -258,7 +258,7 @@ class MyRobot(MyRobotBase):
             if hasattr(subsystem, "stop") and callable(getattr(subsystem, "stop")):
                 subsystem.stop()
 
-        self.container.disablePIDSubsystems()
+        self.container.disable_pid_subsystems()
 
         self.disabledTimer.reset()
         self.disabledTimer.start()

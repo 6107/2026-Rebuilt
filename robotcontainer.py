@@ -21,7 +21,7 @@ import os
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-from commands2 import button, cmd, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
+from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
@@ -41,6 +41,7 @@ from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from lib_6107.util.phoenix6_telemetry import Telemetry
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.swervedrive.point_towards_location import PointTowardsLocation
 from robot_2026.field.field_2026 import RebuiltField as Field
@@ -83,13 +84,17 @@ class RobotContainer:
         #                                                                     EventFlags.kValueAll,
         #                                                                     self._on_alliance_change)
         # The driver's controller
-        self.driver_controller = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
-
-        # TODO: WPILib has a wpimath.fileter.SlewRateLimiter to make joystick more gentle. Look into this
-        #       See https://github.com/robotpy/examples/blob/main/SwerveBot/robot.py for an example
+        self._driver_controller = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
 
         # Shooter's controller
-        self.shooter_controller: XboxController = XboxController(constants.SHOOTER_CONTROLLER_PORT)  # On USB-port
+        self._shooter_controller: XboxController = XboxController(constants.SHOOTER_CONTROLLER_PORT)
+
+        self._controllers = [(self._driver_controller, constants.DRIVER_CONTROLLER_PORT),
+                             (self._shooter_controller, constants.SHOOTER_CONTROLLER_PORT)]
+
+        if constants.CALIBRATION_CONTROLLER_PORT > 0 and constants.CALIBRATION_CONTROLLER_PORT not in self._controllers:
+            self._calibration_controller: XboxController = XboxController(constants.CALIBRATION_CONTROLLER_PORT)
+            self._controllers.append((self._calibration_controller, constants.SHOOTER_CONTROLLER_PORT))
 
         ########################################################
         # Subsystem initialization
@@ -158,7 +163,6 @@ class RobotContainer:
         # Disabled since we are using pykit for now. Kept here in case we need it for some
         # tuning with other tools
         self._phoenix_telemetry = None
-        # self._phoenix_telemetry = Telemetry(self._max_speed)
 
         ##########################################
         #   PathPlanner.  Do this last since it may pull in commands that need the previously
@@ -183,11 +187,11 @@ class RobotContainer:
 
         ########################################################
         # Configure the button bindings
-        for controller, is_driver in ((self.driver_controller, True),
-                                      (self.shooter_controller, False)):
+        for controller, port_id in self._controllers:
             if isinstance(controller, CommandXboxController):
-                self.configure_button_bindings_xbox(controller, is_driver)
-            else:
+                self.configure_button_bindings_xbox(controller, port_id)
+
+            elif controller is not None:
                 logger.error(f"Unsupported controller type {type(controller)}")
 
         # Configure the additional autos that do not come from pathplanner
@@ -327,13 +331,20 @@ class RobotContainer:
     def elapsed_time(self) -> float:
         return time.time() - self.start_time
 
-    def configure_button_bindings_xbox(self, controller: button.CommandXboxController, is_driver: bool) -> None:
+    def configure_button_bindings_xbox(self, controller: button.CommandXboxController, port_id: int) -> None:
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
-        if is_driver:
-            return self._configure_driver_button_bindings_xbox(controller)
+        match port_id:
+            case constants.DRIVER_CONTROLLER_PORT:
+                return self._configure_driver_button_bindings_xbox(controller)
 
-        return self._configure_shooter_button_bindings_xbox(controller)
+            case constants.SHOOTER_CONTROLLER_PORT:
+                return self._configure_shooter_button_bindings_xbox(controller)
+
+            case constants.CALIBRATION_CONTROLLER_PORT:
+                # NOTE: can set calibration port to same as another controller, but the
+                #       last one called will take over any shared button bindings
+                return self._configure_calibration_button_bindings_xbox(controller)
 
     def _configure_driver_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
@@ -378,10 +389,10 @@ class RobotContainer:
             self.robot_drive.apply_request(
                 lambda: (
                     self.robot_drive.drive_request.with_velocity_x(
-                        x_limiter.calculate(-self.driver_controller.getLeftY() * self.max_speed))
-                    .with_velocity_y(y_limiter.calculate(-self.driver_controller.getLeftX() * self.max_speed))
+                        x_limiter.calculate(-self._driver_controller.getLeftY() * self.max_speed))
+                    .with_velocity_y(y_limiter.calculate(-self._driver_controller.getLeftX() * self.max_speed))
                     .with_rotational_rate(
-                        turn_limiter.calculate(-self.driver_controller.getRightX() * self.max_angular_rate))
+                        turn_limiter.calculate(-self._driver_controller.getRightX() * self.max_angular_rate))
                 )
             )
         )
@@ -438,23 +449,7 @@ class RobotContainer:
             self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
         )
         # Start Button
-        controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
-
-        # Back Buttons (complex.  TODO Investigate these)
-        # Run SysId routines when holding back/start and X/Y.
-        # Note that each routine should be run exactly once in a single log.
-        (controller.back() & controller.y()).whileTrue(
-            self.robot_drive.sys_id_dynamic(SysIdRoutine.Direction.kForward)
-        )
-        (controller.back() & controller.x()).whileTrue(
-            self.robot_drive.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
-        )
-        (controller.start() & controller.y()).whileTrue(
-            self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
-        )
-        (controller.start() & controller.x()).whileTrue(
-            self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
-        )
+        # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
 
     def _configure_shooter_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
@@ -522,6 +517,72 @@ class RobotContainer:
                                                            threshold=0.5)
         right_bumper_pressed.whileTrue(track_any_tag)
 
+    def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
+        """
+        Use this method to define your button->command mappings. Buttons can be created by
+        instantiating a :GenericHID or one of its subclasses (Joystick or XboxController),
+        and then passing it to a JoystickButton.
+
+        LS == Left Stick    - Robot direction on field. Fwd, Back, Left, Right (from operators perspective)
+        RS == Right Stick   - Robot rotation  <- Counter-Clockwise  -> Clockwise
+
+        LSB == Left Stick Button
+        RSB == Right Stick Button
+
+        D-Pad == Directional Pad
+                - Up
+                - Right    - Rotate 360 degrees clockwise
+                - Down
+                - Left     - Rotate 360 degrees counter-clockwise
+
+        LB == Left Bumper
+        RB == Right Bumper
+
+        LT == Left Trigger
+        RT == Right Trigger
+
+        A == A Button (Bottom) - Brake
+        B == B Button (Right)  - Align all wheels in direction or Left Stick's Y value
+        Y == Y Button (Top)    -
+        X == X Button (Left)   -
+
+        Start Button (three lines)  - Reset Gyro
+        Back Button
+        """
+        controller.a().whileTrue(
+            self.robot_drive.apply_request(lambda: self.robot_drive.brake_request)
+        )
+        # B Button - Align all wheels in the direction of the left stick Y value
+        controller.b().whileTrue(
+            self.robot_drive.apply_request(
+                lambda: self.robot_drive.point_at_request.with_module_direction(
+                    Rotation2d(-controller.getLeftY(),
+                               -controller.getLeftX())
+                )
+            )
+        )
+        # Run SysId routines when holding back/start and X/Y.
+        # Note that each routine should be run exactly once in a single log.
+        (controller.back() & controller.y()).whileTrue(
+            self.robot_drive.sys_id_dynamic(SysIdRoutine.Direction.kForward)
+        )
+        (controller.back() & controller.x()).whileTrue(
+            self.robot_drive.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
+        )
+        (controller.start() & controller.y()).whileTrue(
+            self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
+        )
+        (controller.start() & controller.x()).whileTrue(
+            self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
+        )
+
+        # reset the field-centric heading on left bumper press
+        controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
+
+        self._phoenix_telemetry = Telemetry(self._max_speed)
+
+        self.robot_drive.register_telemetry(lambda state: self._phoenix_telemetry.telemeterize(state))
+
     def _init_vision_subsystems(self) -> List[Subsystem]:
         camera_subsystems = []
         # TODO: Do we need to prioritize the cameras so some cameras get serviced first in a multi-vision robot
@@ -535,7 +596,7 @@ class RobotContainer:
 
         return camera_subsystems
 
-    def disablePIDSubsystems(self) -> None:
+    def disable_pid_subsystems(self) -> None:
         """
         Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
         This should be called on robot disable to prevent integral windup.

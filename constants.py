@@ -58,6 +58,7 @@ ROBOT_Y_WIDTH_DEFAULT: meters = 0.4
 # Device CAN bus IDs
 DRIVER_CONTROLLER_PORT = 0
 SHOOTER_CONTROLLER_PORT = 1
+CALIBRATION_CONTROLLER_PORT = 2  # Set to < 0 to disable initialization
 
 DEFAULT_FREQUENCY: hertz = 50.0
 ODOMETRY_FREQUENCY: hertz = 100.0  # Primarily for yaw

@@ -23,7 +23,7 @@ try:
     from ntcore import NetworkTableInstance
     from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
     from wpimath.geometry import Transform3d, Rotation2d, Pose3d
-    from wpimath.units import milliseconds, seconds, meters
+    from wpimath.units import milliseconds, seconds, meters, percent, degrees
 
     import constants
     from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData, VisionConsumer
@@ -92,6 +92,37 @@ try:
 
         def _get_latest_results(self) -> Optional[PhotonPipelineResult]:
             self._latest_results = self._camera.getLatestResult()
+            return self._latest_results
+
+        @property
+        def valid(self) -> bool:
+            raise self.isConnected()
+
+        @property
+        def area(self) -> percent:
+            """
+            Target Area (0..100] percent of image
+            """
+            target: Optional[VisionTargetData] = self.best_target
+            return target.area if target else 0
+
+        @property
+        def x_offset(self) -> degrees:
+            """
+            Horizontal Offset from Crosshair to Target
+            """
+            target: Optional[VisionTargetData] = self.best_target
+            return target.yaw if target else 0
+
+        @property
+        def y_offset(self) -> degrees:
+            """
+            Vertical Offset from Crosshair to Target
+            """
+            target: Optional[VisionTargetData] = self.best_target
+            return target.pitch if target else 0
+
+        def get_latest_results(self) -> Optional[PhotonPipelineResult]:
             return self._latest_results
 
         def periodic(self) -> None:

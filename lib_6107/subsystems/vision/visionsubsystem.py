@@ -224,6 +224,10 @@ class VisionSubsystem(Subsystem, VisionIO):
         raise NotImplementedError("TODO: Implement in subclass")
 
     def get_latest_results(self) -> Optional[Any]:
+        #
+        # TODO: When we implement the Limelight, see if we can get a generic
+        #       structure along the lines of PhotonPipelineResults or better.
+        #
         raise NotImplementedError("Implement in subclass")
 
     def periodic(self):
