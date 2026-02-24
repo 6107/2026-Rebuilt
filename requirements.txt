@@ -14,16 +14,16 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-wpilib                  == 2026.2.1
-robotpy                 == 2026.2.1   # Main module and CLI for the robotics platform
-robotpy-apriltag        == 2026.2.1
-robotpy-commands-v2     == 2026.2.1
+wpilib                  == 2026.2.1.1
+robotpy                 == 2026.2.1.1  # Main module and CLI for the robotics platform
+robotpy-apriltag        == 2026.2.1.1
+robotpy-commands-v2     == 2026.2.1.1
 robotpy-pathplannerlib  == 2026.1.2
 robotpy-cli             == 2026.0.1
 phoenix6                == 26.1.1
-robotpy-rev             == 2026.0.3
-robotpy-cscore          == 2026.2.1
-pyntcore                == 2026.2.1
+robotpy-rev             == 2026.0.3.1
+robotpy-cscore          == 2026.2.1.1
+pyntcore                == 2026.2.1.1
 certifi                 == 2026.1.4
 
 # Vision support
