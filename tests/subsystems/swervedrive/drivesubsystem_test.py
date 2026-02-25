@@ -17,9 +17,8 @@
 
 from pyfrc.test_support.controller import TestController
 
-import constants
-from robot import MyRobot
-from robot_2026.generated.tuner_constants import TunerConstants
+from robot import MyRobot, constants
+from generated.tuner_constants import TunerConstants
 
 
 def test_module_offsets(control: TestController, robot: MyRobot):

@@ -627,6 +627,7 @@ class RobotContainer:
         self._limit_chooser.setDefaultOption("20%", 0.2)
         self._limit_chooser.addOption("40%", 0.4)
         self._limit_chooser.addOption("60%", 0.6)
+        self._limit_chooser.addOption("80%", 0.8)
         self._limit_chooser.addOption("100%", 1.0)
 
         SmartDashboard.putData("Drive rate limiter", self._limit_chooser)

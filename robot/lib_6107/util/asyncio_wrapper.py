@@ -26,8 +26,8 @@ import time
 from typing import Optional
 
 from robot2025.service import RobotService
-from util.debug import debug_enable
-from util.logging import init_logging
+from util import debug_enable
+from util import init_logging
 from version import VERSION
 from wpilib import RobotBase
 

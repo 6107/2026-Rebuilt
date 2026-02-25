@@ -22,7 +22,7 @@ SHELL = bash -eu -o pipefail
 # Variables
 THIS_MAKEFILE	:= $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 WORKING_DIR		:= $(dir $(THIS_MAKEFILE))
-PACKAGE_DIR     := $(WORKING_DIR)
+PACKAGE_DIR     := $(WORKING_DIR)robot
 TEST_DIR        := $(WORKING_DIR)tests
 
 include .make/setup.mk

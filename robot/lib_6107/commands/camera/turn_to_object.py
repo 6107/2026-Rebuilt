@@ -16,41 +16,18 @@
 # ------------------------------------------------------------------------ #
 # From Gene Panov's (Team 714) CommandRevSwerve project (and FRC Python videos)
 #
-import commands2
-from commands.aimtodirection import AimToDirection
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 
 
-class FindObject(commands2.Command):
+def turn_to_object(camera, drivetrain) -> None:
+    """
+    This command is used to have the robot camera rotate the object in the
+    direction of an object
 
-    def __init__(self, camera, drivetrain, turnDegrees=-45, turnSpeed=1.0, waitSeconds=0.1):
-        super().__init__()
-        self.camera0 = camera
-        self.drivetrain = drivetrain
-        self.addRequirements(camera)
-        self.addRequirements(drivetrain)
+    If you want the robot to slowly chase that object... replace the 'self.rotate'
+    line below with: self.arcadeDrive(0.1, turn_speed)
 
-        # to find object, we will be running (wait + turn) + (wait + turn) ... in a long cycle, until object is detected
-        wait = commands2.WaitCommand(waitSeconds)
-        turn = AimToDirection(self.drivetrain,
-                              degrees=lambda: self.drivetrain.heading.degrees() + turnDegrees,
-                              speed=turnSpeed)
-
-        self.subcommand = wait.andThen(turn)
-
-    def initialize(self):
-        self.subcommand.initialize()
-
-    def isFinished(self) -> bool:
-        return self.camera0.valid()
-
-    def execute(self):
-        # 1. just execute the wait+turn subcommand
-        self.subcommand.execute()
-
-        # 2. and if that command is finished, start it again (we are doing cycles, right?)
-        if self.subcommand.isFinished():
-            self.subcommand.end(False)
-            self.subcommand.initialize()
-
-    def end(self, interrupted: bool):
-        self.subcommand.end(interrupted)
+    """
+    x = camera.getX()
+    turn_speed = -0.01 * x
+    drivetrain.rotate(turn_speed)
