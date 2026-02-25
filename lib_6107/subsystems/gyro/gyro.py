@@ -25,7 +25,7 @@ from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
 
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
-from util.logtracer import LogTracer
+from robot_2026.util.logtracer import LogTracer
 
 try:
     import navx

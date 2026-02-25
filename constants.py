@@ -183,7 +183,7 @@ FRONT_CAMERA_INFO = {
 }
 
 REAR_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_LIMELIGHT,
+    "Type"     : CAMERA_TYPE_NONE,
     "Label"    : "rear",
     "Name"     : "LimeLight",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(-6.0), y=inchesToMeters(0.0), z=inchesToMeters(12.0)),

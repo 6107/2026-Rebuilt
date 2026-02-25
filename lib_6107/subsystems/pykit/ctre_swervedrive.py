@@ -32,7 +32,7 @@ from wpimath.units import meters, meters_per_second
 import constants
 from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from util.logtracer import LogTracer
+from robot_2026.util.logtracer import LogTracer
 
 
 class CtreSwerveModule(SwerveModuleIO):

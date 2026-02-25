@@ -17,7 +17,7 @@
 
 from typing import Optional
 
-import cv2
+#import cv2
 import numpy as np
 import wpimath.controller
 from wpilib import SmartDashboard

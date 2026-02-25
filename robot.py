@@ -39,7 +39,7 @@ import constants
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
 from robotcontainer import RobotContainer
-from util.logtracer import LogTracer
+from robot_2026.util.logtracer import LogTracer
 
 if True:
     from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot as MyRobotBase

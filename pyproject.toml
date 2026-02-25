@@ -35,24 +35,23 @@ components = [
     "apriltag",
     "commands2",
     "cscore",
-    "rev",
-    "pathplannerlib",
-    "phoenix6",
-    "sim",
-    "pykit"
+    "sim"
 ]
 
 # Other pip packages to install
 requires = [
+    "robotpy-pathplannerlib==2026.1.2",
     "photonlibpy==2026.2.2",
     "limelightlib-python==0.9.6",
-    "pyntcore==2026.2.1",
-    "chardet== 5.2.0"
+    "pyntcore==2026.2.1.1",
+    "chardet== 5.2.0",
+    "phoenix6==26.1.1",
+    "robotpy-pykit==1.0.4"
 ]
 
 # List of paths to include
 include_paths = [
-    "lib_6101",
+    "lib_6107",
     "robot_2026",
     "deploy"
 ]

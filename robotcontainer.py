@@ -623,8 +623,8 @@ class RobotContainer:
         self._limit_chooser = SendableChooser()
 
         # you can also set the default option, if needed
-        self._limit_chooser.setDefaultOption("10%", 0.1)
-        self._limit_chooser.addOption("20%", 0.2)
+        self._limit_chooser.addOption("10%", 0.1)
+        self._limit_chooser.setDefaultOption("20%", 0.2)
         self._limit_chooser.addOption("40%", 0.4)
         self._limit_chooser.addOption("60%", 0.6)
         self._limit_chooser.addOption("100%", 1.0)
