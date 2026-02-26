@@ -84,16 +84,16 @@ class RobotContainer:
         #                                                                     EventFlags.kValueAll,
         #                                                                     self._on_alliance_change)
         # The driver's controller
-        self._driver_controller = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
+        self._driver_controller: CommandXboxController = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
 
         # Shooter's controller
-        self._shooter_controller: XboxController = XboxController(constants.SHOOTER_CONTROLLER_PORT)
+        self._shooter_controller: CommandXboxController = CommandXboxController(constants.SHOOTER_CONTROLLER_PORT)
 
         self._controllers = [(self._driver_controller, constants.DRIVER_CONTROLLER_PORT),
                              (self._shooter_controller, constants.SHOOTER_CONTROLLER_PORT)]
 
         if constants.CALIBRATION_CONTROLLER_PORT > 0 and constants.CALIBRATION_CONTROLLER_PORT not in self._controllers:
-            self._calibration_controller: XboxController = XboxController(constants.CALIBRATION_CONTROLLER_PORT)
+            self._calibration_controller: CommandXboxController = CommandXboxController(constants.CALIBRATION_CONTROLLER_PORT)
             self._controllers.append((self._calibration_controller, constants.SHOOTER_CONTROLLER_PORT))
 
         ########################################################
@@ -494,7 +494,6 @@ class RobotContainer:
         ).onFalse(
             InstantCommand(lambda: self.shooter.stop())
         )
-
         track_any_tag = TrackTagCommand(self.robot_drive, self._cameras["front"], 0)
         right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
                                                            threshold=0.5)

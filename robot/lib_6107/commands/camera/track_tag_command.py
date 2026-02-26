@@ -37,7 +37,7 @@ class TrackTagCommand(BaseCommand):
         apriltag detection algorithm. If 'rotate_only' is true, then the robot will turn
         in place.
         """
-        super().__init__()
+        super().__init__(drivetrain)
         self._drivetrain = drivetrain
         self._target_id = target_id
         self._best_target_id = target_id
