@@ -18,12 +18,13 @@
 import logging
 from typing import Optional, SupportsFloat, SupportsInt
 
+from commands2 import Subsystem
 from wpiutil import Sendable, SendableBuilder, SendableRegistry
 
 logger = logging.getLogger(__name__)
 
 
-class IntegerEditBox(Sendable):
+class IntegerEditBox(Subsystem):
     def __init__(self, name: str,
                  initial_value: Optional[int] = None,
                  minimum_value: Optional[int] = None,
@@ -33,10 +34,11 @@ class IntegerEditBox(Sendable):
         self._value: int | None = None
         self._min: int | None = minimum_value
         self._max: int | None = maximum_value
+        self.setName(name)
 
         # Validate that the initial value is what we accept
         self.set_value(initial_value)
-        SendableRegistry.add(self, name)
+        SendableRegistry.add(self, name=name)
 
     def __str__(self) -> str:
         return str(self._value)
@@ -50,13 +52,10 @@ class IntegerEditBox(Sendable):
 
     def initSendable(self, builder: SendableBuilder) -> None:
         # Define how to send data to SmartDashboard
-        builder.setSmartDashboardType("IntegerEditBox")
+        builder.setSmartDashboardType("String Chooser")
 
         # Add a property that can be read and written
-        builder.addIntegerProperty(self._name, self.get_value, self.set_value)
-
-    def get_value(self) -> int | None:
-        return self._value
+        builder.addIntegerProperty(self._name, lambda: self._value, lambda value: self.set_value(value))
 
     def set_value(self, value: SupportsInt) -> None:
         if isinstance(value, int):
@@ -85,7 +84,7 @@ class FloatEditBox(Sendable):
 
         # Validate that the initial value is what we accept
         self.set_value(initial_value)
-        SendableRegistry.add(self, name)
+        # SendableRegistry.add(self, subsystem="Subsystem", name=name)
 
     def __str__(self) -> str:
         return str(self._value)
@@ -99,13 +98,10 @@ class FloatEditBox(Sendable):
 
     def initSendable(self, builder: SendableBuilder) -> None:
         # Define how to send data to SmartDashboard
-        builder.setSmartDashboardType("FloatEditBox")
+        builder.setSmartDashboardType("Subsystem")
 
         # Add a property that can be read and written
-        builder.addDoubleProperty(self._name, self.get_value, self.set_value)
-
-    def get_value(self) -> float | None:
-        return self._value
+        builder.addDoubleProperty(self._name, lambda: self._value, self.set_value)
 
     def set_value(self, value: SupportsFloat) -> None:
         if isinstance(value, float):
