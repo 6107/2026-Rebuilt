@@ -168,7 +168,13 @@ class RobotContainer:
         #   PathPlanner.  Do this last since it may pull in commands that need the previously
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
-        self._auto_chooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+        try:
+            self._auto_chooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+
+        except FileNotFoundError:
+            logger.error("PathPlanner 'autos' directory does not exist")
+            self._auto_chooser = SendableChooser()
+
         self._auto_end_chooser = SendableChooser()
 
         self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT

@@ -33,8 +33,8 @@ import time
 
 from pyfrc.physics.core import PhysicsInterface
 
-from field.field_2026 import BLUE_TEST_POSE, RED_TEST_POSE
 from robot import MyRobot
+from robot_2026.field.field_2026 import BLUE_TEST_POSE, RED_TEST_POSE
 
 logger = logging.getLogger(__name__)
 

@@ -46,7 +46,8 @@ requires = [
     "pyntcore==2026.2.1.1",
     "chardet== 5.2.0",
     "phoenix6==26.1.1",
-    "robotpy-pykit==1.0.4"
+    "robotpy-pykit==1.0.4",
+    "robotpy-rev==2026.0.3.1"
 ]
 
 # List of paths to include

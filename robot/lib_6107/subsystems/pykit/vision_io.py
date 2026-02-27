@@ -52,7 +52,6 @@ class PoseObservation:
     """
     Represents a robot pose sample used for pose estimation
     """
-
     def __init__(self, timestamp: seconds, pose: Pose3d, ambiguity: float,
                  tag_count: int, avg_tag_distance: meters,
                  observation_type: PoseObservationType):

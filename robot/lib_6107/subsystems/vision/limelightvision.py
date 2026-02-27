@@ -30,9 +30,7 @@ try:
         IntegerPublisher, DoubleSubscriber, DoubleArraySubscriber
 
     from limelight import Limelight
-    # from limelightresults import FiducialResult, GeneralResult, DetectorResult
-    # from lib_6107.subsystems.vision.deprecated.limelight_camera import LimelightCamera
-    # from lib_6107.subsystems.vision.deprecated.limelight_localizer import LimelightLocalizer
+    from limelightresults import FiducialResult, GeneralResult, DetectorResult, parse_results
 
     from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData, VisionConsumer
     from lib_6107.util.field import Field
@@ -47,10 +45,7 @@ try:
             super().__init__(info, drivetrain, field)
 
             self._camera: Limelight = Limelight(self._name)
-
-            self._path: str = self._network_table.getPath()
-
-            # self._latest_results: Optional[LimelightResults] = None
+            self._latest_results: Optional[GeneralResult] = None
 
             self._pipeline_index_request: DoublePublisher = self._network_table.getDoubleTopic("pipeline").publish()
             self._pipeline_index: DoubleEntry = self._network_table.getDoubleTopic("getpipe").getEntry(-1)
@@ -67,25 +62,25 @@ try:
             self._last_heartbeat_time = 0
             self._heart_beating = False
 
-            self._localizer_subscribed = False
             self._robot_orientation_set_request: Optional[DoubleArrayPublisher] = None
             self._camera_pose_set_request: Optional[DoubleArrayPublisher] = None
             self._imu_mode_request: Optional[IntegerPublisher] = None  # this is only for Limelight 4
 
-            # and we can then receive the localizer results from the camera back
-            self._robot_pose: DoubleArrayEntry = self._network_table.getDoubleArrayTopic(
-                "botpose_orb_wpiblue").getEntry([])
-            self._robot_pose_flipped: DoubleArrayEntry = self._network_table.getDoubleArrayTopic(
-                "botpose_orb_wpired").getEntry([])
+            self._robot_pose: Optional[DoubleArrayEntry] = None
+            self._robot_pose_flipped: Optional[DoubleArrayEntry] = None
 
-            # Load the initial field layout
-            # TODO: Is there a way to query existing field layout so we can possibly skip this
-            #       step?
-            # TODO: Below needs JSON
-            #  self._camera.upload_fieldmap(self._field_layout)
+            if self._estimate:
+                # The estimator is used if the drive subsystem does not support a way to add
+                # individual pose elements into it's pose estimation. For the CTRE (phoenix6)
+                # drives, there is a supported method to add individual elements and so we do
+                # not set up our own.
+                self.add_localizer()
 
-            # TODO: New pykit required changes
-            # TODO: Some of the subscribers or publishers may be duplicated with 'add_localizer' code that is pre-pykit (and never tested)
+            # Enable WebSockets
+            self._camera.enable_websocket()
+
+            # TODO: If websockets works as expected, minimize the NT4 items below
+
             # I/O Implementation for real Limelight hardware
             # self.rotationSupplier: Supplier<Rotation2d>     = None
             self.orientation_publisher: DoubleArrayPublisher = self._network_table.getDoubleArrayTopic(
@@ -99,17 +94,13 @@ try:
             self.megatag2_subscriber: DoubleArraySubscriber = self._network_table.getDoubleArrayTopic(
                 "botpose_orb_wpiblue").subscribe([])
 
-        def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
-            """
-            Operator selected a different field layout.
-            """
-            pass  # TODO: Support in future
-
         def add_localizer(self):
-            if self._localizer_subscribed:
-                return
+            # Load the initial field layout
+            self._camera.upload_fieldmap(self._field_layout)
 
-            self._localizer_subscribed = True
+            # Register for field layout changes
+            Field.register_layout_callback(self._on_field_change)
+
             # if we want MegaTag2 localizer to work, we need to be publishing two things (to the camera):
             #   1. what robot's yaw is ("yaw=0 degrees" means "facing North", "yaw=90 degrees" means "facing West", etc.)
             #   2. where is this camera sitting on the robot (e.g. y=-0.2 meters to the right, x=0.1 meters fwd from center)
@@ -124,6 +115,19 @@ try:
             self._robot_pose = self._network_table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
             self._robot_pose_flipped = self._network_table.getDoubleArrayTopic("botpose_orb_wpired").getEntry([])
 
+        def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
+            """
+            Operator selected a different field layout.
+            """
+            self._camera.upload_fieldmap(layout)  # TODO: This is untested (not needed in 2026)
+
+        def _get_latest_results(self) -> Optional[GeneralResult]:
+            """
+            Get the latest targeting data from the camera via the WebSocket connection
+            """
+            self._latest_results = parse_results(self._camera.get_latest_results())
+            return self._latest_results
+
         @property
         def pipeline(self) -> int:
             return int(self._pipeline_index.get(-1))
@@ -134,14 +138,34 @@ try:
 
         @property
         def latency(self) -> Optional[milliseconds]:
-            return None
+            # TODO: Also have a targeting latency.  See which to use?
+            results: Optional[GeneralResult] = self._latest_results or self._get_latest_results()
+            return results.targeting_latency if results is not None else None
 
         @property
         def timestamp(self) -> Optional[seconds]:
             """
             Returns the estimated time the frame was taken, in the Received system's time base
             """
-            return None
+            results: Optional[GeneralResult] = self._latest_results or self._get_latest_results()
+            return results.timestamp if results is not None else None
+
+        @staticmethod
+        def get_vision_data(results: FiducialResult):
+            return VisionTargetData(results.target_x_degrees,
+                                    results.target_y_degrees,
+                                    results.target_area,
+                                    results.fiducial_id,
+                                    None,  # TODO: pose ambiguity
+                                    None,  # TODO: best camera to target
+                                    None)  # TODO: alt camera to target
+
+        # self.skew = fiducial_data["skew"]
+        # self.camera_pose_target_space = fiducial_data["t6c_ts"]
+        # self.robot_pose_field_space = fiducial_data["t6r_fs"]
+        # self.robot_pose_target_space = fiducial_data["t6r_ts"]
+        # self.target_pose_camera_space = fiducial_data["t6t_cs"]
+        # self.target_pose_robot_space = fiducial_data["t6t_rs"]
 
         @property
         def best_target(self) -> Optional[VisionTargetData]:
@@ -149,32 +173,39 @@ try:
             Returns the best target in this pipeline result. If there are no targets, this method will
             return null. The best target is determined by the target sort mode in the PhotonVision UI.
             """
+            results: Optional[GeneralResult] = self._latest_results or self._get_latest_results()
+            if results is not None and len(results.fiducialResults) > 0:
+                return self.get_vision_data(results.fiducialResults[0])
+
             return None
 
         @property
         def valid(self) -> bool:
-            return self.x != 0.0 and self._heart_beating
+            return self._heart_beating
 
         @property
         def area(self) -> percent:
             """
             Target Area (0..100] percent of image
             """
-            return self._ta.get()
+            target: Optional[VisionTargetData] = self.best_target
+            return target.area if target else 0
 
         @property
         def x_offset(self) -> degrees:
             """
             Horizontal Offset from Crosshair to Target [-29.9..29.8] degrees
             """
-            return self._tx.get()
+            target: Optional[VisionTargetData] = self.best_target
+            return target.yaw if target else 0
 
         @property
         def y_offset(self) -> degrees:
             """
             Vertical Offset from Crosshair to Target [-24.85..24.85]
             """
-            return self._ty.get()
+            target: Optional[VisionTargetData] = self.best_target
+            return target.pitch if target else 0
 
         @property
         def hb(self) -> float:
@@ -186,8 +217,15 @@ try:
         def get_seconds_since_last_heartbeat(self) -> float:
             return Timer.getFPGATimestamp() - self._last_heartbeat_time
 
+        def get_latest_results(self) -> Optional[GeneralResult]:
+            return self._latest_results
+
         def periodic(self) -> None:
             super().periodic()
+
+            if not self._is_simulation:
+                # Clear latest_results so we will get new results on the next pass
+                self._latest_results = None
 
             now = Timer.getFPGATimestamp()
             heartbeat = self.hb
@@ -203,12 +241,6 @@ try:
 
             self._heart_beating = heart_beating
 
-            # Update SmartDashboard for this subsystem at a rate slower than the period
-            counter = self._robot.counter
-            if counter % 100 == 0 or (self._robot.counter % 15 == 0 and
-                                      self._robot.isEnabled()):
-                self.dashboard_periodic()
-
         def simulationPeriodic(self):
             super().simulationPeriodic()
 
@@ -216,7 +248,7 @@ try:
 
         def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
             """
-            Pykit support for AdvantageScope
+            Pykit support for AdvantageScope.  Called from base class's 'periodic' function
             """
             # TODO: Tie in the heartbeat with the determination of 'connected' below
             inputs.connected = (RobotController.getFPGATime() - self.latency_subscriber.getLastChange()) / 1000 < 250
@@ -230,8 +262,8 @@ try:
             # Read new pose observations from NetworkTables
             # TODO: In java version of this, this is a set. We want a set but we need to keep order perhaps?
             inputs.tag_ids = []
+            inputs.pose_observations = []
 
-            pose_observations: List[PoseObservation] = []
             for rawSample in self.megatag1_subscriber.readQueue():
                 sample_len = len(rawSample.value)
                 if sample_len == 0:

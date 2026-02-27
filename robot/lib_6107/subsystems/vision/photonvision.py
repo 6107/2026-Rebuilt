@@ -47,10 +47,14 @@ try:
             self._estimator: Optional[PhotonPoseEstimator] = None
 
             if self._estimate:
+                # The estimator is used if the drive subsystem does not support a way to add
+                # individual pose elements into it's pose estimation. For the CTRE (phoenix6)
+                # drives, there is a supported method to add individual elements and so we do
+                # not set up our own.
                 self._estimator: PhotonPoseEstimator = PhotonPoseEstimator(self._field_layout,
                                                                            self._camera_transform)
-            # Register for field layout changes
-            field.register_layout_callback(self._on_field_change)
+                # Register for field layout changes
+                field.register_layout_callback(self._on_field_change)
 
         def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
             """
@@ -58,6 +62,10 @@ try:
             """
             if self._estimator is not None:
                 self._estimator.fieldTags = layout
+
+        def _get_latest_results(self) -> Optional[PhotonPipelineResult]:
+            self._latest_results = self._camera.getLatestResult()
+            return self._latest_results
 
         @property
         def latency(self) -> Optional[milliseconds]:
@@ -86,17 +94,15 @@ try:
             if photon_target is None:
                 return None
 
-            return VisionTargetData(photon_target.yaw, photon_target.pitch, photon_target.area,
-                                    photon_target.fiducialId, photon_target.poseAmbiguity,
-                                    photon_target.bestCameraToTarget, photon_target.altCameraToTarget)
-
-        def _get_latest_results(self) -> Optional[PhotonPipelineResult]:
-            self._latest_results = self._camera.getLatestResult()
-            return self._latest_results
+            return VisionTargetData(photon_target.yaw, photon_target.pitch,
+                                    photon_target.area, photon_target.fiducialId,
+                                    photon_target.poseAmbiguity,
+                                    photon_target.bestCameraToTarget,
+                                    photon_target.altCameraToTarget)
 
         @property
         def valid(self) -> bool:
-            raise self.isConnected()
+            raise self._camera is not None and self._camera.isConnected()
 
         @property
         def area(self) -> percent:
@@ -128,12 +134,7 @@ try:
         def periodic(self) -> None:
             super().periodic()
 
-            if not self._is_simulation and self._estimator is not None:
-                latest_result: Optional[PhotonPipelineResult] = self.get_latest_results()
-
-                if latest_result is not None and latest_result.hasTargets:
-                    self._estimator.TODO("WHAT TO DO HERE?")
-
+            if not self._is_simulation:
                 # Clear latest_results so we will get new results on the next pass
                 self._latest_results = None
 
@@ -150,14 +151,14 @@ try:
 
             # Update estimator with simulated data
             # if self._estimator is not None:
-            # TODO: elf._estimator.update()
+            # TODO: self._estimator.update()
 
             # Clear latest_results so we will get new results on the next pass
             self._latest_results = None
 
         def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
             """
-            Pykit support for AdvantageScope
+            Pykit support for AdvantageScope.  Called from base class's 'periodic' function
             """
             inputs.connected = self._camera.isConnected()
 

@@ -39,11 +39,11 @@ from wpimath.units import degrees, meters, meters_per_second, radians_per_second
 
 from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
     WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
-from field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
-from generated.tuner_constants import TunerSwerveDrivetrain
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
 from lib_6107.subsystems.pykit.robot_state import RobotState
+from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
+from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
 from robot_2026.subsystems.swervedrive.constants import DriveConstants
 from robot_2026.util.logtracer import LogTracer
 

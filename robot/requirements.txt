@@ -24,7 +24,7 @@ phoenix6                == 26.1.1
 robotpy-rev             == 2026.0.3.1
 robotpy-cscore          == 2026.2.1.1
 pyntcore                == 2026.2.1.1
-certifi                 == 2026.1.4
+certifi                 == 2026.2.25
 
 # Vision support
 photonlibpy             == 2026.2.2

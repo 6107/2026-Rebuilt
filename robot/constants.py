@@ -176,17 +176,21 @@ FRONT_CAMERA_INFO = {
     "Type"     : CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(-5.0), y=inchesToMeters(0.0), z=inchesToMeters(12.0)),
+    "Transform": Transform3d(Translation3d(x=inchesToMeters(-5.0),
+                                           y=inchesToMeters(0.0),
+                                           z=inchesToMeters(12.0)),
                              Rotation3d(0.0, 0.0, degreesToRadians(0.0))),
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
 }
 
 REAR_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_NONE,
+    "Type"     : CAMERA_TYPE_LIMELIGHT,
     "Label"    : "rear",
     "Name"     : "LimeLight",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(-6.0), y=inchesToMeters(0.0), z=inchesToMeters(12.0)),
+    "Transform": Transform3d(Translation3d(x=inchesToMeters(-6.0),
+                                           y=inchesToMeters(0.0),
+                                           z=inchesToMeters(12.0)),
                              Rotation3d(0.0, 0.0, degreesToRadians(180.0))),
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
@@ -196,7 +200,9 @@ LEFT_CAMERA_INFO = {
     "Type"     : CAMERA_TYPE_NONE,
     "Label"    : "left",
     "Name"     : "",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(0), y=inchesToMeters(0), z=inchesToMeters(0)),
+    "Transform": Transform3d(Translation3d(x=inchesToMeters(0),
+                                           y=inchesToMeters(0),
+                                           z=inchesToMeters(0)),
                              Rotation3d(0.0, 0.0, degreesToRadians(90.0))),
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
@@ -206,7 +212,9 @@ RIGHT_CAMERA_INFO = {
     "Type"     : CAMERA_TYPE_NONE,
     "Label"    : "right",
     "Name"     : "",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(0), y=inchesToMeters(0), z=inchesToMeters(0)),
+    "Transform": Transform3d(Translation3d(x=inchesToMeters(0),
+                                           y=inchesToMeters(0),
+                                           z=inchesToMeters(0)),
                              Rotation3d(0.0, 0.0, degreesToRadians(270.0))),
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
@@ -226,6 +234,10 @@ ANGULAR_STD_DEV_BASELINE: radians = 0.06
 # Multipliers to apply for MegaTag 2 observations
 LINEAR_STD_DEV_MEGATAG2_FACTOR: float = 0.5  # More stable than full 3D solve
 ANGULAR_STD_DEV_MEGATAG2_FACTOR: float = math.inf  # No rotation data available
+
+# Vision Pipeline for Apriltags. The pipelines need to be manually
+# set up in the camera and should use the following pipeline number. (0..9).
+APRILTAGS_PIPELINE = 0
 
 #################################################################################
 # OPENTelemetry Support
