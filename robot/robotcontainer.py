@@ -41,6 +41,7 @@ from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from lib_6107.util.numerical_chooser import IntegerEditBox
 from lib_6107.util.phoenix6_telemetry import Telemetry
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.swervedrive.point_towards_location import PointTowardsLocation
@@ -176,6 +177,11 @@ class RobotContainer:
             self._auto_chooser = SendableChooser()
 
         self._auto_end_chooser = SendableChooser()
+        self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
+                                                   initial_value=100,
+                                                   minimum_value=100,
+                                                   maximum_value=5000)
+        SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
 
         self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT
         self._robot_y_width: meters = ROBOT_Y_WIDTH_DEFAULT
@@ -500,11 +506,6 @@ class RobotContainer:
         ).onFalse(
             InstantCommand(lambda: self.shooter.stop())
         )
-        track_any_tag = TrackTagCommand(self.robot_drive, self._cameras["front"], 0)
-        right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
-                                                           threshold=0.5)
-        right_bumper_pressed.whileTrue(track_any_tag)
-
         # Left trigger - create a command for keeping the robot nose pointed towards the hub
         keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
                                                          self._field.hub_location(False),
@@ -517,10 +518,13 @@ class RobotContainer:
         when_left_trigger_pressed.whileTrue(keep_pointing_towards_hub)
 
         # Right bumper - track an apriltag around the room
-        track_any_tag = TrackTagCommand(self.robot_drive, self._cameras["front"], 0)
-        right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
-                                                           threshold=0.5)
-        right_bumper_pressed.whileTrue(track_any_tag)
+        front_camera = self._cameras.get("front")
+
+        if front_camera is not None:
+            track_any_tag = TrackTagCommand(self.robot_drive, front_camera, 0)
+            right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
+                                                              threshold=0.5)
+            right_bumper_pressed.whileTrue(track_any_tag)
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """

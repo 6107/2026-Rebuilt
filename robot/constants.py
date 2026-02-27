@@ -95,7 +95,6 @@ WHEEL_LOCK_TIME: seconds = 3  # seconds
 
 # Joystick Deadband
 JOYSTICK_DEADBAND = 0.1
-TURN_CONSTANT = 6
 
 GYRO_REVERSED = False  # (affects field-relative driving)
 
@@ -139,7 +138,6 @@ class DeviceID(IntEnum):
     # Climber Subsystem
     CLIMBER_DEVICE_ID = 33
 
-
 #################################################################################
 # IP Address Assignments.  Not used in code, but kept here for recording purposes
 #                          and are the 'At Home' assigned values
@@ -173,7 +171,7 @@ ROBORIO_USB_STATIC = "172.22.11.2"
 # Camera configurations
 
 FRONT_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_PHOTONVISION,
+    "Type": CAMERA_TYPE_NONE,  # TODO: CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(-5.0),
@@ -185,7 +183,7 @@ FRONT_CAMERA_INFO = {
 }
 
 REAR_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_LIMELIGHT,
+    "Type": CAMERA_TYPE_NONE,  # TODO: CAMERA_TYPE_LIMELIGHT,
     "Label"    : "rear",
     "Name"     : "LimeLight",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(-6.0),
@@ -237,7 +235,7 @@ ANGULAR_STD_DEV_MEGATAG2_FACTOR: float = math.inf  # No rotation data available
 
 # Vision Pipeline for Apriltags. The pipelines need to be manually
 # set up in the camera and should use the following pipeline number. (0..9).
-APRILTAGS_PIPELINE = 0
+APRILTAGS_PIPELINE = 0  # TODO: Need to set this up in all our cameras
 
 #################################################################################
 # OPENTelemetry Support
