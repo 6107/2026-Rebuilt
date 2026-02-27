@@ -104,7 +104,7 @@ class FloatEditBox(Sendable):
         # Add a property that can be read and written
         builder.addDoubleProperty(self._name, self.get_value, self.set_value)
 
-    def get_value(self) -> int | float | None:
+    def get_value(self) -> float | None:
         return self._value
 
     def set_value(self, value: SupportsFloat) -> None:
