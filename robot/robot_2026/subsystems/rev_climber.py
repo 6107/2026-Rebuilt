@@ -108,6 +108,10 @@ class RevClimber(Subsystem):
     def periodic(self) -> None:
         self._position = self._encoder.getPosition()
 
-    def stop(self) -> None:
+    def stop(self, brake: bool) -> None:
         self._pid_controller.setReference(self.position, SparkMax.ControlType.kPosition)
         self._motor.stopMotor()
+
+        if brake:
+            # TODO: Anything else to brake?
+            pass

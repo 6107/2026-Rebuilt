@@ -44,11 +44,12 @@ from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox
 from lib_6107.util.phoenix6_telemetry import Telemetry
 from robot_2026.commands.autonomous import pathplanner
+from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.commands.swervedrive.point_towards_location import PointTowardsLocation
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
-from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
+from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
 
@@ -444,9 +445,8 @@ class RobotContainer:
             )
         )
         # Y Button - Reset x/y to defaults and heading to 'North' (0 degrees)
-        controller.b().whileTrue(
-            ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0)
-        )
+        controller.b().whileTrue(ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0))
+
         # POV-UP: Drive forward at 1/2 speed
         controller.povUp().whileTrue(
             self.robot_drive.apply_request(
@@ -479,9 +479,9 @@ class RobotContainer:
         RSB == Right Stick Button
 
         D-Pad == Directional Pad
-                - Up
+                - Up       - Retract the climbing arm (robot goes up)
                 - Right
-                - Down
+                - Down     - Extend the climbing arm (robot goes down)
                 - Left
 
         LB == Left Bumper
@@ -528,6 +528,14 @@ class RobotContainer:
             right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
                                                               threshold=0.5)
             right_bumper_pressed.whileTrue(track_any_tag)
+
+        # POV-UP: Retract the climbing arm (robot goes up)
+        retract_command = RetractClimber(self, manual=True, position_goal=5)
+        controller.povUp().onTrue(retract_command).andThen(InstantCommand(lambda: self.climber.stop(True)))
+
+        # POV-DOWN: Extend the climbing arm (robot goes down)
+        extend_command = ExtendClimber(self, manual=True, position_goal=-5)
+        controller.povUp().onTrue(extend_command).andThen(InstantCommand(lambda: self.climber.reset()))
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
