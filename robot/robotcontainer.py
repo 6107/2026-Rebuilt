@@ -48,6 +48,7 @@ from robot_2026.commands.swervedrive.point_towards_location import PointTowardsL
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
+from robot_2026.subsystems.rev_climber import RevClimber as Climber
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +122,6 @@ class RobotContainer:
         #   VISION
         #
         self._cameras: Dict[str, Any] = {}
-        # self._localizer: Optional[Subsystem] = None
         self._field: Field = Field()
 
         camera_subsystems = self._init_vision_subsystems()
@@ -131,6 +131,7 @@ class RobotContainer:
         #   SHOOTER
         #
         self.shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        # self.subsystems.append(self.shooter)
 
         ##########################################
         #   INDEXER
@@ -143,6 +144,8 @@ class RobotContainer:
         ##########################################
         #   CLIMBER
         #
+        self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
+        #self.subsystems.append(self.climber)
 
         ##########################################
         #   ALERTS
