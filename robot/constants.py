@@ -160,7 +160,7 @@ ROBORIO_MDMS = f"roboRIO-{TEAM}-frc.local"
 TEAM_LAPTOP_MDMS = f"{TEAM}-frc.local"
 CHIPS_LAPTOP_MDNS = ".local"
 
-PHOTONVISION_MDMS = "photonvision.local"  # TODO: Make unique, add team #
+PHOTONVISION_MDMS = "pv-6107-frc.local"
 LIMELIGHT_MDMS = "limelight.local"  # TODO: Make unique, add team #
 LIMELIGHT_ALT_MDMS = "limelight-alt.local"  # TODO: Make unique, add team #
 
