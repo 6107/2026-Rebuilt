@@ -28,7 +28,6 @@ from pathplannerlib.auto import NamedCommands
 
 from lib_6107.commands.command import BaseCommand
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
-from robotcontainer import RobotContainer
 
 RETRACT_LEVEL_ONE_REVOLUTIONS = 5
 EXTEND_LEVEL_ONE_REVOLUTIONS = -(RETRACT_LEVEL_ONE_REVOLUTIONS + 1)
@@ -44,10 +43,9 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
     trip.
     """
 
-    def __init__(self, container: RobotContainer, **kwargs):
+    def __init__(self, container: 'RobotContainer', **kwargs):
         super().__init__(container)
 
-        self._drivetrain = container.robot.drivetrain
         self._climber: Climber = container.climber
         self._position_goal: float = kwargs.get("position_goal", 0.0)
         self._manual_command: bool = kwargs.get("manual", False)
@@ -103,7 +101,7 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
     """
 
     @staticmethod
-    def pathplanner_register(container: RobotContainer) -> None:
+    def pathplanner_register(container: 'RobotContainer') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner
@@ -133,7 +131,7 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
     """
 
     @staticmethod
-    def pathplanner_register(container: RobotContainer) -> None:
+    def pathplanner_register(container: 'RobotContainer') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

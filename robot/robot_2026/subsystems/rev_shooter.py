@@ -16,8 +16,9 @@
 # ------------------------------------------------------------------------ #
 
 from commands2 import Subsystem
+from commands2.button import Trigger
 from rev import PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkMax
-from wpilib import SmartDashboard
+from wpilib import SendableChooser, SmartDashboard
 from wpimath.units import revolutions_per_minute
 
 
@@ -58,6 +59,20 @@ class RevShooter(Subsystem):
 
         self._pid_controller = self._shooter_motor.getClosedLoopController()
         self._encoder = self._shooter_motor.getEncoder()
+
+        # TODO: Remove following once all works
+        self._enable_chooser = SendableChooser()
+        self._enable_chooser.setDefaultOption("False", False)
+        self._enable_chooser.addOption("True", True)
+        SmartDashboard.putData("Shooter Enabled", self._enable_chooser)
+
+    @property
+    def enabled(self) -> bool:
+        return self._enable_chooser.getSelected()
+
+    @property
+    def subsystem_trigger(self) -> Trigger:
+        return Trigger(lambda: self.enabled)
 
     @staticmethod
     def _motor_config(inverted: bool) -> SparkBaseConfig:

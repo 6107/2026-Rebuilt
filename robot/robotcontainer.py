@@ -447,22 +447,33 @@ class RobotContainer:
         # Y Button - Reset x/y to defaults and heading to 'North' (0 degrees)
         controller.b().whileTrue(ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0))
 
-        # POV-UP: Drive forward at 1/2 speed
-        controller.povUp().whileTrue(
-            self.robot_drive.apply_request(
-                lambda: self.robot_drive.forward_straight_request.with_velocity_x(0.5).with_velocity_y(0)
-            )
-        )
-        # POV-DOWN: Drive backwards at 1/2 speed
-        controller.povDown().whileTrue(
-            self.robot_drive.apply_request(
-                lambda: self.robot_drive.forward_straight_request.with_velocity_x(-0.5).with_velocity_y(0)
-            )
-        )
-        # Left Bumper - reset the field-centric heading on left bumper press
-        controller.leftBumper().onTrue(
-            self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
-        )
+        # # POV-UP: Drive forward at 1/2 speed
+        # controller.povUp().whileTrue(
+        #     self.robot_drive.apply_request(
+        #         lambda: self.robot_drive.forward_straight_request.with_velocity_x(0.5).with_velocity_y(0)
+        #     )
+        # )
+        # # POV-DOWN: Drive backwards at 1/2 speed
+        # controller.povDown().whileTrue(
+        #     self.robot_drive.apply_request(
+        #         lambda: self.robot_drive.forward_straight_request.with_velocity_x(-0.5).with_velocity_y(0)
+        #     )
+        # )
+        # # Left Bumper - reset the field-centric heading on left bumper press
+        # controller.leftBumper().onTrue(
+        #     self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
+        # )
+
+        # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
+        climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
+        retract_command = RetractClimber(self, manual=True, position_goal=5)
+        climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+
+        # POV-DOWN: Extend the climbing arm (robot goes down)
+        climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
+        extend_command = ExtendClimber(self, manual=True, position_goal=-5)
+        climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
 
@@ -529,13 +540,15 @@ class RobotContainer:
                                                               threshold=0.5)
             right_bumper_pressed.whileTrue(track_any_tag)
 
-        # POV-UP: Retract the climbing arm (robot goes up)
+        # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
+        climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
         retract_command = RetractClimber(self, manual=True, position_goal=5)
-        controller.povUp().onTrue(retract_command).andThen(InstantCommand(lambda: self.climber.stop(True)))
+        climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
 
         # POV-DOWN: Extend the climbing arm (robot goes down)
+        climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
         extend_command = ExtendClimber(self, manual=True, position_goal=-5)
-        controller.povUp().onTrue(extend_command).andThen(InstantCommand(lambda: self.climber.reset()))
+        climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """

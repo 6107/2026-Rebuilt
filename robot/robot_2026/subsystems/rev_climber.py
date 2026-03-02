@@ -16,10 +16,12 @@
 # ------------------------------------------------------------------------ #
 
 from commands2 import Subsystem
+from commands2.button import Trigger
 from rev import PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkMax
-from wpilib import SmartDashboard
+from wpilib import SendableChooser, SmartDashboard
 from wpimath.controller import PIDController
 from wpimath.units import amperes, revolutions_per_minute
+
 
 # TODO: Move following to constant
 # TODO: Run the REV Hardware Client and come up with our numbers
@@ -31,6 +33,7 @@ class ClimberConstants:
     INTEGRAL_COEFFICIENT = 0.1         # kI
     DERIVATIVE_COEFFICIENT = 0.0       # kD
     LIMIT_CURRENT: amperes = 35
+    IZONE_RANGE = 0.0
 
 class RevClimber(Subsystem):
 
@@ -50,13 +53,30 @@ class RevClimber(Subsystem):
                               PersistMode.kPersistParameters)
 
         self._encoder = self._motor.getEncoder()
-        self._encoder.setPosition = 0
-        self._position = 0
-        self._position_goal = 0
-        self._pid_controller = PIDController(ClimberConstants.PROPORTIONAL_COEFFICIENT,
-                                             ClimberConstants.INTEGRAL_COEFFICIENT,
-                                             ClimberConstants.DERIVATIVE_COEFFICIENT)
+        self._encoder.setPosition(0.0)
+        self._position: float = 0.0
+        self._position_goal: float = 0.0
+        self._pid_controller: PIDController = PIDController(ClimberConstants.PROPORTIONAL_COEFFICIENT,
+                                                            ClimberConstants.INTEGRAL_COEFFICIENT,
+                                                            ClimberConstants.DERIVATIVE_COEFFICIENT)
+        self._pid_controller.setIZone(ClimberConstants.IZONE_RANGE)
+
+        # TODO: How do we choose the speed/RPM
         # self._target_rpm = ClimberConstants.TARGET_RPM
+
+        # TODO: Remove following once all works
+        self._enable_chooser = SendableChooser()
+        self._enable_chooser.setDefaultOption("False", False)
+        self._enable_chooser.addOption("True", True)
+        SmartDashboard.putData("Climber Enabled", self._enable_chooser)
+
+    @property
+    def enabled(self) -> bool:
+        return self._enable_chooser.getSelected()
+
+    @property
+    def subsystem_trigger(self) -> Trigger:
+        return Trigger(lambda: self.enabled)
 
     @staticmethod
     def _motor_config(inverted: bool) -> SparkBaseConfig:
@@ -92,7 +112,7 @@ class RevClimber(Subsystem):
         self._motor.stopMotor()
         self._position = 0
         self._position_goal = 0
-        self._encoder.setPosition = 0
+        self._encoder.setPosition(0.0)
         self._pid_controller.reset()
 
     @property
@@ -103,13 +123,13 @@ class RevClimber(Subsystem):
     def position(self, position: float) -> None:
         if self._position_goal != position:
             self._position_goal = position
-            self._pid_controller.setReference(position, SparkMax.ControlType.kPosition)
+            self._pid_controller.setSetpoint(position)
 
     def periodic(self) -> None:
         self._position = self._encoder.getPosition()
 
     def stop(self, brake: bool) -> None:
-        self._pid_controller.setReference(self.position, SparkMax.ControlType.kPosition)
+        self._pid_controller.setSetpoint(self.position)
         self._motor.stopMotor()
 
         if brake:
