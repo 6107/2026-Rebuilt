@@ -674,6 +674,10 @@ class RobotContainer:
         """
         self._auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
 
+        # Put sys IDs to run as automation (if not in competition)
+        if not DriverStation.isFMSAttached():
+            self._auto_chooser.addOption("Climber SysID", self.climber.sysIdRoutine(self.climber))
+
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
 

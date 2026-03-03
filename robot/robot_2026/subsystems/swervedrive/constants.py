@@ -40,8 +40,8 @@ class DriveConstants:
     # joystick the voltage values are -1.0..1.0. So if rate was 2.0, it would take
     # a full second to swing from full reverse to full forward.
 
-    MAGNITUDE_SLEW_RATE = 4.0  # percent per second (1 = 100%)
-    ROTATIONAL_SLEW_RATE = 4.0  # percent per second (1 = 100%)
+    MAGNITUDE_SLEW_RATE = 2.0  # percent per second (1 = 100%)
+    ROTATIONAL_SLEW_RATE = 2.0  # percent per second (1 = 100%)
 
     # Chassis configuration
     TRACK_WIDTH = units.inchesToMeters(8.75 + 8.75)  # From YAGSL JSON offsets

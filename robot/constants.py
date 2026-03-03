@@ -51,8 +51,8 @@ ROBOT_MASS: kilograms = lbsToKilograms(148 - 20.3)  # 32lbs * kg per pound
 
 # Robot size (including bumpers). Defaults, use PathPlanner to set actual value to
 #                                 use if PathPlanner is supported
-ROBOT_X_WIDTH_DEFAULT: meters = 0.4
-ROBOT_Y_WIDTH_DEFAULT: meters = 0.4
+ROBOT_X_WIDTH_DEFAULT: meters = inchesToMeters(33)
+ROBOT_Y_WIDTH_DEFAULT: meters = inchesToMeters(33)
 
 ###############################################################################
 # Device CAN bus IDs
