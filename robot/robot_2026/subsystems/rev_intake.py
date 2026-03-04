@@ -261,23 +261,23 @@ class RevIntake(Subsystem, RotationMechanismIO):
     def sysIdRoutine(self, subsystem: Subsystem, left: bool) -> Command:
         """Model the behavior of the climber (for better control) by sweeping through the max and min heights."""
 
-        def logState(state: State) -> None:
-            logged_state = ""
+        def log_state(state: State) -> None:
+            state = ""
             match state:
                 case State.kQuasistaticForward:
-                    logged_state = "quasistatic-forward"
+                    state = "quasistatic-forward"
                 case State.kQuasistaticReverse:
-                    logged_state = "quasistatic-reverse"
+                    state = "quasistatic-reverse"
                 case State.kDynamicForward:
-                    logged_state = "dynamic-forward"
+                    state = "dynamic-forward"
                 case State.kDynamicReverse:
-                    logged_state = "dynamic-reverse"
+                    state = "dynamic-reverse"
                 case State.kNone:
-                    logged_state = "none"
+                    state = "none"
             which = "Left" if left else "Right"
-            Logger.recordOutput("Intake/LeftMotor/SysID State", logged_state)
+            Logger.recordOutput(f"Intake/{which}-Motor/SysID State", state)
 
-        characterization_routine = SysIdRoutine(SysIdRoutine.Config(0.5, 6, 10, logState),
+        characterization_routine = SysIdRoutine(SysIdRoutine.Config(0.5, 6, 10, log_state),
                                                 SysIdRoutine.Mechanism(self.set_voltage,
                                                                        (lambda _: None),
                                                                        subsystem))
