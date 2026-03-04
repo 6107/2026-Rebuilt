@@ -16,7 +16,6 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-import math
 
 from commands2 import Subsystem, cmd
 from commands2.button import Trigger
@@ -28,10 +27,9 @@ from rev import PersistMode, ResetMode, SparkBase, SparkFlex, SparkFlexConfig, S
 from wpilib import SendableChooser, SmartDashboard
 from wpilib.sysid import State
 from wpimath.controller import PIDController
-from wpimath.units import amperes, revolutions_per_minute, volts, degrees, meters, inches, \
-    inchesToMeters, degrees_per_second
+from wpimath.units import amperes, revolutions_per_minute, volts, degrees, meters, inches
 
-from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -51,13 +49,13 @@ class IntakeConstants:
     TOLERANCE: degrees = 2.0
 
 @autologgable_output
-class RevIntake(Subsystem, RotationMechanismIO):
+class RevIntake(Subsystem, DualMechanismIO):
 
     def __init__(self, container: 'RobotContainer',
                  can_left_device_id: int, can_right_device_id: int,
                  left_inverted: bool, right_inverted: bool) -> None:
         Subsystem.__init__(self)
-        RotationMechanismIO.__init__(self, "Intake")
+        DualMechanismIO.__init__(self, "Intake")
 
         # General attributes
         self.setName(self.__class__.__name__)
@@ -68,8 +66,7 @@ class RevIntake(Subsystem, RotationMechanismIO):
         self._right_device_id = can_right_device_id
         self._right_inverted = right_inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
-        self._left_inputs = RotationMechanismIO.RotationMechanismIOInputs()
-        self._right_inputs = RotationMechanismIO.RotationMechanismIOInputs()
+        self._inputs = DualMechanismIO.DualMechanismIOInputs()
 
         # Set up the motor controller
         self._left_motor = SparkFlex(self._left_device_id, SparkBase.MotorType.kBrushless)
@@ -153,25 +150,25 @@ class RevIntake(Subsystem, RotationMechanismIO):
 
     @property
     def left_position(self) -> degrees:
-        return self._left_inputs.mechanism_position
+        return self._inputs.mechanism_1_position
 
     @property
     def right_position(self) -> degrees:
-        return self._right_inputs.mechanism_position
+        return self._inputs.mechanism_2_position
 
-    def set_position(self, position: inches) -> None:
+    def set_position_goal(self, position: inches) -> None:
         if self._position_goal != position:
             self._position_goal = position
             self._left_pid_controller.setSetpoint(position)
             self._right_pid_controller.setSetpoint(position)
 
     def at_min(self, left: bool) -> bool:
-        position = self._left_inputs.mechanism_position if left else self._right_inputs.mechanism_position
+        position = self._inputs.mechanism_1_position if left else self._inputs.mechanism_2_position
         return position <= IntakeConstants.MIN_HEIGHT + \
             IntakeConstants.TOLERANCE
 
     def at_max(self, left: bool) -> bool:
-        position = self._left_inputs.mechanism_position if left else self._right_inputs.mechanism_position
+        position = self._inputs.mechanism_1_position if left else self._inputs.mechanism_2_position
         return position >= IntakeConstants.MAX_HEIGHT - \
             IntakeConstants.TOLERANCE
 
@@ -182,8 +179,7 @@ class RevIntake(Subsystem, RotationMechanismIO):
     def periodic(self) -> None:
         LogTracer.resetOuter("IntakeSubsystem periodic")
 
-        self.updateLeftInputs(self._left_inputs)
-        self.updateRightInputs(self._right_inputs)
+        self.updateInputs(self._inputs)
 
         Logger.processInputs("Intake", self._inputs)
         LogTracer.record("UpdateInputs")
@@ -214,27 +210,23 @@ class RevIntake(Subsystem, RotationMechanismIO):
         """
         SmartDashboard.putNumber("Intake/goal", self._position_goal)
         SmartDashboard.putNumber("Intake/left-position", self.left_position)
-        SmartDashboard.putNumber("Intake/left-speed", self._left_inputs.mechanism_speed)
+        SmartDashboard.putNumber("Intake/left-speed", self._inputs.mechanism_1_speed)
         SmartDashboard.putNumber("Intake/right-position", self.right_position)
-        SmartDashboard.putNumber("Intake/right-speed", self._right_inputs.mechanism_speed)
+        SmartDashboard.putNumber("Intake/right-speed", self._inputs.mechanism_2_speed)
         SmartDashboard.putBoolean("Intake/closed-loop", self._closed_loop)
 
-    def updateLeftInputs(self, inputs: RotationMechanismIO.RotationMechanismIOInputs) -> None:
-        inputs.mechanism_connected = True   # TODO: Figure this one out
-        inputs.mechanism_position = self._left_encoder.getPosition()
-        inputs.mechanism_speed = self._left_encoder.getVelocity()
+    def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
+        inputs.mechanism_1_connected = True   # TODO: Figure this one out
+        inputs.mechanism_1_position = self._left_encoder.getPosition()
+        inputs.mechanism_1_speed = self._left_encoder.getVelocity()
+        inputs.mechanism_1_applied_voltage = self._left_motor.getBusVoltage()
+        inputs.mechanism_1_supply_current = self._left_motor.getOutputCurrent()
 
-        inputs.mechanism_applied_voltage = self._left_motor.getBusVoltage()
-        inputs.mechanism_supply_current = self._left_motor.getOutputCurrent()
-        # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
-
-    def updateRightInputs(self, inputs: RotationMechanismIO.RotationMechanismIOInputs) -> None:
-        inputs.mechanism_connected = True   # TODO: Figure this one out
-        inputs.mechanism_position = self._right_encoder.getPosition()
-        inputs.mechanism_speed = self._right_encoder.getVelocity()
-
-        inputs.mechanism_applied_voltage = self._right_motor.getBusVoltage()
-        inputs.mechanism_supply_current = self._right_motor.getOutputCurrent()
+        inputs.mechanism_2_connected = True   # TODO: Figure this one out
+        inputs.mechanism_2_position = self._right_encoder.getPosition()
+        inputs.mechanism_2_speed = self._right_encoder.getVelocity()
+        inputs.mechanism_2_applied_voltage = self._right_motor.getBusVoltage()
+        inputs.mechanism_2_supply_current = self._right_motor.getOutputCurrent()
         # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
 
     def set_position(self, position: inches) -> None:
@@ -258,12 +250,11 @@ class RevIntake(Subsystem, RotationMechanismIO):
         self._left_motor.setVoltage(voltage)
         self._right_motor.setVoltage(voltage)
 
-    def sysIdRoutine(self, subsystem: Subsystem, left: bool) -> Command:
+    def sys_id_routine(self, subsystem: Subsystem, left: bool) -> Command:
         """Model the behavior of the climber (for better control) by sweeping through the max and min heights."""
 
-        def log_state(state: State) -> None:
-            state = ""
-            match state:
+        def log_state(sys_id_state: State) -> None:
+            match sys_id_state:
                 case State.kQuasistaticForward:
                     state = "quasistatic-forward"
                 case State.kQuasistaticReverse:
