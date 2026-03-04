@@ -50,6 +50,7 @@ from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
 from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
+from robot_2026.subsystems.rev_intake import RevIntake as Intake
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,7 @@ class RobotContainer:
         #   SHOOTER
         #
         self.shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        # self.subsystems.append(self.shooter)
+        self.subsystems.append(self.shooter)
 
         ##########################################
         #   INDEXER
@@ -141,6 +142,10 @@ class RobotContainer:
         ##########################################
         #   INTAKE
         #
+        self.intake = Intake(self,
+                             DeviceID.INTAKE_LEFT_MOTOR_DEVICE_ID,
+                             DeviceID.INTAKE_RIGHT_MOTOR_DEVICE_ID,
+                             False, False)
 
         ##########################################
         #   CLIMBER
@@ -228,6 +233,7 @@ class RobotContainer:
             if hasattr(subsystem, "dashboard_initialize") and callable(getattr(subsystem,
                                                                                "dashboard_initialize")):
                 subsystem.dashboard_initialize()
+
         #########################################################
         # Specific commands based on time remaining
 

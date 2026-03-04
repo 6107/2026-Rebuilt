@@ -133,7 +133,8 @@ class DeviceID(IntEnum):
     SHOOTER_DEVICE_ID = 30
 
     # Intake Subsystem
-    INTAKE_DEVICE_ID = 31
+    INTAKE_LEFT_MOTOR_DEVICE_ID = 31
+    INTAKE_RIGHT_MOTOR_DEVICE_ID = 32
 
     # Climber Subsystem
     CLIMBER_DEVICE_ID = 33

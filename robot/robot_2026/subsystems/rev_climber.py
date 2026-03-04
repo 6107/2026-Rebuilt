@@ -122,7 +122,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
     def reset(self) -> None:
         self._motor.stopMotor()
-        self._position = 0
         self._position_goal = 0
         self._encoder.setPosition(0.0)
         self._pid_controller.reset()
@@ -153,7 +152,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
             ClimberConstants.CLIMBER_TOLERANCE
 
     def stop(self, brake: bool) -> None:
-        self._pid_controller.setSetpoint(self.position)
         self._motor.stopMotor()
 
         if brake:
