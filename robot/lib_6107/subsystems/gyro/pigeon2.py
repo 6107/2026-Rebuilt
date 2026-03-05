@@ -29,6 +29,7 @@ from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_p
 from constants import DEFAULT_FREQUENCY
 from lib_6107.subsystems.gyro.gyro import Gyro, GyroIO
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import try_until_ok
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +62,7 @@ class Pigeon2(Gyro):
         config: Pigeon2Configuration = Pigeon2Configuration()
         config.pigeon2_features.enable_compass = False
 
-        for _ in range(5):
-            if self._gyro.configurator.apply(config, timeout_seconds=0.2).is_ok():
-                break
-
+        try_until_ok("Pigeon2", 5, lambda: self._gyro.configurator.apply(config, timeout_seconds=0.2))
         self._update_hz: hertz = update_frequency
 
         # Next two are for use by pykit for AdvantageScope support

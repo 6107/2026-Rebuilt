@@ -17,19 +17,22 @@
 
 import logging
 
-from commands2 import Subsystem, cmd
+from commands2 import cmd, Subsystem
 from commands2.button import Trigger
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
-from rev import PersistMode, ResetMode, SparkBase, SparkFlex, SparkFlexConfig, SparkRelativeEncoder
-from wpilib import SendableChooser, SmartDashboard
+from rev import PersistMode, ResetMode, SparkBase, SparkFlex, SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, \
+    SparkRelativeEncoderSim
+from wpilib import RobotBase, SendableChooser, SmartDashboard
 from wpilib.sysid import State
+from wpimath._controls._controls.plant import DCMotor
 from wpimath.controller import PIDController
-from wpimath.units import amperes, revolutions_per_minute, volts, degrees, meters, inches
+from wpimath.units import amperes, degrees, inches, meters, revolutions_per_minute, volts
 
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
+from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -70,20 +73,30 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         # Set up the motor controller
         self._left_motor = SparkFlex(self._left_device_id, SparkBase.MotorType.kBrushless)
-        self._left_motor.configure(self._motor_config(self._left_inverted),
-                              ResetMode.kResetSafeParameters,
-                              PersistMode.kPersistParameters)
+        try_until_ok("Left Intake", 5,
+                     lambda: self._left_motor.configure(self._motor_config(self._left_inverted),
+                                                        ResetMode.kResetSafeParameters,
+                                                        PersistMode.kNoPersistParameters))
 
         self._right_motor = SparkFlex(self._right_device_id, SparkBase.MotorType.kBrushless)
-        self._right_motor.configure(self._motor_config(self._right_inverted),
-                              ResetMode.kResetSafeParameters,
-                              PersistMode.kPersistParameters)
+        try_until_ok("Right Intake", 5,
+                     lambda: self._right_motor.configure(self._motor_config(self._right_inverted),
+                                                         ResetMode.kResetSafeParameters,
+                                                         PersistMode.kNoPersistParameters))
         # Set up the encoders
         self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
         self._left_encoder.setPosition(0.0)
 
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
         self._right_encoder.setPosition(0.0)
+
+        # Support simulation
+        if RobotBase.isSimulation():
+            self._left_sim_motor = SparkFlexSim(self._left_motor, DCMotor.NEO(1))
+            self._right_sim_motor = SparkFlexSim(self._right_motor, DCMotor.NEO(1))
+
+            self._left_sim_encoder = SparkRelativeEncoderSim(self._left_motor)
+            self._right_sim_encoder = SparkRelativeEncoderSim(self._right_motor)
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
@@ -251,7 +264,9 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._right_motor.setVoltage(voltage)
 
     def sys_id_routine(self, subsystem: Subsystem, left: bool) -> Command:
-        """Model the behavior of the climber (for better control) by sweeping through the max and min heights."""
+        """
+        Model the behavior of the intake (for better control) by sweeping through the max and min heights.
+        """
 
         def log_state(sys_id_state: State) -> None:
             match sys_id_state:
@@ -265,6 +280,7 @@ class RevIntake(Subsystem, DualMechanismIO):
                     state = "dynamic-reverse"
                 case State.kNone:
                     state = "none"
+
             which = "Left" if left else "Right"
             Logger.recordOutput(f"Intake/{which}-Motor/SysID State", state)
 

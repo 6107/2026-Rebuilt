@@ -17,37 +17,42 @@
 
 import logging
 import math
+from typing import Optional
 
-from commands2 import Subsystem, cmd
+from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
-from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
-from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, SparkRelativeEncoder
-from wpilib import SendableChooser, SmartDashboard
+from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, \
+    SparkRelativeEncoderSim
+from wpilib import RobotBase, SendableChooser, SmartDashboard
 from wpilib.sysid import State
+from wpimath._controls._controls.plant import DCMotor
 from wpimath.controller import PIDController
-from wpimath.units import amperes, revolutions_per_minute, volts, meters, inches, inchesToMeters
+from wpimath.units import amperes, inches, inchesToMeters, meters, revolutions_per_minute, volts
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
+
 class ClimberConstants:
     TARGET_RPM: revolutions_per_minute = 10
-    PROPORTIONAL_COEFFICIENT = 0.1     # kP
-    INTEGRAL_COEFFICIENT = 0.1         # kI
-    DERIVATIVE_COEFFICIENT = 0.0       # kD
+    PROPORTIONAL_COEFFICIENT = 0.1  # kP
+    INTEGRAL_COEFFICIENT = 0.1  # kI
+    DERIVATIVE_COEFFICIENT = 0.0  # kD
     LIMIT_CURRENT: amperes = 35
     IZONE_RANGE = 0.0
     GEAR_RATIO = 25.0
-    DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
-    SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
+    DRIVE_VOLTAGE: volts = 0.10  # Start at 10% power
+    SPOOL_DIAMETER: meters = 1.0  # TODO: Use an algorythm to compensate for cord already spooled in
     CLIMBER_MIN_HEIGHT: meters = 0.0
-    CLIMBER_MAX_HEIGHT: meters = inchesToMeters(9.0)    # TODO: Guess for now
-    CLIMBER_TOLERANCE: meters = 0.05    # 5 cm
+    CLIMBER_MAX_HEIGHT: meters = inchesToMeters(9.0)  # TODO: Guess for now
+    CLIMBER_TOLERANCE: meters = 0.05  # 5 cm
+
 
 @autologgable_output
 class RevClimber(Subsystem, RotationMechanismIO):
@@ -64,15 +69,22 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._inverted = inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
         self._inputs = RotationMechanismIO.RotationMechanismIOInputs()
+        self._physics_controller = None
 
         # Set up the motor controller
         self._motor = SparkMax(can_device_id, SparkBase.MotorType.kBrushless)
-        self._motor.configure(self._motor_config(self._inverted),
-                              ResetMode.kResetSafeParameters,
-                              PersistMode.kPersistParameters)
+        try_until_ok("Climber", 5,
+                     lambda: self._motor.configure(self._motor_config(self._inverted),
+                                                   ResetMode.kResetSafeParameters,
+                                                   PersistMode.kNoPersistParameters))
         # Set up the encoder
         self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
         self._encoder.setPosition(0.0)
+
+        # Support simulation
+        if RobotBase.isSimulation():
+            self._sim_motor = SparkMaxSim(self._motor, DCMotor.NEO(1))
+            self._sim_encoder = SparkRelativeEncoderSim(self._motor)
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
@@ -126,6 +138,14 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._encoder.setPosition(0.0)
         self._pid_controller.reset()
 
+    def stop(self, brake: bool) -> None:
+        self._pid_controller.setSetpoint(self.position)
+        self._motor.stopMotor()
+
+        if brake:
+            # TODO: Anything else to brake?
+            pass
+
     @property
     def closed_loop(self) -> bool:
         return self._closed_loop
@@ -157,6 +177,40 @@ class RevClimber(Subsystem, RotationMechanismIO):
         if brake:
             # TODO: Anything else to brake?
             pass
+
+    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
+        """
+        Initialize any simulation only needed parameters
+        """
+        self._physics_controller = physics_controller
+        # TODO: Anything
+
+    def simulationPeriodic(self, **kwargs) -> Optional[float]:
+        """
+        This method is called periodically by the CommandScheduler (after the periodic
+        function. It is useful for updating subsystem-specific state that needs to be
+        maintained for simulations, such as for updating simulation classes and setting
+        simulated sensor readings.
+
+        Unlike the physics 'update_sim', it is not called with the current time (now)
+        or the amount of time since 'update_sim' was called (tm_diff).  It is called
+        just after the 'periodic' call and before the 'update_sim' is called.
+
+        To unify the two uses, our call signature above has a kwargs parameter so we
+        know when we are being called. Typically, we only need to support one method
+        but for future simulation purposes, if called with keywords, return the amperage
+        used in this interval
+        """
+        # For the swerve drive, we only support the 'update_sim' form of call
+        if not kwargs:
+            return None
+
+        # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
+        amperes_used = 0.0  # TODO: Support in future
+
+        # TODO: Anything
+
+        return amperes_used
 
     def periodic(self) -> None:
         LogTracer.resetOuter("ClimberSubsystem periodic")
@@ -224,8 +278,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._motor.setVoltage(voltage)
 
     def sysIdRoutine(self, subsystem: Subsystem) -> Command:
-        """Model the behavior of the climber (for better control) by sweeping through the max and min heights."""
-
+        """
+        Model the behavior of the climber (for better control) by sweeping through the max and min heights.
+        """
         def logState(state: State) -> None:
             logged_state = ""
             match state:
