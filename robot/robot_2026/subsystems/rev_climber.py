@@ -299,7 +299,8 @@ class RevClimber(Subsystem, RotationMechanismIO):
         characterization_routine = SysIdRoutine(SysIdRoutine.Config(0.5, 6, 10, logState),
                                                 SysIdRoutine.Mechanism(self.set_voltage,
                                                                        (lambda _: None),
-                                                                       subsystem))
+                                                                       subsystem,
+                                                                       "Climber"))
         return cmd.sequence(
             cmd.runOnce(lambda: self.set_closed_loop(False), self),
             characterization_routine.quasistatic(SysIdRoutine.Direction.kForward).until(self.at_max),

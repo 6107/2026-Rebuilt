@@ -175,15 +175,35 @@ class RevIntake(Subsystem, DualMechanismIO):
             self._left_pid_controller.setSetpoint(position)
             self._right_pid_controller.setSetpoint(position)
 
-    def at_deployed_angle(self, left: bool) -> bool:
-        position = self._inputs.mechanism_1_position if left else self._inputs.mechanism_2_position
-        return position <= IntakeConstants.DEPLOYED_ANGLE + \
-            IntakeConstants.TOLERANCE
+    def at_deployed_angle(self, left: bool | None) -> bool:
+        left_pos = self._inputs.mechanism_1_position
+        right_pos = self._inputs.mechanism_2_position
+        match left:
+            case True:
+                return left_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE
 
-    def at_retracted_angle(self, left: bool) -> bool:
-        position = self._inputs.mechanism_1_position if left else self._inputs.mechanism_2_position
-        return position >= IntakeConstants.RETRACTED_ANGLE - \
-            IntakeConstants.TOLERANCE
+            case False:
+                return right_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE
+
+            case None:
+                return left_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE and \
+                    right_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE
+        return True
+
+    def at_retracted_angle(self, left: bool | None) -> bool:
+        left_pos = self._inputs.mechanism_1_position
+        right_pos = self._inputs.mechanism_2_position
+        match left:
+            case True:
+                return left_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE
+
+            case False:
+                return right_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE
+
+            case None:
+                return left_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE and \
+                    right_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE
+        return True
 
     def stop(self) -> None:
         self._left_motor.stopMotor()
@@ -290,16 +310,17 @@ class RevIntake(Subsystem, DualMechanismIO):
         characterization_routine = SysIdRoutine(SysIdRoutine.Config(0.5, 6, 10, log_state),
                                                 SysIdRoutine.Mechanism(self.set_voltage,
                                                                        (lambda _: None),
-                                                                       subsystem))
+                                                                       subsystem,
+                                                                       "Climber"))
         return cmd.sequence(
             cmd.runOnce(lambda: self.set_closed_loop(False), self),
             characterization_routine.quasistatic(SysIdRoutine.Direction.kForward).until(
-                lambda: self.at_retracted_angle(left)),
+                lambda: self.at_retracted_angle(None)),
             characterization_routine.quasistatic(SysIdRoutine.Direction.kReverse).until(
-                lambda: self.at_deployed_angle(left)),
+                lambda: self.at_deployed_angle(None)),
             characterization_routine.dynamic(SysIdRoutine.Direction.kForward).until(
-                lambda: self.at_retracted_angle(left)),
+                lambda: self.at_retracted_angle(None)),
             characterization_routine.dynamic(SysIdRoutine.Direction.kReverse).until(
-                lambda: self.at_deployed_angle(left)),
+                lambda: self.at_deployed_angle(None)),
             cmd.runOnce(lambda: self.set_closed_loop(True), self),
         )
