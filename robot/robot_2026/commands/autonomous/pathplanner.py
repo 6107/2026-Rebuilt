@@ -19,8 +19,7 @@ import logging
 import os
 from typing import Optional
 
-from commands2 import cmd
-from commands2.sysid import SysIdRoutine
+from commands2 import cmd, Command, CommandScheduler
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.auto import RobotConfig
 from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
@@ -82,37 +81,35 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
                               drivetrain  # Subsystem for requirements
                               )
 
-        # robot_config = RobotConfig.fromGUISettings()
-        #
-        # # TODO: What do we need here with pathplanner and assuming pykit is also supported. Also if
-        # #       we want the PPLTV Controller, should we use the AutoConstants or DriveConstants.
-        # # controller = apriltag.k_pathplanner_holonomic_controller
-        # controller = PPLTVController(1 / kwargs["pykit"]["Update Frequency"],
-        #                              MAX_SPEED)
-        # PathPlanner and AdvantageScope integration
-        PathPlannerLogging.setLogActivePathCallback(lambda path: Logger.recordOutput("Odometry/Trajectory",
-                                                                                     path))
-        PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("Odometry/TrajectorySetpoint",
-                                                                                     pose))
+        # Setup pykit support in PathPlanner
+        command_count: dict[str, int] = {}
 
-        # PathPlannerLogging.setLogCurrentPoseCallback(lambda pose: Logger.recordOutput("PathPlanner/CurrentPose",
-        #                                                                               pose))
-        # PathPlannerLogging.setLogTargetPoseCallback(lambda pose: Logger.recordOutput("PathPlanner/TargetPose",
-        #                                                                              pose))
-        # PathPlannerLogging.setLogActivePathCallback(lambda poses: Logger.recordOutput("PathPlanner/CurrentPath",
-        #                                                                               poses))
+        def log_command_function(command: Command, active: bool) -> None:
+            name = command.getName()
+            count = command_count.get(name, 0) + (1 if active else -1)
+            command_count[name] = count
+            Logger.recordOutput(f"Commands/{name}", count > 0)
+
+        CommandScheduler.getInstance().onCommandInitialize(lambda c: log_command_function(c, True))
+        CommandScheduler.getInstance().onCommandFinish(lambda c: log_command_function(c, False))
+        CommandScheduler.getInstance().onCommandInterrupt(lambda c: log_command_function(c, False))
+
+        PathPlannerLogging.setLogCurrentPoseCallback(lambda pose:
+                                                     Logger.recordOutput("PathPlanner/CurrentPose", pose))
+        PathPlannerLogging.setLogTargetPoseCallback(lambda pose:
+                                                    Logger.recordOutput("PathPlanner/TargetPose", pose))
+        PathPlannerLogging.setLogActivePathCallback(lambda poses:
+                                                    Logger.recordOutput("PathPlanner/CurrentPath", poses))
+
         # TODO: Next relies upon PYKIT support
-        SysIdRoutine(SysIdRoutine.Config(1, 7, 10,
-                                         lambda state: Logger.recordOutput("Drive/SysIdState",
-                                                                           state.name), ),
-                     SysIdRoutine.Mechanism((lambda volts: drivetrain.runOpenLoop(volts, volts)),
-                                            (lambda: None),
-                                            drivetrain))  # Register all the library 'named' commands we may wish to use
-
-        # Load in any Autonomous Commands into the chooser
-
-        # AdvantageKit/pykit provide a LoggedDashboardChooser that can be
-        # logged.  TODO: Support that and also use it for any other chooser.
+        # SysIdRoutine(SysIdRoutine.Config(1, 7, 10,
+        #                                  lambda state: Logger.recordOutput("Drive/SysIdState",
+        #                                                                    state.name), ),
+        #              SysIdRoutine.Mechanism((lambda volts: drivetrain.runOpenLoop(volts, volts)),
+        #                                     (lambda: None),
+        #                                     drivetrain))  # Register all the library 'named' commands we may wish to use
+        #  TODO: AdvantageKit/pykit provide a LoggedDashboardChooser that can be logged.
+        #  TODO: Support that and also use it for any other chooser.
 
         return AutoBuilder.buildAutoChooser(default_command)
 

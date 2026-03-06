@@ -277,7 +277,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         """
         self._motor.setVoltage(voltage)
 
-    def sysIdRoutine(self, subsystem: Subsystem) -> Command:
+    def sys_id_routine(self, subsystem: Subsystem) -> Command:
         """
         Model the behavior of the climber (for better control) by sweeping through the max and min heights.
         """

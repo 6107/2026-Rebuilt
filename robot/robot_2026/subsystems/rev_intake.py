@@ -47,8 +47,8 @@ class IntakeConstants:
     GEAR_RATIO = 25.0
     DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
-    MIN_HEIGHT: degrees = 0.0
-    MAX_HEIGHT: degrees = 90.0
+    DEPLOYED_ANGLE: degrees = 0.0
+    RETRACTED_ANGLE: degrees = 90.0
     TOLERANCE: degrees = 2.0
 
 @autologgable_output
@@ -169,20 +169,20 @@ class RevIntake(Subsystem, DualMechanismIO):
     def right_position(self) -> degrees:
         return self._inputs.mechanism_2_position
 
-    def set_position_goal(self, position: inches) -> None:
+    def set_position_goal(self, position: degrees) -> None:
         if self._position_goal != position:
             self._position_goal = position
             self._left_pid_controller.setSetpoint(position)
             self._right_pid_controller.setSetpoint(position)
 
-    def at_min(self, left: bool) -> bool:
+    def at_deployed_angle(self, left: bool) -> bool:
         position = self._inputs.mechanism_1_position if left else self._inputs.mechanism_2_position
-        return position <= IntakeConstants.MIN_HEIGHT + \
+        return position <= IntakeConstants.DEPLOYED_ANGLE + \
             IntakeConstants.TOLERANCE
 
-    def at_max(self, left: bool) -> bool:
+    def at_retracted_angle(self, left: bool) -> bool:
         position = self._inputs.mechanism_1_position if left else self._inputs.mechanism_2_position
-        return position >= IntakeConstants.MAX_HEIGHT - \
+        return position >= IntakeConstants.RETRACTED_ANGLE - \
             IntakeConstants.TOLERANCE
 
     def stop(self) -> None:
@@ -251,8 +251,8 @@ class RevIntake(Subsystem, DualMechanismIO):
             position (rotations +/-): The desired number of rotations
         """
         # Limit to max/min
-        position = max(min(position, IntakeConstants.MAX_HEIGHT),
-                       IntakeConstants.MIN_HEIGHT)
+        position = max(min(position, IntakeConstants.RETRACTED_ANGLE),
+                       IntakeConstants.DEPLOYED_ANGLE)
         self._left_encoder.setPosition(position)
         self._right_encoder.setPosition(position)
 
@@ -263,26 +263,29 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._left_motor.setVoltage(voltage)
         self._right_motor.setVoltage(voltage)
 
-    def sys_id_routine(self, subsystem: Subsystem, left: bool) -> Command:
+    def sys_id_routine(self, subsystem: Subsystem) -> Command:
         """
-        Model the behavior of the intake (for better control) by sweeping through the max and min heights.
+        Model the behavior of the intake (for better control) by sweeping through
+        the max and min heights.
         """
-
         def log_state(sys_id_state: State) -> None:
             match sys_id_state:
                 case State.kQuasistaticForward:
                     state = "quasistatic-forward"
+
                 case State.kQuasistaticReverse:
                     state = "quasistatic-reverse"
+
                 case State.kDynamicForward:
                     state = "dynamic-forward"
+
                 case State.kDynamicReverse:
                     state = "dynamic-reverse"
+
                 case State.kNone:
                     state = "none"
 
-            which = "Left" if left else "Right"
-            Logger.recordOutput(f"Intake/{which}-Motor/SysID State", state)
+            Logger.recordOutput(f"Intake/SysID State", state)
 
         characterization_routine = SysIdRoutine(SysIdRoutine.Config(0.5, 6, 10, log_state),
                                                 SysIdRoutine.Mechanism(self.set_voltage,
@@ -290,9 +293,13 @@ class RevIntake(Subsystem, DualMechanismIO):
                                                                        subsystem))
         return cmd.sequence(
             cmd.runOnce(lambda: self.set_closed_loop(False), self),
-            characterization_routine.quasistatic(SysIdRoutine.Direction.kForward).until(lambda: self.at_max(left)),
-            characterization_routine.quasistatic(SysIdRoutine.Direction.kReverse).until(lambda: self.at_min(left)),
-            characterization_routine.dynamic(SysIdRoutine.Direction.kForward).until(lambda: self.at_max(left)),
-            characterization_routine.dynamic(SysIdRoutine.Direction.kReverse).until(lambda: self.at_min(left)),
+            characterization_routine.quasistatic(SysIdRoutine.Direction.kForward).until(
+                lambda: self.at_retracted_angle(left)),
+            characterization_routine.quasistatic(SysIdRoutine.Direction.kReverse).until(
+                lambda: self.at_deployed_angle(left)),
+            characterization_routine.dynamic(SysIdRoutine.Direction.kForward).until(
+                lambda: self.at_retracted_angle(left)),
+            characterization_routine.dynamic(SysIdRoutine.Direction.kReverse).until(
+                lambda: self.at_deployed_angle(left)),
             cmd.runOnce(lambda: self.set_closed_loop(True), self),
         )

@@ -49,8 +49,8 @@ from robot_2026.commands.swervedrive.point_towards_location import PointTowardsL
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
-from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 from robot_2026.subsystems.rev_intake import RevIntake as Intake
+from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
 
@@ -681,8 +681,9 @@ class RobotContainer:
         self._auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
 
         # Put sys IDs to run as automation (if not in competition)
-        if not DriverStation.isFMSAttached():
-            self._auto_chooser.addOption("Climber SysID", self.climber.sysIdRoutine(self.climber))
+        if not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
+            self._auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
+            self._auto_chooser.addOption("Intake SysID", self.intake.sys_id_routine(self.intake))
 
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
