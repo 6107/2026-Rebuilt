@@ -110,6 +110,8 @@ DriveKinematics = SwerveDrive4Kinematics(
 
 @unique
 class DeviceID(IntEnum):
+    REV_POWER_DISTRIBUTION_HUB = 1
+
     # Drivetrain and IMU is provided already via Tuner X
     DRIVETRAIN_LEFT_FRONT_TURNING_ID = TunerConstants._front_left_steer_motor_id
     DRIVETRAIN_LEFT_FRONT_DRIVING_ID = TunerConstants._front_left_drive_motor_id
@@ -133,8 +135,8 @@ class DeviceID(IntEnum):
     SHOOTER_DEVICE_ID = 30
 
     # Intake Subsystem
-    INTAKE_LEFT_MOTOR_DEVICE_ID = 31
-    INTAKE_RIGHT_MOTOR_DEVICE_ID = 32
+    INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID = 31
+    INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID = 32
 
     # Climber Subsystem
     CLIMBER_DEVICE_ID = 33
@@ -175,7 +177,7 @@ ROBORIO_USB_STATIC = "172.22.11.2"
 # Camera configurations
 
 FRONT_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_PHOTONVISION,
+    "Type"     : CAMERA_TYPE_NONE,  # CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(-5.0),

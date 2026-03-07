@@ -142,15 +142,17 @@ class RobotContainer:
         ##########################################
         #   INTAKE
         #
-        self.intake = Intake(self,
-                             DeviceID.INTAKE_LEFT_MOTOR_DEVICE_ID,
-                             DeviceID.INTAKE_RIGHT_MOTOR_DEVICE_ID,
-                             False, False)
+        self.intake = None
+        # self.intake = Intake(self,
+        #                      DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
+        #                      DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
+        #                      False, False)
 
         ##########################################
         #   CLIMBER
         #
-        self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
+        self.climber = None
+        #self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
         #self.subsystems.append(self.climber)
 
         ##########################################
@@ -470,15 +472,16 @@ class RobotContainer:
         #     self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
         # )
 
-        # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
-        climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
-        retract_command = RetractClimber(self, manual=True, position_goal=5)
-        climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+        if self.climber is not None:
+            # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
+            climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
+            retract_command = RetractClimber(self, manual=True, position_goal=5)
+            climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
 
-        # POV-DOWN: Extend the climbing arm (robot goes down)
-        climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
-        extend_command = ExtendClimber(self, manual=True, position_goal=-5)
-        climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+            # POV-DOWN: Extend the climbing arm (robot goes down)
+            climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
+            extend_command = ExtendClimber(self, manual=True, position_goal=-5)
+            climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
@@ -546,15 +549,16 @@ class RobotContainer:
                                                               threshold=0.5)
             right_bumper_pressed.whileTrue(track_any_tag)
 
-        # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
-        climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
-        retract_command = RetractClimber(self, manual=True, position_goal=5)
-        climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+        if self.climber is not None:
+            # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
+            climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
+            retract_command = RetractClimber(self, manual=True, position_goal=5)
+            climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
 
-        # POV-DOWN: Extend the climbing arm (robot goes down)
-        climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
-        extend_command = ExtendClimber(self, manual=True, position_goal=-5)
-        climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+            # POV-DOWN: Extend the climbing arm (robot goes down)
+            climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
+            extend_command = ExtendClimber(self, manual=True, position_goal=-5)
+            climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
@@ -682,8 +686,11 @@ class RobotContainer:
 
         # Put sys IDs to run as automation (if not in competition)
         if not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
-            self._auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
-            self._auto_chooser.addOption("Intake SysID", self.intake.sys_id_routine(self.intake))
+            if self.climber is not None:
+                self._auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
+
+            if self.intake is not None:
+                self._auto_chooser.addOption("Intake SysID", self.intake.sys_id_routine(self.intake))
 
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
