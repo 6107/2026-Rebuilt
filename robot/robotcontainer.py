@@ -131,17 +131,18 @@ class RobotContainer:
         ##########################################
         #   SHOOTER
         #
-        self.shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        self.subsystems.append(self.shooter)
+        self.shooter: Shooter | None
+        # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        # self.subsystems.append(self.shooter)
 
         ##########################################
         #   INDEXER
         #
 
         ##########################################
-        #   INTAKE
+        #   INTAKE (Pivot & Rollers)
         #
-        self.intake = None
+        self.intake: Intake | None = None
         # self.intake = Intake(self,
         #                      DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
         #                      DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
@@ -150,7 +151,7 @@ class RobotContainer:
         ##########################################
         #   CLIMBER
         #
-        self.climber = None
+        self.climber: Climber | None = None
         #self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
         #self.subsystems.append(self.climber)
 
@@ -187,11 +188,13 @@ class RobotContainer:
             self._auto_chooser = SendableChooser()
 
         self._auto_end_chooser = SendableChooser()
-        self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
-                                                   initial_value=100,
-                                                   minimum_value=100,
-                                                   maximum_value=5000)
-        SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
+
+        if self.shooter is not None:
+            self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
+                                                       initial_value=100,
+                                                       minimum_value=100,
+                                                       maximum_value=5000)
+            SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
 
         self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT
         self._robot_y_width: meters = ROBOT_Y_WIDTH_DEFAULT
@@ -529,14 +532,15 @@ class RobotContainer:
         # Right trigger - Start the shooter
         # TODO: Figure out our tolerances
         # TODO: Adjust RPM higher. Start out slow so we cantest it
-        rpm = 120
-        tolerance = 40
+        if self.shooter is not None:
+            rpm = 120                   # TODO : tie into chooser
+            tolerance = 40
 
-        controller.button(XboxController.Axis.kLeftTrigger).onTrue(
-            InstantCommand(lambda: self.shooter.set_velocity_goal(rpm, tolerance))
-        ).onFalse(
-            InstantCommand(lambda: self.shooter.stop())
-        )
+            controller.button(XboxController.Axis.kLeftTrigger).onTrue(
+                InstantCommand(lambda: self.shooter.set_velocity_goal(rpm, tolerance))
+            ).onFalse(
+                InstantCommand(lambda: self.shooter.stop())
+            )
         # Left trigger - create a command for keeping the robot nose pointed towards the hub
         keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
                                                          self._field.hub_location(False),
