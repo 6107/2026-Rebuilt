@@ -42,7 +42,7 @@ class IntakeConstants:
     PROPORTIONAL_COEFFICIENT = 0.1     # kP
     INTEGRAL_COEFFICIENT = 0.1         # kI
     DERIVATIVE_COEFFICIENT = 0.0       # kD
-    LIMIT_CURRENT: amperes = 35
+    LIMIT_CURRENT: amperes = 30
     IZONE_RANGE = 0.0
     GEAR_RATIO = 25.0
     DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
