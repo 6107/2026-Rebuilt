@@ -16,12 +16,11 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-
 from typing import overload
 
 from phoenix6 import CANBus, configs, hardware, signals, swerve, units
+from phoenix6.signals.spn_enums import NeutralModeValue
 from wpimath.units import inchesToMeters
-
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +87,9 @@ class TunerConstants:
         .with_stator_current_limit(60.0)
         .with_stator_current_limit_enable(True)
     )
+    _drive_initial_configs.motor_output.neutral_mode = NeutralModeValue.BRAKE
+    _steer_initial_configs.motor_output.neutral_mode = NeutralModeValue.BRAKE
+
     _encoder_initial_configs = configs.CANcoderConfiguration()
     # Configs for the Pigeon 2; leave this None to skip applying Pigeon 2 configs
     _pigeon_configs: configs.Pigeon2Configuration | None = None

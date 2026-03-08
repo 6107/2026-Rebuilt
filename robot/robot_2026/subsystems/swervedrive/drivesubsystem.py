@@ -800,8 +800,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         return scaler
 
     def set_motor_brake(self, brake: bool) -> None:
-        # TODO: Need to actually set the IdleMode to 'brake' since this
-        #       would be useful on an incline as well.   The container has a _brake command.  See what it dies
         if brake:
             self.stop()
             self.apply_request(lambda: self.brake_request)
