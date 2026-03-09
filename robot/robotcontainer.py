@@ -26,6 +26,7 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
+from phoenix6.swerve.swerve_module import SwerveModule
 from pykit.alertlogger import AlertLogger
 from pykit.logger import Logger
 from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
@@ -424,15 +425,16 @@ class RobotContainer:
             self.robot_drive.apply_request(lambda: idle).ignoringDisable(True)
         )
         # Left Trigger - Rotate (in-place) toward best AprilTag.
-        def turn_to_object():
-            x = self.camera("front").x_offset
-            print(f"x={x}")
-            turn_speed = -0.005 * x
-            self.robot_drive.rotate(turn_speed)
+        if self.camera("front") is not None:
+            def turn_to_object():
+                x = self.camera("front").x_offset
+                print(f"x={x}")
+                turn_speed = -0.005 * x
+                self.robot_drive.rotate(turn_speed)
 
-        controller.leftTrigger(threshold=0.25).whileTrue(RunCommand(turn_to_object,
-                                                                    self.robot_drive))
-        controller.leftTrigger(threshold=0.25).onFalse(InstantCommand(lambda: self.robot_drive.stop()))
+            controller.leftTrigger(threshold=0.25).whileTrue(RunCommand(turn_to_object,
+                                                                        self.robot_drive))
+            controller.leftTrigger(threshold=0.25).onFalse(InstantCommand(lambda: self.robot_drive.stop()))
 
         # Right Trigger - Follow the best AprilTag around the room
 
@@ -453,7 +455,9 @@ class RobotContainer:
                 lambda: self.robot_drive.point_at_request.with_module_direction(
                     Rotation2d(-controller.getLeftY(),
                                -controller.getLeftX())
-                )
+                ).with_drive_request(
+                    SwerveModule.DriveRequestType.VELOCITY)
+                # ).with_steer_request(SwerveModule.DriveRequestType.VELOCITY)
             )
         )
         # Y Button - Reset x/y to defaults and heading to 'North' (0 degrees)
@@ -605,7 +609,7 @@ class RobotContainer:
                 lambda: self.robot_drive.point_at_request.with_module_direction(
                     Rotation2d(-controller.getLeftY(),
                                -controller.getLeftX())
-                )
+                ).with_drive_request(DriveRequestType.Velocity)
             )
         )
         # Run SysId routines when holding back/start and X/Y.
