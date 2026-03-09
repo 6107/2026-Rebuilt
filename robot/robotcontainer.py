@@ -50,6 +50,7 @@ from robot_2026.commands.swervedrive.point_towards_location import PointTowardsL
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
+from robot_2026.subsystems.rev_intake import RevIntake as Intake
 
 logger = logging.getLogger(__name__)
 
@@ -142,11 +143,12 @@ class RobotContainer:
         ##########################################
         #   INTAKE (Pivot & Rollers)
         #
+        # Left Pivot Motor should be Inverted
         self.intake: Intake | None = None
         # self.intake = Intake(self,
         #                      DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
         #                      DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
-        #                      False, False)
+        #                      True, False)
 
         ##########################################
         #   CLIMBER
