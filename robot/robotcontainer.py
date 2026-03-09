@@ -48,8 +48,6 @@ from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractC
 from robot_2026.commands.swervedrive.point_towards_location import PointTowardsLocation
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
-from robot_2026.subsystems.rev_climber import RevClimber as Climber
-from robot_2026.subsystems.rev_intake import RevIntake as Intake
 from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
@@ -388,9 +386,8 @@ class RobotContainer:
                 - Down      Drive backward in X-Direction at 1/2 speed
                 - Left
 
-        LB == Left Bumper    Resets the rotation of the robot pose to the given value from
-                             the ForwardPerspectiveValue.OPERATOR_PERSPECTIVE perspective
-        RB == Right Bumper
+        LB == Left Bumper   Reset the default drive to field-centric
+        RB == Right Bumper  Reset the default drive to robot-centric
 
         LT == Left Trigger  - Rotate (in-place) toward best AprilTag. Stop when trigger released.
         RT == Right Trigger - Follow the best AprilTag around the room. Stop when trigger released.
@@ -439,6 +436,13 @@ class RobotContainer:
 
         # Right Trigger - Follow the best AprilTag around the room
 
+        # Left Bumper - Reset the default drive to field-centric
+        # controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
+        controller.leftBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric(True)))
+
+        # Left Bumper - Reset the default drive to robot-centric
+        controller.rightBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric(False)))
+
         # A Button - Brake
         controller.a().whileTrue(
             self.robot_drive.apply_request(lambda: self.robot_drive.brake_request)
@@ -453,7 +457,7 @@ class RobotContainer:
             )
         )
         # Y Button - Reset x/y to defaults and heading to 'North' (0 degrees)
-        controller.b().whileTrue(ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0))
+        controller.y().whileTrue(ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0))
 
         # # POV-UP: Drive forward at 1/2 speed
         # controller.povUp().whileTrue(
