@@ -32,14 +32,15 @@ from pykit.logger import Logger
 from pykit.networktables.nt4Publisher import NT4Publisher
 from pykit.wpilog.wpilogreader import WPILOGReader
 from pykit.wpilog.wpilogwriter import WPILOGWriter
+from rev import StatusLogger
 from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
-from robotcontainer import RobotContainer
 from robot_2026.util.logtracer import LogTracer
+from robotcontainer import RobotContainer
 
 if True:
     from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot as MyRobotBase
@@ -145,13 +146,13 @@ class MyRobot(MyRobotBase):
         logger.info("robotInit: entry")
         super().robotInit()
 
-        # Disable RoboRio auto-logging.  TODO: If we can put a thumbdrive in, may want as a backup
-        #                                      and we should enable this again and re-evaluate.
+        # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykig
         SignalLogger.enable_auto_logging(False)
+        StatusLogger.disableAutoLogging()
         LiveWindow.disableAllTelemetry()
 
         # TODO: make period smaller?
-        CommandScheduler.getInstance().setPeriod(0.5)  # 1/2s period for command scheduler wathdoc
+        # CommandScheduler.getInstance().setPeriod(0.5)  # 1/2s period for command scheduler wathdoc
 
         command_count: dict[str, int] = {}
 

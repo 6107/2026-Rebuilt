@@ -131,6 +131,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         self._container = container
         self._robot = container.robot
+        self._period: seconds = container.robot.getPeriod()
         self._physics_controller = None
 
         # Camera/localizer defaults
@@ -714,7 +715,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
             rotation = robot_speeds.omega
 
         speeds = ChassisSpeeds.discretize(ChassisSpeeds(x_speed, y_speed, rotation),
-                                          0.020)  # TODO: Pass in period here
+                                          self._period)  # TODO: Pass in period here
 
         def adjust(rate: meters_per_second) -> meters_per_second:
             return min(max_speed, rate * scale_factor)
@@ -755,7 +756,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         self.set_control(
             self.apply_robot_speeds
-            .with_speeds(ChassisSpeeds.discretize(chassis_speeds, 0.020))
+            .with_speeds(ChassisSpeeds.discretize(chassis_speeds, self._period))
             .with_wheel_force_feedforwards_x(feed_forward.robotRelativeForcesXNewtons)
             .with_wheel_force_feedforwards_y(feed_forward.robotRelativeForcesYNewtons)
         ),

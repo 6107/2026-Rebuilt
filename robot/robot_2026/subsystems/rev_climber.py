@@ -27,10 +27,12 @@ from pykit.logger import Logger
 from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, \
     SparkRelativeEncoderSim
 from wpilib import RobotBase, SendableChooser, SmartDashboard
+from wpilib.simulation import BatterySim, RoboRioSim
+from wpilib.simulation import ElevatorSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.controller import PIDController
-from wpimath.units import amperes, inches, inchesToMeters, meters, revolutions_per_minute, volts
+from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
@@ -48,10 +50,14 @@ class ClimberConstants:
     IZONE_RANGE = 0.0
     GEAR_RATIO = 25.0
     DRIVE_VOLTAGE: volts = 0.10  # Start at 10% power
-    SPOOL_DIAMETER: meters = 1.0  # TODO: Use an algorythm to compensate for cord already spooled in
+    SPOOL_DIAMETER: meters = inchesToMeters(1.0)  # TODO: Use an algorythm to compensate for cord already spooled in
     CLIMBER_MIN_HEIGHT: meters = 0.0
     CLIMBER_MAX_HEIGHT: meters = inchesToMeters(9.0)  # TODO: Guess for now
     CLIMBER_TOLERANCE: meters = 0.05  # 5 cm
+
+    #################################################################################
+    # Simulation Support
+    CARRIAGE_MASS: kilograms = 1.0  # The part that extends up
 
 
 @autologgable_output
@@ -65,6 +71,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self.setName(self.__class__.__name__)
         self._container = container
         self._robot = container.robot
+        self._period: seconds = container.robot.getPeriod()
         self._device_id = can_device_id
         self._inverted = inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
@@ -83,9 +90,18 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         # Support simulation
         if RobotBase.isSimulation():
-            self._sim_motor = SparkMaxSim(self._motor, DCMotor.NEO(1))
+            motor_model = DCMotor.NEO(1)
+            self._sim_motor = SparkMaxSim(self._motor, motor_model)
             self._sim_encoder = SparkRelativeEncoderSim(self._motor)
-
+            self._sim_climber = ElevatorSim(motor_model,
+                                            ClimberConstants.GEAR_RATIO,
+                                            ClimberConstants.CARRIAGE_MASS,
+                                            ClimberConstants.SPOOL_DIAMETER,
+                                            ClimberConstants.CLIMBER_MIN_HEIGHT,
+                                            ClimberConstants.CLIMBER_MAX_HEIGHT,
+                                            True,  # Simulate gravity
+                                            0.0,  # Staring Height
+                                            [0.01, 0.0])
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
         self._pid_controller: PIDController = PIDController(ClimberConstants.PROPORTIONAL_COEFFICIENT,
@@ -171,7 +187,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         return self._inputs.mechanism_position >= ClimberConstants.CLIMBER_MAX_HEIGHT - \
             ClimberConstants.CLIMBER_TOLERANCE
 
-    def stop(self, brake: bool) -> None:
+    def stop(self, brake: Optional[bool] = True) -> None:
         self._motor.stopMotor()
 
         if brake:
@@ -185,7 +201,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._physics_controller = physics_controller
         # TODO: Anything
 
-    def simulationPeriodic(self, **kwargs) -> Optional[float]:
+    def simulationPeriodic(self, **kwargs) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function. It is useful for updating subsystem-specific state that needs to be
@@ -201,16 +217,15 @@ class RevClimber(Subsystem, RotationMechanismIO):
         but for future simulation purposes, if called with keywords, return the amperage
         used in this interval
         """
-        # For the swerve drive, we only support the 'update_sim' form of call
-        if not kwargs:
-            return None
+        if self._robot.isEnabled():
+            self._sim_climber.setInputVoltage(self._sim_motor.getAppliedOutput())
+            self._sim_climber.update(self._period)
 
-        # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
-        amperes_used = 0.0  # TODO: Support in future
+            # Set the simulated encoder
+            self._sim_encoder.setPosition(self._sim_climber.getPosition())
 
-        # TODO: Anything
-
-        return amperes_used
+            # And simulate current drain
+            RoboRioSim.setVInVoltage(BatterySim.calculate([self._sim_climber.getCurrentDraw()]))
 
     def periodic(self) -> None:
         LogTracer.resetOuter("ClimberSubsystem periodic")

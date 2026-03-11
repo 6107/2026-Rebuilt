@@ -15,15 +15,13 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from typing import Optional
-
 from commands2 import Subsystem
 from commands2.button import Trigger
 from rev import PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkMax, \
     SparkMaxSim, SparkRelativeEncoderSim
 from wpilib import RobotBase, SendableChooser, SmartDashboard
 from wpimath._controls._controls.plant import DCMotor
-from wpimath.units import revolutions_per_minute
+from wpimath.units import revolutions_per_minute, seconds
 
 from lib_6107.util.rev_utils import try_until_ok
 
@@ -50,6 +48,7 @@ class RevShooter(Subsystem):
 
         self._container = container
         self._robot = container.robot
+        self._period: seconds = container.robot.getPeriod()
         self._device_id = can_device_id
         self._inverted = inverted
         self._physics_controller = None
@@ -155,7 +154,7 @@ class RevShooter(Subsystem):
         self._physics_controller = physics_controller
         # TODO: Anything
 
-    def simulationPeriodic(self, **kwargs) -> Optional[float]:
+    def simulationPeriodic(self, **kwargs) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function. It is useful for updating subsystem-specific state that needs to be
@@ -171,13 +170,5 @@ class RevShooter(Subsystem):
         but for future simulation purposes, if called with keywords, return the amperage
         used in this interval
         """
-        # For the swerve drive, we only support the 'update_sim' form of call
-        if not kwargs:
-            return None
-
-        # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
-        amperes_used = 0.0  # TODO: Support in future
 
         # TODO: Anything
-
-        return amperes_used

@@ -132,7 +132,7 @@ class RobotContainer:
         ##########################################
         #   SHOOTER
         #
-        self.shooter: Shooter | None
+        self.shooter: Shooter | None = None
         # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
         # self.subsystems.append(self.shooter)
 

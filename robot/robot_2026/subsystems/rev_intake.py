@@ -23,13 +23,12 @@ from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
-from rev import PersistMode, ResetMode, SparkBase, SparkFlex, SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, \
-    SparkRelativeEncoderSim
+from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
+    SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import RobotBase, SendableChooser, SmartDashboard
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
-from wpimath.controller import PIDController
-from wpimath.units import amperes, degrees, inches, meters, revolutions_per_minute, volts
+from wpimath.units import amperes, degrees, inches, meters, revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
@@ -64,12 +63,15 @@ class RevIntake(Subsystem, DualMechanismIO):
         self.setName(self.__class__.__name__)
         self._container = container
         self._robot = container.robot
+        self._period: seconds = container.robot.getPeriod()
         self._left_device_id = can_left_device_id
         self._left_inverted = left_inverted
         self._right_device_id = can_right_device_id
         self._right_inverted = right_inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
         self._inputs = DualMechanismIO.DualMechanismIOInputs()
+
+        self._physics_controller = None
 
         # Set up the motor controller
         self._left_motor = SparkFlex(self._left_device_id, SparkBase.MotorType.kBrushless)
@@ -100,14 +102,8 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
-        self._left_pid_controller: PIDController = PIDController(IntakeConstants.PROPORTIONAL_COEFFICIENT,
-                                                            IntakeConstants.INTEGRAL_COEFFICIENT,
-                                                            IntakeConstants.DERIVATIVE_COEFFICIENT)
-        self._left_pid_controller.setIZone(IntakeConstants.IZONE_RANGE)
-        self._right_pid_controller: PIDController = PIDController(IntakeConstants.PROPORTIONAL_COEFFICIENT,
-                                                            IntakeConstants.INTEGRAL_COEFFICIENT,
-                                                            IntakeConstants.DERIVATIVE_COEFFICIENT)
-        self._right_pid_controller.setIZone(IntakeConstants.IZONE_RANGE)
+        self._left_pid_controller: SparkClosedLoopController = self._left_motor.getClosedLoopController()
+        self._right_pid_controller: SparkClosedLoopController = self._right_motor.getClosedLoopController()
 
         # The critical attributes/properties for operation
         self._position_goal: degrees = 0.0
@@ -129,12 +125,13 @@ class RevIntake(Subsystem, DualMechanismIO):
 
     @staticmethod
     def _motor_config(inverted: bool) -> SparkFlexConfig:
-        config = SparkFlexConfig()
-        config.inverted(inverted)
-        config.setIdleMode(SparkFlexConfig.IdleMode.kBrake)      # Set idle mode as brake
-        config.limitSwitch.forwardLimitSwitchEnabled(False)
-        config.limitSwitch.reverseLimitSwitchEnabled(False)
-        config.smartCurrentLimit(IntakeConstants.LIMIT_CURRENT)
+        config = (SparkFlexConfig().
+                  inverted(inverted).
+                  smartCurrentLimit(IntakeConstants.LIMIT_CURRENT).
+                  setIdleMode(SparkFlexConfig.IdleMode.kBrake).
+                  smartCurrentLimit(IntakeConstants.LIMIT_CURRENT)
+                  )
+        config.limitSwitch.forwardLimitSwitchEnabled(True).reverseLimitSwitchEnabled(True)
 
         # Set the position conversion factor (e.g., to convert rotations to degrees)
         # The native unit is rotations. So use 360.0 as conversion factor to get degrees
@@ -143,6 +140,22 @@ class RevIntake(Subsystem, DualMechanismIO):
         # Set the velocity conversion factor (e.g., to convert RPM to degrees/second)
         # The native unit is RPM. So use:  (360 degrees/revolution) / (60 seconds/minute) = 6
         config.encoder.velocityConversionFactor(6.0)
+
+        # Closed loop configuration parameters, slot=0
+        # TODO: Use SysID to determine actual values
+        (
+            config.closedLoop.
+            pid(IntakeConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+                IntakeConstants.INTEGRAL_COEFFICIENT,
+                IntakeConstants.DERIVATIVE_COEFFICIENT,
+                ClosedLoopSlot(0))
+        )
+
+        # TODO: add to above -> feedForward.kS(0).kV(0).kA(0).kCos(0).kCosRatio(0))
+        #       https://docs.revrobotics.com/revlib/spark/closed-loop/feed-forward-control
+        #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
+        #       https://docs.revrobotics.com/revlib/spark/closed-loop/position-control-mode
+
         return config
 
     def reset(self) -> None:
@@ -151,8 +164,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._position_goal = 0
         self._left_encoder.setPosition(0.0)
         self._right_encoder.setPosition(0.0)
-        self._left_pid_controller.reset()
-        self._right_pid_controller.reset()
+        # self._left_pid_controller.reset()
+        # self._right_pid_controller.reset()
 
     @property
     def closed_loop(self) -> bool:
@@ -169,11 +182,17 @@ class RevIntake(Subsystem, DualMechanismIO):
     def right_position(self) -> degrees:
         return self._inputs.mechanism_2_position
 
-    def set_position_goal(self, position: degrees) -> None:
-        if self._position_goal != position:
-            self._position_goal = position
-            self._left_pid_controller.setSetpoint(position)
-            self._right_pid_controller.setSetpoint(position)
+    def set_position_goal(self, goal: degrees) -> None:
+        if self._position_goal != goal:
+            self._position_goal = goal
+            self._left_pid_controller.setSetpoint(goal,
+                                                  SparkBase.ControlType.kPosition,
+                                                  ClosedLoopSlot(0))
+            self._right_pid_controller.setSetpoint(goal,
+                                                   SparkBase.ControlType.kPosition,
+                                                   ClosedLoopSlot(0))
+            # TODO: What about velocity goal?
+            #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
 
     def at_deployed_angle(self, left: bool | None) -> bool:
         left_pos = self._inputs.mechanism_1_position
@@ -247,6 +266,33 @@ class RevIntake(Subsystem, DualMechanismIO):
         SmartDashboard.putNumber("Intake/right-position", self.right_position)
         SmartDashboard.putNumber("Intake/right-speed", self._inputs.mechanism_2_speed)
         SmartDashboard.putBoolean("Intake/closed-loop", self._closed_loop)
+
+    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
+        """
+        Initialize any simulation only needed parameters
+        """
+        self._physics_controller = physics_controller
+        # TODO: Anything
+
+    def simulationPeriodic(self, **kwargs) -> None:
+        """
+        This method is called periodically by the CommandScheduler (after the periodic
+        function. It is useful for updating subsystem-specific state that needs to be
+        maintained for simulations, such as for updating simulation classes and setting
+        simulated sensor readings.
+
+        Unlike the physics 'update_sim', it is not called with the current time (now)
+        or the amount of time since 'update_sim' was called (tm_diff).  It is called
+        just after the 'periodic' call and before the 'update_sim' is called.
+
+        To unify the two uses, our call signature above has a kwargs parameter so we
+        know when we are being called. Typically, we only need to support one method
+        but for future simulation purposes, if called with keywords, return the amperage
+        used in this interval
+        """
+
+        # TODO: Anything
+
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
         inputs.mechanism_1_connected = True   # TODO: Figure this one out

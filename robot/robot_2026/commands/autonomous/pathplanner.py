@@ -64,7 +64,7 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
                               #        and does a log for each time called'.
                               lambda speeds, feedforwards: drivetrain.set_control(
                                   drivetrain.apply_robot_speeds
-                                  .with_speeds(ChassisSpeeds.discretize(speeds, 0.020))  # TODO: Pass in period here
+                                  .with_speeds(ChassisSpeeds.discretize(speeds, container.robot.getPeriod()))
                                   .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
                                   .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
                               ),
