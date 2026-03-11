@@ -595,10 +595,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         but for future simulation purposes, if called with keywords, return the amperage
         used in this interval
         """
-        # For the swerve drive, we only support the 'update_sim' form of call
-        if not kwargs:
-            return None
-
         # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
         amperes_used = 0.0  # TODO: Support in future
 
@@ -620,8 +616,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
             if x != pose.x or y != pose.y:
                 self.pose = Pose2d(x, y, pose.rotation())
-
-        return amperes_used
 
     @property
     def heading(self) -> Rotation2d:

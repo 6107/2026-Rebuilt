@@ -154,7 +154,7 @@ class RevShooter(Subsystem):
         self._physics_controller = physics_controller
         # TODO: Anything
 
-    def simulationPeriodic(self, **kwargs) -> None:
+    def simulationPeriodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function. It is useful for updating subsystem-specific state that needs to be

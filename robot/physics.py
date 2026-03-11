@@ -27,9 +27,7 @@
 # of your robot code without too much extra effort.
 #
 # Examples can be found at https://github.com/robotpy/examples
-import inspect
 import logging
-import time
 
 from pyfrc.physics.core import PhysicsInterface
 
@@ -93,29 +91,7 @@ class PhysicsEngine:
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
-        start = time.monotonic()
-
-        kwargs = {
-            "now": now,
-            "tm_diff": tm_diff,
-        }
-        # battery_voltage: volts = RobotController.getBatteryVoltage()
-        total_amps_used: float = 0.0
-
-        if self._robot.isEnabled():
-            logger.debug(f"PhysicsEngine: updating sim: Enabled: {self._robot.isEnabled()}")
-
-            for subsystem in self._robot.container.subsystems:
-                if hasattr(subsystem, "simulationPeriodic") and callable(getattr(subsystem,
-                                                                                 "simulationPeriodic")):
-                    signature = inspect.signature(subsystem.simulationPeriodic)
-                    parameters = signature.parameters
-
-                    if inspect.Parameter.VAR_KEYWORD in [p.kind for p in parameters.values()]:
-                        total_amps_used += subsystem.simulationPeriodic(**kwargs)
-
-        # TODO: update simulated battery with amps consumed if real robo rio has a battery monitor as well
-        self._robot._stats.add("sim", time.monotonic() - start)
+        pass
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """
