@@ -26,7 +26,8 @@ from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, \
     SparkRelativeEncoderSim
-from wpilib import RobotBase, SendableChooser, SmartDashboard
+from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, SendableChooser, \
+    SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpilib.simulation import ElevatorSim
 from wpilib.sysid import State
@@ -54,6 +55,11 @@ class ClimberConstants:
     CLIMBER_MIN_HEIGHT: meters = 0.0
     CLIMBER_MAX_HEIGHT: meters = inchesToMeters(9.0)  # TODO: Guess for now
     CLIMBER_TOLERANCE: meters = 0.05  # 5 cm
+
+    CLIMBER_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
+    CLIMBER_ROOT_Y: meters = inchesToMeters(12.5)
+    CLIMBER_BASE_LENGTH: meters = inchesToMeters(8.0)  # TODO: Validate all this locations/lengths
+    CLIMBER_UPPER_MIN_LENGTH: meters = inchesToMeters(2.0)
 
     #################################################################################
     # Simulation Support
@@ -102,6 +108,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
                                             True,  # Simulate gravity
                                             0.0,  # Staring Height
                                             [0.01, 0.0])
+
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
         self._pid_controller: PIDController = PIDController(ClimberConstants.PROPORTIONAL_COEFFICIENT,
@@ -112,6 +119,21 @@ class RevClimber(Subsystem, RotationMechanismIO):
         # The critical attributes/properties for operation
         self._position_goal: inches = 0.0
         self._applied_voltage: volts = 0.0
+
+        # Visualization support
+        mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        mech_root: MechanismRoot2d = mech_2d.getRoot("Climber Root",
+                                                     ClimberConstants.CLIMBER_ROOT_X, ClimberConstants.
+                                                     CLIMBER_ROOT_Y)
+        mech_base: MechanismLigament2d = mech_root.appendLigament("Climber Base",
+                                                                  ClimberConstants.CLIMBER_BASE_LENGTH,
+                                                                  90,
+                                                                  color=Color8Bit(Color.kBlue))
+        self._mech_upper: MechanismLigament2d = mech_base.appendLigament("Climber Upper",
+                                                                         ClimberConstants.CLIMBER_UPPER_MIN_LENGTH,
+                                                                         90,
+                                                                         color=Color8Bit(Color.kYellow))
+        SmartDashboard.putData("Climber", mech_2d)
 
         # TODO: Remove following once all works
         self._enable_chooser = SendableChooser()
@@ -172,6 +194,10 @@ class RevClimber(Subsystem, RotationMechanismIO):
     @property
     def position(self) -> inches:
         return self._inputs.mechanism_position
+
+    @property
+    def position_meters(self) -> meters:
+        return inches(self.position)
 
     @position.setter
     def position(self, position: inches) -> None:
@@ -237,6 +263,8 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         if self._closed_loop:
             self.set_position(self._position_goal)
+
+        self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT + self.position_meters)
 
         LogTracer.record("Closed Loop Control")
         Logger.recordOutput("Climber/goal", self._position_goal)

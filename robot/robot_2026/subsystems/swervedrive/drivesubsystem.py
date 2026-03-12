@@ -579,7 +579,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         self.gyro.sim_init(physics_controller)
 
-    def simulationPeriodic(self, **kwargs) -> Optional[float]:
+    def simulationPeriodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function. It is useful for updating subsystem-specific state that needs to be
