@@ -19,11 +19,12 @@ from commands2 import Subsystem
 from commands2.button import Trigger
 from rev import PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkMax, \
     SparkMaxSim, SparkRelativeEncoderSim
-from wpilib import RobotBase, SendableChooser, SmartDashboard
+from wpilib import RobotBase, SmartDashboard
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.units import revolutions_per_minute, seconds
 
 from lib_6107.util.rev_utils import try_until_ok
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 
 
 # TODO: Move following to constant
@@ -72,7 +73,7 @@ class RevShooter(Subsystem):
             self._sim_encoder = SparkRelativeEncoderSim(self._motor)
 
         # TODO: Remove following once all works
-        self._enable_chooser = SendableChooser()
+        self._enable_chooser = LoggedDashboardChooser("Shooter-Enable")
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
         SmartDashboard.putData("Shooter Enabled", self._enable_chooser)

@@ -22,11 +22,9 @@ from typing import Optional
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
-from pykit.autolog import autologgable_output
-from pykit.logger import Logger
 from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, \
     SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, SendableChooser, \
+from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, \
     SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
@@ -36,6 +34,9 @@ from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, re
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
+from pykit.autolog import autologgable_output
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_chooser = SendableChooser()
+        self._enable_chooser = LoggedDashboardChooser("Climber-Enable")
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
         SmartDashboard.putData("Climber Enabled", self._enable_chooser)

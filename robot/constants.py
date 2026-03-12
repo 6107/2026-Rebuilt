@@ -46,7 +46,7 @@ ROBOT_MODE = RobotModes.REAL if RobotBase.isReal() else SIM_MODE
 
 ##################################################################
 # Robot Constants
-ROBOT_MASS: kilograms = lbsToKilograms(148 - 20.3)  # 32lbs * kg per pound
+ROBOT_MASS: kilograms = lbsToKilograms(60)
 # CHASSIS    = Matter(geometry.Translation3d(0, 0, units.inchesToMeters(8)), ROBOT_MASS)        TODO: Figure this out
 
 # Robot size (including bumpers). Defaults, use PathPlanner to set actual value to

@@ -27,9 +27,7 @@ from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from phoenix6.swerve.swerve_module import SwerveModule
-from pykit.alertlogger import AlertLogger
-from pykit.logger import Logger
-from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
+from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
@@ -44,6 +42,9 @@ from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox
 from lib_6107.util.phoenix6_telemetry import Telemetry
+from pykit.alertlogger import AlertLogger
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.commands.swervedrive.point_towards_location import PointTowardsLocation
@@ -184,13 +185,13 @@ class RobotContainer:
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
-            self._auto_chooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+            self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
 
         except FileNotFoundError:
-            logger.error("PathPlanner 'autos' directory does not exist")
-            self._auto_chooser = SendableChooser()
+            logger.warning("PathPlanner 'autos' directory does not exist")
+            self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
 
-        self._auto_end_chooser = SendableChooser()
+        self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
 
         if self.shooter is not None:
             self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
@@ -678,7 +679,7 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        self._limit_chooser = SendableChooser()
+        self._limit_chooser = LoggedDashboardChooser("Speed-Limiter")
 
         # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)

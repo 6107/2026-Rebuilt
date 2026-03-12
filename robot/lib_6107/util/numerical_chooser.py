@@ -24,6 +24,7 @@ from wpiutil import Sendable, SendableBuilder, SendableRegistry
 logger = logging.getLogger(__name__)
 
 
+# TODO: The pykit LoggedSendableChooser allows for a type to be specified
 class IntegerEditBox(Subsystem):
     def __init__(self, name: str,
                  initial_value: Optional[int] = None,

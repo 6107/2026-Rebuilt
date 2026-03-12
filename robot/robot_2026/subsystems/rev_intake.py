@@ -21,12 +21,10 @@ from commands2 import cmd, Subsystem
 from commands2.button import Trigger
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
-from pykit.autolog import autologgable_output
-from pykit.logger import Logger
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, \
-    SendableChooser, SmartDashboard
+    SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
@@ -35,6 +33,9 @@ from wpimath.units import amperes, degrees, inches, inchesToMeters, kilograms, m
 
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
+from pykit.autolog import autologgable_output
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -163,7 +164,7 @@ class RevIntake(Subsystem, DualMechanismIO):
         SmartDashboard.putData("Right-Pivot", self._right_mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_intake = SendableChooser()
+        self._enable_intake = LoggedDashboardChooser("Intake-Enable")
         self._enable_intake.setDefaultOption("False", False)
         self._enable_intake.addOption("True", True)
         SmartDashboard.putData("Intake Enabled", self._enable_intake)

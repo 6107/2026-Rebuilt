@@ -25,8 +25,7 @@ from pathplannerlib.auto import RobotConfig
 from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
 from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
-from pykit.logger import Logger
-from wpilib import DriverStation, getDeployDirectory, SendableChooser
+from wpilib import DriverStation, getDeployDirectory
 from wpimath.kinematics import ChassisSpeeds
 
 from lib_6107.commands.camera.approach_tag import ApproachTag
@@ -34,6 +33,8 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.climber.climber_commands import ExtendClimber
 from robot_2026.commands.climber.climber_commands import RetractClimber
 from robot_2026.commands.intake.intake_commands import IntakeCollectFuel
@@ -43,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContainer',
-                           default_command: Optional[str] = "") -> Optional[SendableChooser]:
+                           default_command: Optional[str] = "") -> Optional[LoggedDashboardChooser]:
 
     # Register named commands first
     register_commands_and_triggers(drivetrain, container)
@@ -101,22 +102,45 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
         PathPlannerLogging.setLogActivePathCallback(lambda poses:
                                                     Logger.recordOutput("PathPlanner/CurrentPath", poses))
 
-        # TODO: Next relies upon PYKIT support
-        # SysIdRoutine(SysIdRoutine.Config(1, 7, 10,
-        #                                  lambda state: Logger.recordOutput("Drive/SysIdState",
-        #                                                                    state.name), ),
-        #              SysIdRoutine.Mechanism((lambda volts: drivetrain.runOpenLoop(volts, volts)),
-        #                                     (lambda: None),
-        #                                     drivetrain))  # Register all the library 'named' commands we may wish to use
-        #  TODO: AdvantageKit/pykit provide a LoggedDashboardChooser that can be logged.
-        #  TODO: Support that and also use it for any other chooser.
-
-        return AutoBuilder.buildAutoChooser(default_command)
+        return build_auto_chooser(default_command)
 
     logger.error(f"PathPlanner settings {file_path} not found or is not readable")
     logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
 
-    return None
+    return LoggedDashboardChooser("Autonomous")
+
+
+def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
+    """
+    Create and populate a sendable chooser with all PathPlannerAutos in the project and the default auto name selected.
+
+    :param default_auto_name: the name of the default auto to be selected in the chooser
+    :return: a sendable chooser object populated with all of PathPlannerAutos in the project
+    """
+    if not AutoBuilder.isConfigured():
+        raise RuntimeError('AutoBuilder was not configured before attempting to build an auto chooser')
+
+    auto_folder_path = os.path.join(getDeployDirectory(), 'pathplanner', 'autos')
+    auto_list = os.listdir(auto_folder_path)
+
+    chooser = LoggedDashboardChooser("Autonomous")
+    default_auto_added = False
+
+    for auto in auto_list:
+        auto = auto.removesuffix(".auto")
+        if auto == default_auto_name:
+            default_auto_added = True
+            chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
+        else:
+            chooser.addOption(auto, AutoBuilder.buildAuto(auto))
+
+    if not default_auto_added:
+        chooser.setDefaultOption("None", cmd.none())
+    else:
+        chooser.addOption("None", cmd.none())
+
+    return chooser
+
 
 def register_commands_and_triggers(drivetrain: DriveSubsystem, container: 'RobotContainer') -> None:
     # Register Named Commands.

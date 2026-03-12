@@ -20,9 +20,11 @@ import os
 from typing import Callable, List, Optional, Sequence, Tuple
 
 from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout
-from wpilib import getDeployDirectory, SendableChooser, SmartDashboard
+from wpilib import getDeployDirectory, SmartDashboard
 from wpimath.geometry import Pose3d
 from wpimath.units import meters
+
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 
 # Setup Logging
 logger = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ class Field:
 
     def __init__(self):
         # First is the default
-        self._april_tag_chooser = SendableChooser()
+        self._april_tag_chooser = LoggedDashboardChooser("Field-Selector")
         self._april_tag_chooser.setDefaultOption(self._field_info[0][0], self._field_info[0][1])
 
         for field in self._field_info[1:]:
