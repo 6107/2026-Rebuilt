@@ -18,7 +18,7 @@
 from dataclasses import dataclass
 
 from pykit.autolog import autolog
-from wpimath.units import amperes, inches, inches, volts, radians_per_second
+from wpimath.units import amperes, degrees, inches, volts
 
 
 class DualMechanismIO:
@@ -31,13 +31,13 @@ class DualMechanismIO:
         mechanism_1_connected: bool = False
         mechanism_2_connected: bool = False
 
-        mechanism_1_position: inches = 0.0
+        mechanism_1_position: inches | degrees = 0.0
         mechanism_1_speed: float = 0.0            # Inches / second
         mechanism_1_applied_voltage: volts = 0.0
         mechanism_1_supply_current: amperes = 0.0
         mechanism_1_torque_amps: amperes = 0.0
 
-        mechanism_2_position: inches = 0.0
+        mechanism_2_position: inches | degrees = 0.0
         mechanism_2_speed: float = 0.0            # Inches / second
         mechanism_2_applied_voltage: volts = 0.0
         mechanism_2_supply_current: amperes = 0.0

@@ -25,10 +25,13 @@ from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from wpilib import RobotBase, SendableChooser, SmartDashboard
+from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, \
+    SendableChooser, SmartDashboard
+from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
-from wpimath.units import amperes, degrees, inches, meters, revolutions_per_minute, seconds, volts
+from wpimath.units import amperes, degrees, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, \
+    volts
 
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
@@ -49,6 +52,15 @@ class IntakeConstants:
     DEPLOYED_ANGLE: degrees = 0.0
     RETRACTED_ANGLE: degrees = 90.0
     TOLERANCE: degrees = 2.0
+
+    PIVOT_GEARING = 2.0  # Verify
+    PIVOT_LEFT_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
+    PIVOT_RIGHT_ROOT_X: meters = inchesToMeters(24.5)
+    PIVOT_ROOT_Y: meters = inchesToMeters(24.5)
+    PIVOT_BASE_LENGTH: meters = inchesToMeters(8.0)  # TODO: Validate all this locations/lengths
+
+    PIVOT_LENGTH: meters = inchesToMeters(8.0)
+    PIVOT_MASS: kilograms = 1.0  # TODO: Verify
 
 @autologgable_output
 class RevIntake(Subsystem, DualMechanismIO):
@@ -94,11 +106,30 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         # Support simulation
         if RobotBase.isSimulation():
-            self._left_sim_motor = SparkFlexSim(self._left_motor, DCMotor.NEO(1))
-            self._right_sim_motor = SparkFlexSim(self._right_motor, DCMotor.NEO(1))
+            gearbox = DCMotor.NEO(1)
+            self._left_sim_motor = SparkFlexSim(self._left_motor, gearbox)
+            self._right_sim_motor = SparkFlexSim(self._right_motor, gearbox)
 
             self._left_sim_encoder = SparkRelativeEncoderSim(self._left_motor)
             self._right_sim_encoder = SparkRelativeEncoderSim(self._right_motor)
+
+            moi = SingleJointedArmSim.estimateMOI(IntakeConstants.PIVOT_LENGTH, IntakeConstants.PIVOT_MASS)
+            self._left_sim_pivot = SingleJointedArmSim(gearbox,
+                                                       IntakeConstants.PIVOT_GEARING,
+                                                       moi,
+                                                       IntakeConstants.PIVOT_LENGTH,
+                                                       IntakeConstants.DEPLOYED_ANGLE,
+                                                       IntakeConstants.RETRACTED_ANGLE,
+                                                       True,
+                                                       IntakeConstants.RETRACTED_ANGLE)
+            self._right_sim_pivot = SingleJointedArmSim(gearbox,
+                                                        IntakeConstants.PIVOT_GEARING,
+                                                        moi,
+                                                        IntakeConstants.PIVOT_LENGTH,
+                                                        IntakeConstants.DEPLOYED_ANGLE,
+                                                        IntakeConstants.RETRACTED_ANGLE,
+                                                        True,
+                                                        IntakeConstants.RETRACTED_ANGLE)
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
@@ -108,6 +139,28 @@ class RevIntake(Subsystem, DualMechanismIO):
         # The critical attributes/properties for operation
         self._position_goal: degrees = 0.0
         self._applied_voltage: volts  = 0.0
+
+        #####################################
+        # Visualization support
+        left_mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        mech_root: MechanismRoot2d = left_mech_2d.getRoot("Left Pivot Root",
+                                                          IntakeConstants.PIVOT_LEFT_ROOT_X,
+                                                          IntakeConstants.PIVOT_ROOT_Y)
+        self._left_mech_base: MechanismLigament2d = mech_root.appendLigament("Left Pivot Base",
+                                                                             IntakeConstants.PIVOT_BASE_LENGTH,
+                                                                             90,
+                                                                             color=Color8Bit(Color.kBlue))
+        right_mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        mech_root: MechanismRoot2d = right_mech_2d.getRoot("Right Pivot Root",
+                                                           IntakeConstants.PIVOT_RIGHT_ROOT_X,
+                                                           IntakeConstants.PIVOT_ROOT_Y)
+
+        self._right_mech_base: MechanismLigament2d = mech_root.appendLigament("Right Pivot Base",
+                                                                              IntakeConstants.PIVOT_BASE_LENGTH,
+                                                                              90,
+                                                                              color=Color8Bit(Color.kBlue))
+        SmartDashboard.putData("Left Pivot", left_mech_2d)
+        SmartDashboard.putData("Right Pivot", right_mech_2d)
 
         # TODO: Remove following once all works
         self._enable_intake = SendableChooser()
@@ -164,6 +217,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._position_goal = 0
         self._left_encoder.setPosition(0.0)
         self._right_encoder.setPosition(0.0)
+        self._left_mech_base.setAngle(90)
+        self._right_mech_base.setAngle(90)
         # self._left_pid_controller.reset()
         # self._right_pid_controller.reset()
 
@@ -239,6 +294,10 @@ class RevIntake(Subsystem, DualMechanismIO):
         if self._closed_loop:
             self.set_position(self._position_goal)
 
+        # Update visualization
+        self._left_mech_base.setAngle(self._inputs.mechanism_1_position)
+        self._right_mech_base.setAngle(self._inputs.mechanism_2_position)
+
         LogTracer.record("Closed Loop Control")
         Logger.recordOutput("Intake/goal", self._position_goal)
         Logger.recordOutput("Intake/ClosedLoop", self._closed_loop)
@@ -290,8 +349,20 @@ class RevIntake(Subsystem, DualMechanismIO):
         but for future simulation purposes, if called with keywords, return the amperage
         used in this interval
         """
+        if self._robot.isEnabled() and self._left_sim_pivot is not None and self._left_sim_pivot is not None:
+            self._left_sim_pivot.setInputVoltage(self._left_sim_motor.getAppliedOutput())
+            self._left_sim_pivot.update(self._period)
 
-        # TODO: Anything
+            self._right_sim_pivot.setInputVoltage(self._right_sim_motor.getAppliedOutput())
+            self._right_sim_pivot.update(self._period)
+
+            # Set the simulated encoder
+            self._left_sim_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
+            self._right_sim_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
+
+            # And simulate current drain
+            RoboRioSim.setVInVoltage(BatterySim.calculate([self._left_sim_pivot.getCurrentDraw(),
+                                                           self._right_sim_pivot.getCurrentDraw()]))
 
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:

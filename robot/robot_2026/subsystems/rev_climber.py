@@ -28,8 +28,7 @@ from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, Spa
     SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, SendableChooser, \
     SmartDashboard
-from wpilib.simulation import BatterySim, RoboRioSim
-from wpilib.simulation import ElevatorSim
+from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.controller import PIDController
@@ -120,11 +119,12 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._position_goal: inches = 0.0
         self._applied_voltage: volts = 0.0
 
+        #####################################
         # Visualization support
         mech_2d: Mechanism2d = Mechanism2d(20, 50)
         mech_root: MechanismRoot2d = mech_2d.getRoot("Climber Root",
-                                                     ClimberConstants.CLIMBER_ROOT_X, ClimberConstants.
-                                                     CLIMBER_ROOT_Y)
+                                                     ClimberConstants.CLIMBER_ROOT_X,
+                                                     ClimberConstants.CLIMBER_ROOT_Y)
         mech_base: MechanismLigament2d = mech_root.appendLigament("Climber Base",
                                                                   ClimberConstants.CLIMBER_BASE_LENGTH,
                                                                   90,
@@ -175,6 +175,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._position_goal = 0
         self._encoder.setPosition(0.0)
         self._pid_controller.reset()
+        self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT)
 
     def stop(self, brake: bool) -> None:
         self._pid_controller.setSetpoint(self.position)
@@ -264,6 +265,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         if self._closed_loop:
             self.set_position(self._position_goal)
 
+        # Update visualization
         self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT + self.position_meters)
 
         LogTracer.record("Closed Loop Control")
