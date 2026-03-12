@@ -142,16 +142,16 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         #####################################
         # Visualization support
-        left_mech_2d: Mechanism2d = Mechanism2d(20, 50)
-        mech_root: MechanismRoot2d = left_mech_2d.getRoot("Left Pivot Root",
+        self._left_mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        mech_root: MechanismRoot2d = self._left_mech_2d.getRoot("Left Pivot Root",
                                                           IntakeConstants.PIVOT_LEFT_ROOT_X,
                                                           IntakeConstants.PIVOT_ROOT_Y)
         self._left_mech_base: MechanismLigament2d = mech_root.appendLigament("Left Pivot Base",
                                                                              IntakeConstants.PIVOT_BASE_LENGTH,
                                                                              90,
                                                                              color=Color8Bit(Color.kBlue))
-        right_mech_2d: Mechanism2d = Mechanism2d(20, 50)
-        mech_root: MechanismRoot2d = right_mech_2d.getRoot("Right Pivot Root",
+        self._right_mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        mech_root: MechanismRoot2d = self._right_mech_2d.getRoot("Right Pivot Root",
                                                            IntakeConstants.PIVOT_RIGHT_ROOT_X,
                                                            IntakeConstants.PIVOT_ROOT_Y)
 
@@ -159,8 +159,8 @@ class RevIntake(Subsystem, DualMechanismIO):
                                                                               IntakeConstants.PIVOT_BASE_LENGTH,
                                                                               90,
                                                                               color=Color8Bit(Color.kBlue))
-        SmartDashboard.putData("Left Pivot", left_mech_2d)
-        SmartDashboard.putData("Right Pivot", right_mech_2d)
+        SmartDashboard.putData("Left-Pivot", self._left_mech_2d)
+        SmartDashboard.putData("Right-Pivot", self._right_mech_2d)
 
         # TODO: Remove following once all works
         self._enable_intake = SendableChooser()

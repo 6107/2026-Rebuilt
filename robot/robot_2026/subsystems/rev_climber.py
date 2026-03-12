@@ -121,8 +121,8 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         #####################################
         # Visualization support
-        mech_2d: Mechanism2d = Mechanism2d(20, 50)
-        mech_root: MechanismRoot2d = mech_2d.getRoot("Climber Root",
+        self._mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        mech_root: MechanismRoot2d = self._mech_2d.getRoot("Climber Root",
                                                      ClimberConstants.CLIMBER_ROOT_X,
                                                      ClimberConstants.CLIMBER_ROOT_Y)
         mech_base: MechanismLigament2d = mech_root.appendLigament("Climber Base",
@@ -133,7 +133,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
                                                                          ClimberConstants.CLIMBER_UPPER_MIN_LENGTH,
                                                                          90,
                                                                          color=Color8Bit(Color.kYellow))
-        SmartDashboard.putData("Climber", mech_2d)
+        SmartDashboard.putData("Climber-mech", self._mech_2d)
 
         # TODO: Remove following once all works
         self._enable_chooser = SendableChooser()

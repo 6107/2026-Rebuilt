@@ -27,13 +27,11 @@ from commands2 import CommandScheduler
 from commands2.command import Command
 from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
-from phoenix6 import SignalLogger
 from pykit.logger import Logger
 from pykit.networktables.nt4Publisher import NT4Publisher
 from pykit.wpilog.wpilogreader import WPILOGReader
 from pykit.wpilog.wpilogwriter import WPILOGWriter
-from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
+from wpilib import DriverStation, Field2d, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
@@ -147,9 +145,9 @@ class MyRobot(MyRobotBase):
         super().robotInit()
 
         # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykig
-        SignalLogger.enable_auto_logging(False)
-        StatusLogger.disableAutoLogging()
-        LiveWindow.disableAllTelemetry()
+        # SignalLogger.enable_auto_logging(False)
+        # StatusLogger.disableAutoLogging()
+        # LiveWindow.disableAllTelemetry()
 
         # TODO: make period smaller?
         # CommandScheduler.getInstance().setPeriod(0.5)  # 1/2s period for command scheduler wathdoc
