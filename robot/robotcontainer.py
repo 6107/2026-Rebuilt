@@ -134,8 +134,9 @@ class RobotContainer:
         ##########################################
         #   SHOOTER
         #
-        self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        self.subsystems.append(self.shooter)
+        self.shooter = None
+        # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        # self.subsystems.append(self.shooter)
 
         ##########################################
         #   INDEXER
@@ -145,16 +146,18 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Left Pivot Motor should be Inverted
-        self.intake = Intake(self,
-                             DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
-                             DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
-                             True, False)
+        self.intake = None
+        # self.intake = Intake(self,
+        #                      DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
+        #                      DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
+        #                      True, False)
 
         ##########################################
         #   CLIMBER
         #
-        self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
-        self.subsystems.append(self.climber)
+        self.climber = None
+        # self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
+        # self.subsystems.append(self.climber)
 
         ##########################################
         #   ALERTS
@@ -442,12 +445,12 @@ class RobotContainer:
 
         # Right Trigger - Follow the best AprilTag around the room
 
-        # Left Bumper - Reset the default drive to field-centric
-        # controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
-        controller.leftBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric(True)))
-
-        # Left Bumper - Reset the default drive to robot-centric
-        controller.rightBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric(False)))
+        # # Left Bumper - Reset the default drive to field-centric
+        # # controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
+        # controller.leftBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric(True)))
+        #
+        # # Left Bumper - Reset the default drive to robot-centric
+        # controller.rightBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric(False)))
 
         # A Button - Brake
         controller.a().whileTrue(
@@ -494,6 +497,15 @@ class RobotContainer:
             climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
             extend_command = ExtendClimber(self, manual=True, position_goal=-5)
             climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+
+        if self.intake is not None:
+            rotate_down = controller.povLeft()# .and_(self.intake.subsystem_trigger)
+            down_command = InstantCommand(lambda: self.intake.pivot_down())
+            rotate_down.onTrue(down_command)
+
+            rotate_up = controller.povRight()# .and_(self.intake.subsystem_trigger)
+            up_command = InstantCommand(lambda: self.intake.pivot_up())
+            rotate_up.onTrue(up_command)
 
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
@@ -542,16 +554,16 @@ class RobotContainer:
             ).onFalse(
                 InstantCommand(lambda: self.shooter.stop())
             )
-        # Left trigger - create a command for keeping the robot nose pointed towards the hub
-        keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
-                                                         self._field.hub_location(False),
-                                                         self._field.hub_location(True))
-
-        # set up a condition for when to do this: do it when the joystick right trigger is pressed by more than 50%
-        when_left_trigger_pressed = controller.axisGreaterThan(XboxController.Axis.kLeftTrigger,
-                                                              threshold=0.5)
-        # connect the command to its trigger
-        when_left_trigger_pressed.whileTrue(keep_pointing_towards_hub)
+        # # Left trigger - create a command for keeping the robot nose pointed towards the hub
+        # keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
+        #                                                  self._field.hub_location(False),
+        #                                                  self._field.hub_location(True))
+        #
+        # # set up a condition for when to do this: do it when the joystick right trigger is pressed by more than 50%
+        # when_left_trigger_pressed = controller.axisGreaterThan(XboxController.Axis.kLeftTrigger,
+        #                                                       threshold=0.5)
+        # # connect the command to its trigger
+        # when_left_trigger_pressed.whileTrue(keep_pointing_towards_hub)
 
         # Right bumper - track an apriltag around the room
         front_camera = self._cameras.get("front")

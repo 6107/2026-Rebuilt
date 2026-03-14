@@ -29,7 +29,7 @@ from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
 from phoenix6 import SignalLogger
 from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
+from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer, DataLogManager
 from wpimath.units import seconds
 
 import constants
@@ -146,10 +146,11 @@ class MyRobot(MyRobotBase):
         logger.info("robotInit: entry")
         super().robotInit()
 
-        # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykig
-        SignalLogger.enable_auto_logging(False)
-        StatusLogger.disableAutoLogging()
-        LiveWindow.disableAllTelemetry()
+        # # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykit
+        DataLogManager.start()
+        SignalLogger.enable_auto_logging(True)
+        StatusLogger.start()    # .disableAutoLogging()
+        LiveWindow.enableAllTelemetry() # .disableAllTelemetry()
 
         # TODO: make period smaller?
         # CommandScheduler.getInstance().setPeriod(0.5)  # 1/2s period for command scheduler wathdoc
@@ -193,6 +194,7 @@ class MyRobot(MyRobotBase):
         logger.info("robotInit: exit")
 
     def _logging_init(self):
+        DriverStation.silenceJoystickConnectionWarning(True)
         match constants.ROBOT_MODE:
             case constants.RobotModes.REAL:
                 logger.setLevel(logging.ERROR)  # Python logging

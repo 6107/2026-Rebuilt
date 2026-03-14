@@ -166,7 +166,8 @@ ROBORIO_MDMS = f"roboRIO-{TEAM}-frc.local"
 TEAM_LAPTOP_MDMS = f"{TEAM}-frc.local"
 CHIPS_LAPTOP_MDNS = ".local"
 
-PHOTONVISION_MDMS = "pv-6107-frc.local"
+PHOTON_VISION_NAME = "pf-6107-frc"
+PHOTONVISION_MDMS = f"{PHOTON_VISION_NAME}.local"
 LIMELIGHT_MDMS = "limelight.local"  # TODO: Make unique, add team #
 LIMELIGHT_ALT_MDMS = "limelight-alt.local"  # TODO: Make unique, add team #
 
@@ -177,24 +178,26 @@ ROBORIO_USB_STATIC = "172.22.11.2"
 # Camera configurations
 
 FRONT_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_NONE,  # CAMERA_TYPE_PHOTONVISION,
+    "Type"     : CAMERA_TYPE_NONE,  #CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(-5.0),
-                                           y=inchesToMeters(0.0),
-                                           z=inchesToMeters(12.0)),
-                             Rotation3d(0.0, 0.0, degreesToRadians(0.0))),
+    "Transform": Transform3d(Translation3d(x=inchesToMeters(2.5),
+                                           y=inchesToMeters(-10.5),
+                                           z=inchesToMeters(31.625)),
+                             Rotation3d(degreesToRadians(0.0),  # Roll  -  front/back x-axis rotation
+                                        degreesToRadians(-3.0),  # Pitch -  side/side y-axis rotation
+                                        degreesToRadians(0.0))),# Yaw   - left(+) / right(-) z-axis
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
 }
 
 REAR_CAMERA_INFO = {
-    "Type": CAMERA_TYPE_NONE,  # TODO: CAMERA_TYPE_LIMELIGHT,
+    "Type"     : CAMERA_TYPE_NONE, # CAMERA_TYPE_LIMELIGHT,
     "Label"    : "rear",
     "Name"     : "LimeLight",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(-6.0),
-                                           y=inchesToMeters(0.0),
-                                           z=inchesToMeters(12.0)),
+    "Transform": Transform3d(Translation3d(x=inchesToMeters(2.5),
+                                           y=inchesToMeters(-10.5),
+                                           z=inchesToMeters(31.625)),
                              Rotation3d(0.0, 0.0, degreesToRadians(180.0))),
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0

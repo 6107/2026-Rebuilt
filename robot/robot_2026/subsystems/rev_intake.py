@@ -23,7 +23,7 @@ from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, RobotBase, SmartDashboard
+from wpilib import Color, Color8Bit, RobotBase, SmartDashboard, SendableChooser
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
@@ -174,10 +174,15 @@ class RevIntake(Subsystem, DualMechanismIO):
         SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_intake = LoggedDashboardChooser("Intake Enable")
+        # self._enable_intake = LoggedDashboardChooser("Intake Enable")
+        self._enable_intake = SendableChooser()
         self._enable_intake.setDefaultOption("False", False)
         self._enable_intake.addOption("True", True)
-        # SmartDashboard.putData("Intake Enabled", self._enable_intake)
+
+        if isinstance(self._enable_intake, SendableChooser):
+            SmartDashboard.putData("Intake Enabled", self._enable_intake)
+        elif isinstance(self._enable_intake, LoggedDashboardChooser):
+            pass
 
     @property
     def enabled(self) -> bool:
@@ -249,8 +254,25 @@ class RevIntake(Subsystem, DualMechanismIO):
     def right_position(self) -> degrees:
         return self._inputs.mechanism_2_position
 
+    def pivot_up(self):
+        # Set encoders to zero and go up ~90 degrees
+        logger.info(f"Intake: Pivot up, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+        self._left_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
+        self._right_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
+        self._position_goal = IntakeConstants.DEPLOYED_ANGLE
+        self.set_position_goal(IntakeConstants.RETRACTED_ANGLE)
+
+    def pivot_down(self):
+        # Set encoders to 90 degrees and go down
+        logger.info(f"Intake: Pivot down, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+        self._left_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+        self._right_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+        self._position_goal = IntakeConstants.DEPLOYED_ANGLE
+        self.set_position_goal(IntakeConstants.DEPLOYED_ANGLE)
+
     def set_position_goal(self, goal: degrees) -> None:
         if self._position_goal != goal:
+            logger.info(f"Intake: Setting goal position to {goal}. currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
             self._position_goal = goal
             self._left_pid_controller.setReference(goal, SparkBase.ControlType.kPosition)
             self._right_pid_controller.setReference(goal, SparkBase.ControlType.kPosition)
@@ -299,8 +321,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         Logger.processInputs("Intake", self._inputs)
         LogTracer.record("UpdateInputs")
 
-        if self._closed_loop:
-            self.set_position(self._position_goal)
+        # if self._closed_loop and self._robot.isEnabled():
+        #     self.set_position(self._position_goal)
 
         # Update visualization
         self._left_mech_base.setAngle(self._inputs.mechanism_1_position)
@@ -372,7 +394,6 @@ class RevIntake(Subsystem, DualMechanismIO):
             RoboRioSim.setVInVoltage(BatterySim.calculate([self._left_sim_pivot.getCurrentDraw(),
                                                            self._right_sim_pivot.getCurrentDraw()]))
 
-
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
         inputs.mechanism_1_connected = True   # TODO: Figure this one out
         inputs.mechanism_1_position = self._left_encoder.getPosition()
@@ -398,15 +419,25 @@ class RevIntake(Subsystem, DualMechanismIO):
         # Limit to max/min
         position = max(min(position, IntakeConstants.RETRACTED_ANGLE),
                        IntakeConstants.DEPLOYED_ANGLE)
-        self._left_encoder.setPosition(position)
-        self._right_encoder.setPosition(position)
+
+        if position != self.left_position or position != self.right_position:
+            logger.info(f"Intake: Setting position to {position}")
+            self._inputs.mechanism_1_position = position
+            self._inputs.mechanism_2_position = position
+            self._left_encoder.setPosition(position)
+            self._right_encoder.setPosition(position)
+            if RobotBase.isSimulation():
+                self._left_sim_encoder.setPosition(position)
+                self._right_sim_encoder.setPosition(position)
 
     def set_voltage(self, voltage: volts) -> None:
         """
         Set the drive voltage
         """
-        self._left_motor.setVoltage(voltage)
-        self._right_motor.setVoltage(voltage)
+        if voltage != self._left_motor.getAppliedOutput() or voltage != self._right_motor.getAppliedOutput():
+            logger.info(f"Intake: Setting voltage to {voltage}")
+            self._left_motor.setVoltage(voltage)
+            self._right_motor.setVoltage(voltage)
 
     def sys_id_routine(self, subsystem: Subsystem) -> Command:
         """
