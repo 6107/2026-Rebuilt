@@ -20,7 +20,7 @@ import os
 from typing import Callable, List, Optional, Sequence, Tuple
 
 from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout
-from wpilib import getDeployDirectory, SmartDashboard
+from wpilib import getDeployDirectory
 from wpimath.geometry import Pose3d
 from wpimath.units import meters
 
@@ -49,13 +49,13 @@ class Field:
 
     def __init__(self):
         # First is the default
-        self._april_tag_chooser = LoggedDashboardChooser("Field-Selector")
+        self._april_tag_chooser = LoggedDashboardChooser("Field Selector")
         self._april_tag_chooser.setDefaultOption(self._field_info[0][0], self._field_info[0][1])
 
         for field in self._field_info[1:]:
             self._april_tag_chooser.addOption(field[0], field[1])
 
-        SmartDashboard.putData("Field Selector", self._april_tag_chooser)
+        # SmartDashboard.putData("Field Selector", self._april_tag_chooser)
 
         # print("TODO: Support NT4 here")
         # self._chooser_entry = NetworkTables.getTable("SmartDashboard").getEntry("Field Selector/active")

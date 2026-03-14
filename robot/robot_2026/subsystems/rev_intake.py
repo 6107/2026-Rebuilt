@@ -23,14 +23,15 @@ from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, \
-    SmartDashboard
+from wpilib import Color, Color8Bit, RobotBase, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.units import amperes, degrees, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, \
     volts
 
+from lib_6107.pykit.LoggedMechanism2d import LoggedMechanism2d
+from lib_6107.pykit.LoggedMechanismLigament2d import LoggedMechanismLigament2d
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
 from pykit.autolog import autologgable_output
@@ -105,6 +106,7 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
         self._right_encoder.setPosition(0.0)
 
+
         # Support simulation
         if RobotBase.isSimulation():
             gearbox = DCMotor.NEO(1)
@@ -137,37 +139,45 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._left_pid_controller: SparkClosedLoopController = self._left_motor.getClosedLoopController()
         self._right_pid_controller: SparkClosedLoopController = self._right_motor.getClosedLoopController()
 
+        self._left_pid_controller.setReference(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+        self._right_pid_controller.setReference(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+        # TODO: What about velocity goal?
+
+
         # The critical attributes/properties for operation
         self._position_goal: degrees = 0.0
         self._applied_voltage: volts  = 0.0
 
         #####################################
         # Visualization support
-        self._left_mech_2d: Mechanism2d = Mechanism2d(20, 50)
-        mech_root: MechanismRoot2d = self._left_mech_2d.getRoot("Left Pivot Root",
-                                                          IntakeConstants.PIVOT_LEFT_ROOT_X,
-                                                          IntakeConstants.PIVOT_ROOT_Y)
-        self._left_mech_base: MechanismLigament2d = mech_root.appendLigament("Left Pivot Base",
-                                                                             IntakeConstants.PIVOT_BASE_LENGTH,
-                                                                             90,
-                                                                             color=Color8Bit(Color.kBlue))
-        self._right_mech_2d: Mechanism2d = Mechanism2d(20, 50)
-        mech_root: MechanismRoot2d = self._right_mech_2d.getRoot("Right Pivot Root",
+        left_mech_2d = LoggedMechanism2d(20, 50)
+        mech_root = left_mech_2d.getRoot("Left Pivot Root",
+                                         IntakeConstants.PIVOT_LEFT_ROOT_X,
+                                         IntakeConstants.PIVOT_ROOT_Y)
+        self._left_mech_base = LoggedMechanismLigament2d("Left Pivot Base",
+                                                         IntakeConstants.PIVOT_BASE_LENGTH,
+                                                         90,
+                                                         color=Color8Bit(Color.kBlue))
+        mech_root.append(self._left_mech_base)
+
+        right_mech_2d = LoggedMechanism2d(20, 50)
+        mech_root = right_mech_2d.getRoot("Right Pivot Root",
                                                            IntakeConstants.PIVOT_RIGHT_ROOT_X,
                                                            IntakeConstants.PIVOT_ROOT_Y)
+        self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
+                                                          IntakeConstants.PIVOT_BASE_LENGTH,
+                                                          90,
+                                                          color=Color8Bit(Color.kBlue))
+        mech_root.append(self._right_mech_base)
 
-        self._right_mech_base: MechanismLigament2d = mech_root.appendLigament("Right Pivot Base",
-                                                                              IntakeConstants.PIVOT_BASE_LENGTH,
-                                                                              90,
-                                                                              color=Color8Bit(Color.kBlue))
-        SmartDashboard.putData("Left-Pivot", self._left_mech_2d)
-        SmartDashboard.putData("Right-Pivot", self._right_mech_2d)
+        SmartDashboard.putData("Left-Pivot", left_mech_2d)
+        SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_intake = LoggedDashboardChooser("Intake-Enable")
+        self._enable_intake = LoggedDashboardChooser("Intake Enable")
         self._enable_intake.setDefaultOption("False", False)
         self._enable_intake.addOption("True", True)
-        SmartDashboard.putData("Intake Enabled", self._enable_intake)
+        # SmartDashboard.putData("Intake Enabled", self._enable_intake)
 
     @property
     def enabled(self) -> bool:
@@ -203,6 +213,7 @@ class RevIntake(Subsystem, DualMechanismIO):
                 IntakeConstants.INTEGRAL_COEFFICIENT,
                 IntakeConstants.DERIVATIVE_COEFFICIENT,
                 ClosedLoopSlot(0))
+            .outputRange(-0.2, 0.2)
         )
 
         # TODO: add to above -> feedForward.kS(0).kV(0).kA(0).kCos(0).kCosRatio(0))
@@ -241,12 +252,8 @@ class RevIntake(Subsystem, DualMechanismIO):
     def set_position_goal(self, goal: degrees) -> None:
         if self._position_goal != goal:
             self._position_goal = goal
-            self._left_pid_controller.setSetpoint(goal,
-                                                  SparkBase.ControlType.kPosition,
-                                                  ClosedLoopSlot(0))
-            self._right_pid_controller.setSetpoint(goal,
-                                                   SparkBase.ControlType.kPosition,
-                                                   ClosedLoopSlot(0))
+            self._left_pid_controller.setReference(goal, SparkBase.ControlType.kPosition)
+            self._right_pid_controller.setReference(goal, SparkBase.ControlType.kPosition)
             # TODO: What about velocity goal?
             #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
 
@@ -337,7 +344,7 @@ class RevIntake(Subsystem, DualMechanismIO):
     def simulationPeriodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
-        function. It is useful for updating subsystem-specific state that needs to be
+        function). It is useful for updating subsystem-specific state that needs to be
         maintained for simulations, such as for updating simulation classes and setting
         simulated sensor readings.
 

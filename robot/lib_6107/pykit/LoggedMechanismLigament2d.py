@@ -28,7 +28,7 @@ from pykit.logtable import LogTable
 
 class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
-    def __init__(self, name: str, length: meters, angle: degrees, linewidth: float,
+    def __init__(self, name: str, length: meters, angle: degrees, linewidth: Optional[float] = 10,
                  color: Optional[Color8Bit] = None):
 
         super().__init__(name)

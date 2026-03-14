@@ -134,9 +134,8 @@ class RobotContainer:
         ##########################################
         #   SHOOTER
         #
-        self.shooter: Shooter | None = None
-        # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        # self.subsystems.append(self.shooter)
+        self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        self.subsystems.append(self.shooter)
 
         ##########################################
         #   INDEXER
@@ -146,7 +145,6 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Left Pivot Motor should be Inverted
-        # self.intake: Intake | None = None
         self.intake = Intake(self,
                              DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
                              DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
@@ -155,7 +153,6 @@ class RobotContainer:
         ##########################################
         #   CLIMBER
         #
-        # self.climber: Climber | None = None
         self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
         self.subsystems.append(self.climber)
 
@@ -679,7 +676,7 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        self._limit_chooser = LoggedDashboardChooser("Speed-Limiter")
+        self._limit_chooser = LoggedDashboardChooser("Drive rate limiter")
 
         # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)
@@ -689,7 +686,7 @@ class RobotContainer:
         self._limit_chooser.addOption("80%", 0.8)
         self._limit_chooser.addOption("100%", 1.0)
 
-        SmartDashboard.putData("Drive rate limiter", self._limit_chooser)
+        # SmartDashboard.putData("Drive rate limiter", self._limit_chooser)
 
     def configure_additional_autos(self):
         """
@@ -711,8 +708,8 @@ class RobotContainer:
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
 
-        SmartDashboard.putData("Chosen Auto", self._auto_chooser)
-        SmartDashboard.putData("Chosen Auto End Game", self._auto_end_chooser)
+        # SmartDashboard.putData("Chosen Auto", self._auto_chooser)
+        # SmartDashboard.putData("Chosen Auto End Game", self._auto_end_chooser)
 
     def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
         """

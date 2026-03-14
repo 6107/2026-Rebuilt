@@ -137,10 +137,10 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_chooser = LoggedDashboardChooser("Climber-Enable")
+        self._enable_chooser = LoggedDashboardChooser("Climber Enable")
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
-        SmartDashboard.putData("Climber Enabled", self._enable_chooser)
+        # SmartDashboard.putData("Climber Enabled", self._enable_chooser)
 
     @property
     def enabled(self) -> bool:

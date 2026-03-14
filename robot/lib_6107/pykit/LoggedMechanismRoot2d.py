@@ -81,12 +81,12 @@ class LoggedMechanismRoot2d:
     def update(self, table: NetworkTable) -> None:
         self._table = table
 
-        if self._x is not None:
+        if self._x_publisher is not None:
             self._x_publisher.close()
 
         self._x_publisher = table.getDoubleTopic("x").publish()
 
-        if self._y is not None:
+        if self._y_publisher is not None:
             self._y_publisher.close()
 
         self._y_publisher = table.getDoubleTopic("y").publish()

@@ -73,10 +73,10 @@ class RevShooter(Subsystem):
             self._sim_encoder = SparkRelativeEncoderSim(self._motor)
 
         # TODO: Remove following once all works
-        self._enable_chooser = LoggedDashboardChooser("Shooter-Enable")
+        self._enable_chooser = LoggedDashboardChooser("Shooter Enable")
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
-        SmartDashboard.putData("Shooter Enabled", self._enable_chooser)
+        # SmartDashboard.putData("Shooter Enabled", self._enable_chooser)
 
     @property
     def enabled(self) -> bool:
