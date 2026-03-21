@@ -21,22 +21,22 @@ from commands2 import cmd, Subsystem
 from commands2.button import Trigger
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
+from pykit.autolog import autologgable_output
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
-from wpimath.units import amperes, degrees, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, \
-    volts
+from wpimath.units import amperes, degrees, degrees_per_second, inches, inchesToMeters, kilograms, meters, \
+    revolutions_per_minute, seconds, volts
 
 from lib_6107.pykit.LoggedMechanism2d import LoggedMechanism2d
 from lib_6107.pykit.LoggedMechanismLigament2d import LoggedMechanismLigament2d
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
-from pykit.autolog import autologgable_output
-from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -76,12 +76,7 @@ class RevIntake(Subsystem, DualMechanismIO):
     the angle (degrees). Positive moves the pivot forward/down. Setting back to
     zero returns it to the zero-point (see note below).
 
-    The Idle mode is currently set to 'Coast'. After we get the rest of the intake
-    working, we may want to put it to 'Brake' mode if that is a better value.
-
-    TODO: If we stay with 'Coast' mode, then our 'Down/Deployed' degrees, could be
-          less than 90-degrees and we use the bumpers to limit us. That would mean
-          that we need to remove voltage, but can we even do that.
+    The Idle mode is currently set to 'Coast'.
 
     IMPORTANT NOTE:  On motor power-on, the internal encoder will assume that the
                      current position is the 0. For the intake to run off of commands
@@ -134,8 +129,6 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
 
-        # self._left_encoder.setPosition(0.0)
-        # self._right_encoder.setPosition(0.0)
         logger.info(f"Intake. At startup, encoder currently at {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
 
         # Support simulation
@@ -288,6 +281,14 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         return config
 
+    @property
+    def angle(self) -> degrees:
+        return self._left_encoder.getPosition()
+
+    @property
+    def angular_velocity(self) -> degrees_per_second:
+        return self._left_encoder.getVelocity()
+
     def reset(self) -> None:
         self.stop()
         logger.info(f"Intake: Reset command was called")
@@ -319,9 +320,7 @@ class RevIntake(Subsystem, DualMechanismIO):
         # Set encoders to zero and go up ~90 degrees
         logger.info(f"Intake: Pivot up, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
         logger.info(f"Intake: Pivot up. Position goal before command is: {self._position_goal}")
-        # self._left_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
-        # self._right_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
-        # self._position_goal = IntakeConstants.RETRACTED_ANGLE
+
         self.set_position_goal(IntakeConstants.RETRACTED_ANGLE)
 
     def pivot_tweak_up(self, increment: degrees = 1.0)-> None:
@@ -334,16 +333,16 @@ class RevIntake(Subsystem, DualMechanismIO):
         # Set encoders to 90 degrees and go down
         logger.info(f"Intake: Pivot down, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
         logger.info(f"Intake: Pivot down. Position goal before command is: {self._position_goal}")
-        # self._left_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
-        # self._right_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
-        #self._position_goal = IntakeConstants.DEPLOYED_ANGLE
+
         self.set_position_goal(IntakeConstants.DEPLOYED_ANGLE)
 
     def set_position_goal(self, goal: degrees) -> None:
         if self._position_goal != goal:
             logger.info(f"Intake: Setting goal position to {goal}. currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
             logger.info(f"Intake: current PID controller setpoint before command is: {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
+
             self._position_goal = goal
+
             self._left_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
             self._right_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
             # TODO: What about velocity goal?
@@ -391,9 +390,6 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         Logger.processInputs("Intake", self._inputs)
         LogTracer.record("UpdateInputs")
-
-        # if self._closed_loop and self._robot.isEnabled():
-        #     self.set_position(self._position_goal)
 
         # Update visualization
         self._left_mech_base.setAngle(self._inputs.mechanism_1_position)

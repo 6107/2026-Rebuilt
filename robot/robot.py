@@ -28,17 +28,17 @@ from commands2.command import Command
 from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
 from phoenix6 import SignalLogger
+from pykit.logger import Logger
+from pykit.networktables.nt4Publisher import NT4Publisher
+from pykit.wpilog.wpilogreader import WPILOGReader
+from pykit.wpilog.wpilogwriter import WPILOGWriter
 from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer, DataLogManager
+from wpilib import DataLogManager, DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
-from pykit.logger import Logger
-from pykit.networktables.nt4Publisher import NT4Publisher
-from pykit.wpilog.wpilogreader import WPILOGReader
-from pykit.wpilog.wpilogwriter import WPILOGWriter
 from robot_2026.util.logtracer import LogTracer
 from robotcontainer import RobotContainer
 
@@ -148,12 +148,16 @@ class MyRobot(MyRobotBase):
 
         # # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykit
         DataLogManager.start()
-        SignalLogger.enable_auto_logging(True)
-        StatusLogger.start()    # .disableAutoLogging()
-        LiveWindow.enableAllTelemetry() # .disableAllTelemetry()
-
-        # TODO: make period smaller?
-        # CommandScheduler.getInstance().setPeriod(0.5)  # 1/2s period for command scheduler wathdoc
+        if False:
+            # Enable all logging
+            SignalLogger.enable_auto_logging(True)
+            StatusLogger.start()  # .disableAutoLogging()
+            LiveWindow.enableAllTelemetry()  # .disableAllTelemetry()
+        else:
+            # Disable most logging
+            SignalLogger.enable_auto_logging(False)
+            StatusLogger.disableAutoLogging()
+            LiveWindow.disableAllTelemetry()
 
         command_count: dict[str, int] = {}
 

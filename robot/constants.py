@@ -51,8 +51,10 @@ ROBOT_MASS: kilograms = lbsToKilograms(60)
 
 # Robot size (including bumpers). Defaults, use PathPlanner to set actual value to
 #                                 use if PathPlanner is supported
-ROBOT_X_WIDTH_DEFAULT: meters = inchesToMeters(33)
-ROBOT_Y_WIDTH_DEFAULT: meters = inchesToMeters(33)
+ROBOT_BUMPER_WIDTH: meters = inchesToMeters(4)
+ROBOT_CHASSIS_WIDTH: meters = inchesToMeters(27)  # Outside, assume square chassis
+ROBOT_X_WIDTH_DEFAULT: meters = ROBOT_CHASSIS_WIDTH + (2 * ROBOT_BUMPER_WIDTH)
+ROBOT_Y_WIDTH_DEFAULT: meters = ROBOT_CHASSIS_WIDTH + (2 * ROBOT_BUMPER_WIDTH)
 
 ###############################################################################
 # Device CAN bus IDs
@@ -85,7 +87,7 @@ THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_S
 # TODO: Do we need an 'Autonomous Mode' max speed, max accel, max_angular, ...
 
 WHEEL_RADIUS: meters = TunerConstants._wheel_radius
-WHEEL_DIAMETER: meters = WHEEL_RADIUS * 3
+WHEEL_DIAMETER: meters = WHEEL_RADIUS * 2
 WHEEL_CIRCUMFERENCE: meters = WHEEL_DIAMETER * math.pi
 
 MAX_WHEEL_LINEAR_VELOCITY: meters_per_second = 1.0

@@ -27,14 +27,17 @@ from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from phoenix6.swerve.swerve_module import SwerveModule
+from pykit.alertlogger import AlertLogger
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
 import constants
-from constants import FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
-    ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT, DeviceID
+from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
+    ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
 from lib_6107.commands.camera.track_tag_command import TrackTagCommand
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
@@ -42,14 +45,12 @@ from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox
 from lib_6107.util.phoenix6_telemetry import Telemetry
-from pykit.alertlogger import AlertLogger
-from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_intake import RevIntake as Intake
+from robot_2026.subsystems.simulation.robot_mech import RobotMech
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,11 @@ class RobotContainer:
         self.climber = None
         # self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
         # self.subsystems.append(self.climber)
+
+        ##########################################
+        #   Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
+        if not DriverStation.isFMSAttached():
+            self._mechanism_2d = RobotMech(self)
 
         ##########################################
         #   ALERTS
