@@ -99,7 +99,6 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
     set so if we fully retract the climbing arm, the stall current limit should
     trip.
     """
-
     @staticmethod
     def pathplanner_register(container: 'RobotContainer') -> None:
         """
@@ -129,7 +128,6 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
     This command, while it runs, will extend the climber (robot goes down). It
     can be attached to controller button or used by an automated routine.
     """
-
     @staticmethod
     def pathplanner_register(container: 'RobotContainer') -> None:
         """

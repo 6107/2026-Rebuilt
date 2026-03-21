@@ -22,14 +22,13 @@ from typing import Optional
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
-from rev import PersistMode, ResetMode, SparkBase, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, \
-    SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, \
+from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, SparkMaxSim, \
+    SparkRelativeEncoder, SparkRelativeEncoderSim
+from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
     SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
-from wpimath.controller import PIDController
 from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
@@ -111,10 +110,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
-        self._pid_controller: PIDController = PIDController(ClimberConstants.PROPORTIONAL_COEFFICIENT,
-                                                            ClimberConstants.INTEGRAL_COEFFICIENT,
-                                                            ClimberConstants.DERIVATIVE_COEFFICIENT)
-        self._pid_controller.setIZone(ClimberConstants.IZONE_RANGE)
+        self._pid_controller = self._motor.getClosedLoopController()
 
         # The critical attributes/properties for operation
         self._position_goal: inches = 0.0
@@ -122,7 +118,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         #####################################
         # Visualization support
-        self._mech_2d: Mechanism2d = Mechanism2d(20, 50)
+        self._mech_2d: Mechanism2d = Mechanism2d(inchesToMeters(20), inchesToMeters(50))
         mech_root: MechanismRoot2d = self._mech_2d.getRoot("Climber Root",
                                                      ClimberConstants.CLIMBER_ROOT_X,
                                                      ClimberConstants.CLIMBER_ROOT_Y)
@@ -132,7 +128,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
                                                                   color=Color8Bit(Color.kBlue))
         self._mech_upper: MechanismLigament2d = mech_base.appendLigament("Climber Upper",
                                                                          ClimberConstants.CLIMBER_UPPER_MIN_LENGTH,
-                                                                         90,
+                                                                         0,
                                                                          color=Color8Bit(Color.kYellow))
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
@@ -169,17 +165,44 @@ class RevClimber(Subsystem, RotationMechanismIO):
         velocity_factor = (ClimberConstants.SPOOL_DIAMETER / math.pi) / (ClimberConstants.GEAR_RATIO * 60.0)
 
         config.encoder.velocityConversionFactor(velocity_factor)
+
+        slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
+        (
+            config.closedLoop.
+            IMaxAccum(0.03, slot=slot0).
+            IZone(3, slot=slot0).
+            pidf(p=ClimberConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+                 i=ClimberConstants.INTEGRAL_COEFFICIENT,
+                 d=ClimberConstants.DERIVATIVE_COEFFICIENT,
+                 ff=0,
+                 slot=slot0)
+            .outputRange(-0.1, 0.1)
+        )
+        # crank_max_dps = ClimberConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
+        # slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
+        # (
+        #     config.closedLoop.
+        #     pidf(p=1e-5,
+        #          i=0,
+        #          d=0,
+        #          ff=1 / crank_max_dps,
+        #          slot=slot1)
+        #     .maxMotion.cruiseVelocity(250, slot=slot1)
+        #     .maxAcceleration(500, slot=slot1)
+        #     .allowedClosedLoopError(0, slot=slot1)
+        # )
         return config
 
     def reset(self) -> None:
         self._motor.stopMotor()
-        self._position_goal = 0
+        self._position_goal = 0.0
         self._encoder.setPosition(0.0)
         self._pid_controller.reset()
         self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT)
 
     def stop(self, brake: bool) -> None:
-        self._pid_controller.setSetpoint(self.position)
+        self._pid_controller.setSetpoint(self.position, SparkLowLevel.ControlType.kPosition,
+                                         ClosedLoopSlot(ClosedLoopSlot.kSlot0))
         self._motor.stopMotor()
 
         if brake:
@@ -205,7 +228,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
     def position(self, position: inches) -> None:
         if self._position_goal != position:
             self._position_goal = position
-            self._pid_controller.setSetpoint(position)
+            self._pid_controller.setSetpoint(position, SparkLowLevel.ControlType.kPosition,
+                                             ClosedLoopSlot(ClosedLoopSlot.kSlot0))
+            logger.info(f"Climber position set to {position}")
 
     def at_min(self) -> bool:
         return self._inputs.mechanism_position <= ClimberConstants.CLIMBER_MIN_HEIGHT + \
@@ -214,6 +239,14 @@ class RevClimber(Subsystem, RotationMechanismIO):
     def at_max(self) -> bool:
         return self._inputs.mechanism_position >= ClimberConstants.CLIMBER_MAX_HEIGHT - \
             ClimberConstants.CLIMBER_TOLERANCE
+
+    def extend(self) -> None:
+        self.position = 5.0
+        self._motor.set(0.1)
+
+    def retract(self) -> None:
+        self.position = 0.0
+        self._motor.set(-0.1)
 
     def stop(self, brake: Optional[bool] = True) -> None:
         self._motor.stopMotor()
@@ -246,7 +279,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
         used in this interval
         """
         if self._robot.isEnabled():
-            self._sim_climber.setInputVoltage(self._sim_motor.getAppliedOutput())
+            voltage = self._sim_motor.getAppliedOutput() * RobotController.getBatteryVoltage()
+
+            self._sim_climber.setInputVoltage(voltage)
             self._sim_climber.update(self._period)
 
             # Set the simulated encoder

@@ -23,7 +23,7 @@ from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, RobotBase, SmartDashboard, SendableChooser
+from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
@@ -43,12 +43,13 @@ logger = logging.getLogger(__name__)
 
 class IntakeConstants:
     TARGET_RPM: revolutions_per_minute = 10
-    PROPORTIONAL_COEFFICIENT = 0.1     # kP
-    INTEGRAL_COEFFICIENT = 0.1         # kI
-    DERIVATIVE_COEFFICIENT = 0.0       # kD
+    PROPORTIONAL_COEFFICIENT = 1e-2  # kP
+    INTEGRAL_COEFFICIENT = 1e-5  # kI
+    DERIVATIVE_COEFFICIENT = 1e-2  # kD
     LIMIT_CURRENT: amperes = 30
-    IZONE_RANGE = 0.0
-    GEAR_RATIO = 25.0
+
+    MAX_RPM = 6784
+    GEAR_RATIO = 1.0
     DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
     DEPLOYED_ANGLE: degrees = 0.0
@@ -88,13 +89,13 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._physics_controller = None
 
         # Set up the motor controller
-        self._left_motor = SparkFlex(self._left_device_id, SparkBase.MotorType.kBrushless)
+        self._left_motor = SparkFlex(self._left_device_id, SparkFlex.MotorType.kBrushless)
         try_until_ok("Left Intake", 5,
                      lambda: self._left_motor.configure(self._motor_config(self._left_inverted),
                                                         ResetMode.kResetSafeParameters,
                                                         PersistMode.kNoPersistParameters))
 
-        self._right_motor = SparkFlex(self._right_device_id, SparkBase.MotorType.kBrushless)
+        self._right_motor = SparkFlex(self._right_device_id, SparkFlex.MotorType.kBrushless)
         try_until_ok("Right Intake", 5,
                      lambda: self._right_motor.configure(self._motor_config(self._right_inverted),
                                                          ResetMode.kResetSafeParameters,
@@ -150,17 +151,16 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         #####################################
         # Visualization support
-        left_mech_2d = LoggedMechanism2d(20, 50)
+        left_mech_2d = Mechanism2d(inchesToMeters(20), inchesToMeters(50))
         mech_root = left_mech_2d.getRoot("Left Pivot Root",
                                          IntakeConstants.PIVOT_LEFT_ROOT_X,
                                          IntakeConstants.PIVOT_ROOT_Y)
-        self._left_mech_base = LoggedMechanismLigament2d("Left Pivot Base",
+        self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
                                                          IntakeConstants.PIVOT_BASE_LENGTH,
                                                          90,
                                                          color=Color8Bit(Color.kBlue))
-        mech_root.append(self._left_mech_base)
 
-        right_mech_2d = LoggedMechanism2d(20, 50)
+        right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
         mech_root = right_mech_2d.getRoot("Right Pivot Root",
                                                            IntakeConstants.PIVOT_RIGHT_ROOT_X,
                                                            IntakeConstants.PIVOT_ROOT_Y)
@@ -197,31 +197,56 @@ class RevIntake(Subsystem, DualMechanismIO):
         config = (SparkFlexConfig().
                   inverted(inverted).
                   smartCurrentLimit(IntakeConstants.LIMIT_CURRENT).
-                  setIdleMode(SparkFlexConfig.IdleMode.kBrake).
-                  smartCurrentLimit(IntakeConstants.LIMIT_CURRENT)
+                  setIdleMode(SparkFlexConfig.IdleMode.kBrake)
                   )
-        config.limitSwitch.forwardLimitSwitchEnabled(True).reverseLimitSwitchEnabled(True)
+        config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
 
         # Set the position conversion factor (e.g., to convert rotations to degrees)
         # The native unit is rotations. So use 360.0 as conversion factor to get degrees
-        config.encoder.positionConversionFactor(360.0)
+        deploy_degrees_per_motor_rotation = 360 * IntakeConstants.GEAR_RATIO
+        config.encoder.positionConversionFactor(deploy_degrees_per_motor_rotation)
 
         # Set the velocity conversion factor (e.g., to convert RPM to degrees/second)
         # The native unit is RPM. So use:  (360 degrees/revolution) / (60 seconds/minute) = 6
-        config.encoder.velocityConversionFactor(6.0)
+        config.encoder.velocityConversionFactor(deploy_degrees_per_motor_rotation / 60)
 
         # Closed loop configuration parameters, slot=0
         # TODO: Use SysID to determine actual values
+        slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
             config.closedLoop.
-            pid(IntakeConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
-                IntakeConstants.INTEGRAL_COEFFICIENT,
-                IntakeConstants.DERIVATIVE_COEFFICIENT,
-                ClosedLoopSlot(0))
-            .outputRange(-0.2, 0.2)
+            IMaxAccum(0.03, slot=slot0).
+            IZone(3, slot=slot0).
+            pidf(p=IntakeConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+                 i=IntakeConstants.INTEGRAL_COEFFICIENT,
+                 d=IntakeConstants.DERIVATIVE_COEFFICIENT,
+                 ff=0,
+                 slot=slot0)
+            .outputRange(-0.1, 0.1)
         )
-
-        # TODO: add to above -> feedForward.kS(0).kV(0).kA(0).kCos(0).kCosRatio(0))
+        # TODO: For control over acceleration and velocity, use maxMotion on slot 1
+        #       https://docs.revrobotics.com/revlib/spark/closed-loop/maxmotion-position-control
+        #
+        # CruiseVelocity -> Set the cruise velocity for the MAXMotion mode of the controller
+        #                   for a specific closed loop slot. Natively, the units are in RPM
+        #                   but will be affected by the velocity conversion factor.
+        #
+        #  Max RPM is at 12V and we should be lower if the outputRange above is in play
+        #
+        crank_max_dps = IntakeConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
+        slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
+        (
+            config.closedLoop.
+            pidf(p=1e-5,
+                 i=0,
+                 d=0,
+                 ff=1 / crank_max_dps,
+                 slot=slot1)
+            .maxMotion.cruiseVelocity(250, slot=slot1)
+            .maxAcceleration(500, slot=slot1)
+            .allowedClosedLoopError(0, slot=slot1)
+        )
+        # TODO: review the following again
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/feed-forward-control
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/position-control-mode

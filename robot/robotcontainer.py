@@ -33,7 +33,7 @@ from wpimath.geometry import Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
 import constants
-from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
+from constants import FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
     ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
 from lib_6107.commands.camera.track_tag_command import TrackTagCommand
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
@@ -47,12 +47,8 @@ from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
-from robot_2026.commands.swervedrive.point_towards_location import PointTowardsLocation
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
-from robot_2026.subsystems.rev_climber import RevClimber as Climber
-from robot_2026.subsystems.rev_intake import RevIntake as Intake
-from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 
 logger = logging.getLogger(__name__)
 
@@ -489,14 +485,19 @@ class RobotContainer:
 
         if self.climber is not None:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
-            climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
-            retract_command = RetractClimber(self, manual=True, position_goal=5)
-            climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+            climb_up = controller.povUp()  # .and_(self.climber.subsystem_trigger)
+            extend = InstantCommand(lambda: self.climber.extend())
+            climb_up.onTrue(extend)
+            # retract_command = RetractClimber(self, manual=True, position_goal=5)
+            # climb_up.onTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
 
             # POV-DOWN: Extend the climbing arm (robot goes down)
-            climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
-            extend_command = ExtendClimber(self, manual=True, position_goal=-5)
-            climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+            climb_down = controller.povDown()  # .and_(self.climber.subsystem_trigger)
+            retract = InstantCommand(lambda: self.climber.retract())
+            climb_down.onTrue(retract)
+
+            # extend_command = ExtendClimber(self, manual=True, position_goal=-5)
+            # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
         if self.intake is not None:
             rotate_down = controller.povLeft()# .and_(self.intake.subsystem_trigger)
