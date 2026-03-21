@@ -142,6 +142,7 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Left Pivot Motor should be Inverted
+        from constants import DeviceID
         self.intake = None
         # self.intake = Intake(self,
         #                      DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
@@ -627,7 +628,7 @@ class RobotContainer:
                 lambda: self.robot_drive.point_at_request.with_module_direction(
                     Rotation2d(-controller.getLeftY(),
                                -controller.getLeftX())
-                ).with_drive_request(DriveRequestType.Velocity)
+                ).with_drive_request(swerve.SwerveModule.DriveRequestType.VELOCITY)
             )
         )
         # Run SysId routines when holding back/start and X/Y.
