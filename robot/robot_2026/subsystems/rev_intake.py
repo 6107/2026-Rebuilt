@@ -207,8 +207,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         # TODO: Remove following once all works
         # self._enable_intake = LoggedDashboardChooser("Intake Enable")
         self._enable_intake = SendableChooser()
-        self._enable_intake.setDefaultOption("False", False)
-        self._enable_intake.addOption("True", True)
+        self._enable_intake.addOption("False", False)
+        self._enable_intake.setDefaultOption("True", True)
 
         if isinstance(self._enable_intake, SendableChooser):
             SmartDashboard.putData("Intake Enabled", self._enable_intake)
@@ -293,10 +293,10 @@ class RevIntake(Subsystem, DualMechanismIO):
         logger.info(f"Intake: Reset command was called")
 
         self._position_goal = 0
-        self._left_encoder.setPosition(0.0)
-        self._right_encoder.setPosition(0.0)
-        self._left_mech_base.setAngle(90)
-        self._right_mech_base.setAngle(90)
+        #self._left_encoder.setPosition(0.0)
+        #self._right_encoder.setPosition(0.0)
+        self._left_mech_base.setAngle(IntakeConstants.RETRACTED_ANGLE)
+        self._right_mech_base.setAngle(IntakeConstants.RETRACTED_ANGLE)
         # self._left_pid_controller.reset()
         # self._right_pid_controller.reset()
 
@@ -323,6 +323,12 @@ class RevIntake(Subsystem, DualMechanismIO):
         # self._right_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
         # self._position_goal = IntakeConstants.RETRACTED_ANGLE
         self.set_position_goal(IntakeConstants.RETRACTED_ANGLE)
+
+    def pivot_tweak_up(self, increment: degrees = 1.0)-> None:
+        self.set_position_goal(self._position_goal + increment)
+
+    def pivot_tweak_down(self, increment: degrees = 1.0)-> None:
+        self.set_position_goal(self._position_goal - increment)
 
     def pivot_down(self):
         # Set encoders to 90 degrees and go down

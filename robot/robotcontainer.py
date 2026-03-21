@@ -509,6 +509,32 @@ class RobotContainer:
             up_command = InstantCommand(lambda: self.intake.pivot_up())
             rotate_up.onTrue(up_command)
 
+            """
+            pov_left_trigger = controller.povLeft()
+            pov_right_trigger = controller.povRight()
+            x_button_trigger = controller.x()
+            # .and_(self.intake.subsystem_trigger)
+
+            #down_trigger = pov_left_trigger.and_(x_button_trigger.negate())
+            down_trigger = pov_left_trigger
+            down_command = InstantCommand(lambda: self.intake.pivot_down())
+            down_trigger.onTrue(down_command)
+
+            #up_trigger = pov_right_trigger.and_(x_button_trigger.negate())
+            up_trigger = pov_right_trigger
+            up_command = InstantCommand(lambda: self.intake.pivot_down())
+            up_trigger.onTrue(up_command)
+
+            # # Incremental Adjustments
+            # tweak_down_trigger = pov_left_trigger.and_(x_button_trigger)
+            # tweak_down_command = InstantCommand(lambda: self.intake.pivot_tweak_down(1))
+            # tweak_down_trigger.whileTrue(tweak_down_command)
+            #
+            # tweak_up_trigger = pov_right_trigger.and_(x_button_trigger)
+            # tweak_up_command = InstantCommand(lambda: self.intake.pivot_tweak_up(1))
+            # tweak_up_trigger.whileTrue(tweak_up_command)
+            """
+
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
 
