@@ -34,7 +34,7 @@ from wpimath.units import meters, meters_per_second, radians_per_second, rotatio
 
 import constants
 from constants import FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
-    ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
+    ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT, DeviceID
 from lib_6107.commands.camera.track_tag_command import TrackTagCommand
 from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
@@ -49,6 +49,7 @@ from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
+from robot_2026.subsystems.rev_intake import RevIntake as Intake
 
 logger = logging.getLogger(__name__)
 
@@ -141,13 +142,11 @@ class RobotContainer:
         ##########################################
         #   INTAKE (Pivot & Rollers)
         #
-        # Left Pivot Motor should be Inverted
-        from constants import DeviceID
-        self.intake = None
-        # self.intake = Intake(self,
-        #                      DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
-        #                      DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
-        #                      True, False)
+        # Right Pivot Motor should be Inverted
+        self.intake = Intake(self,
+                             DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
+                             DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
+                             False, True)
 
         ##########################################
         #   CLIMBER
@@ -501,6 +500,7 @@ class RobotContainer:
             # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
         if self.intake is not None:
+            logger.info("Enabling Driver control of intake pivot. PovLeft is DOWN, PovRight is up")
             rotate_down = controller.povLeft()# .and_(self.intake.subsystem_trigger)
             down_command = InstantCommand(lambda: self.intake.pivot_down())
             rotate_down.onTrue(down_command)

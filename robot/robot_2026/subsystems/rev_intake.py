@@ -67,6 +67,36 @@ class IntakeConstants:
 
 @autologgable_output
 class RevIntake(Subsystem, DualMechanismIO):
+    """
+    Intake Pivot Motor.
+
+    This subsystem has two Rev Robotics NEO Vortex motors and is using the
+    internal encoder. Gear Ratio is 1:1. Encoder conversion factors are set up
+    to count in degrees. So when you input a setpoint to the PID, that value is
+    the angle (degrees). Positive moves the pivot forward/down. Setting back to
+    zero returns it to the zero-point (see note below).
+
+    The Idle mode is currently set to 'Coast'. After we get the rest of the intake
+    working, we may want to put it to 'Brake' mode if that is a better value.
+
+    TODO: If we stay with 'Coast' mode, then our 'Down/Deployed' degrees, could be
+          less than 90-degrees and we use the bumpers to limit us. That would mean
+          that we need to remove voltage, but can we even do that.
+
+    IMPORTANT NOTE:  On motor power-on, the internal encoder will assume that the
+                     current position is the 0. For the intake to run off of commands
+                     that pass in an angle, always start with the intake in the
+                     'up' position. That is where it will need to start anyway when
+                     starting a competition.
+
+                     A 'chooser' on the operator console will have a default setting
+                     that disables the XBox Controller buttons (POV up/down) when we
+                     are not in competition. So that must be set to "True" to enable
+                     the intake Pivot.
+
+                     TODO: Need to work on logic so that when we are in competition,
+                           the Intake pivot is automatically enabled (ready to go...).
+    """
 
     def __init__(self, container: 'RobotContainer',
                  can_left_device_id: int, can_right_device_id: int,
@@ -102,11 +132,11 @@ class RevIntake(Subsystem, DualMechanismIO):
                                                          PersistMode.kNoPersistParameters))
         # Set up the encoders
         self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
-        self._left_encoder.setPosition(0.0)
-
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
-        self._right_encoder.setPosition(0.0)
 
+        # self._left_encoder.setPosition(0.0)
+        # self._right_encoder.setPosition(0.0)
+        logger.info(f"Intake. At startup, encoder currently at {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
 
         # Support simulation
         if RobotBase.isSimulation():
@@ -140,10 +170,11 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._left_pid_controller: SparkClosedLoopController = self._left_motor.getClosedLoopController()
         self._right_pid_controller: SparkClosedLoopController = self._right_motor.getClosedLoopController()
 
-        self._left_pid_controller.setReference(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
-        self._right_pid_controller.setReference(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
-        # TODO: What about velocity goal?
+        logger.info(f"Intake. At startup, pid setpoints are {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
 
+        self._left_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+        self._right_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+        # TODO: What about velocity goal?
 
         # The critical attributes/properties for operation
         self._position_goal: degrees = 0.0
@@ -194,6 +225,10 @@ class RevIntake(Subsystem, DualMechanismIO):
 
     @staticmethod
     def _motor_config(inverted: bool) -> SparkFlexConfig:
+        """
+        Motor config for the intake pivot. Using the default Primary Encoder
+        as the Feedback Sensor.
+        """
         config = (SparkFlexConfig().
                   inverted(inverted).
                   smartCurrentLimit(IntakeConstants.LIMIT_CURRENT).
@@ -233,19 +268,19 @@ class RevIntake(Subsystem, DualMechanismIO):
         #
         #  Max RPM is at 12V and we should be lower if the outputRange above is in play
         #
-        crank_max_dps = IntakeConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
-        slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
-        (
-            config.closedLoop.
-            pidf(p=1e-5,
-                 i=0,
-                 d=0,
-                 ff=1 / crank_max_dps,
-                 slot=slot1)
-            .maxMotion.cruiseVelocity(250, slot=slot1)
-            .maxAcceleration(500, slot=slot1)
-            .allowedClosedLoopError(0, slot=slot1)
-        )
+        # crank_max_dps = IntakeConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
+        # slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
+        # (
+        #     config.closedLoop.
+        #     pidf(p=1e-5,
+        #          i=0,
+        #          d=0,
+        #          ff=1 / crank_max_dps,
+        #          slot=slot1)
+        #     .maxMotion.cruiseVelocity(250, slot=slot1)
+        #     .maxAcceleration(500, slot=slot1)
+        #     .allowedClosedLoopError(0, slot=slot1)
+        # )
         # TODO: review the following again
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/feed-forward-control
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
@@ -255,6 +290,7 @@ class RevIntake(Subsystem, DualMechanismIO):
 
     def reset(self) -> None:
         self.stop()
+        logger.info(f"Intake: Reset command was called")
 
         self._position_goal = 0
         self._left_encoder.setPosition(0.0)
@@ -282,25 +318,28 @@ class RevIntake(Subsystem, DualMechanismIO):
     def pivot_up(self):
         # Set encoders to zero and go up ~90 degrees
         logger.info(f"Intake: Pivot up, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
-        self._left_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
-        self._right_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
-        self._position_goal = IntakeConstants.DEPLOYED_ANGLE
+        logger.info(f"Intake: Pivot up. Position goal before command is: {self._position_goal}")
+        # self._left_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
+        # self._right_encoder.setPosition(IntakeConstants.DEPLOYED_ANGLE)
+        # self._position_goal = IntakeConstants.RETRACTED_ANGLE
         self.set_position_goal(IntakeConstants.RETRACTED_ANGLE)
 
     def pivot_down(self):
         # Set encoders to 90 degrees and go down
         logger.info(f"Intake: Pivot down, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
-        self._left_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
-        self._right_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
-        self._position_goal = IntakeConstants.DEPLOYED_ANGLE
+        logger.info(f"Intake: Pivot down. Position goal before command is: {self._position_goal}")
+        # self._left_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+        # self._right_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+        #self._position_goal = IntakeConstants.DEPLOYED_ANGLE
         self.set_position_goal(IntakeConstants.DEPLOYED_ANGLE)
 
     def set_position_goal(self, goal: degrees) -> None:
         if self._position_goal != goal:
             logger.info(f"Intake: Setting goal position to {goal}. currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+            logger.info(f"Intake: current PID controller setpoint before command is: {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
             self._position_goal = goal
-            self._left_pid_controller.setReference(goal, SparkBase.ControlType.kPosition)
-            self._right_pid_controller.setReference(goal, SparkBase.ControlType.kPosition)
+            self._left_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+            self._right_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
             # TODO: What about velocity goal?
             #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
 
@@ -335,6 +374,7 @@ class RevIntake(Subsystem, DualMechanismIO):
         return True
 
     def stop(self) -> None:
+        logger.info(f"Intake: Stop command was called")
         self._left_motor.stopMotor()
         self._right_motor.stopMotor()
 
