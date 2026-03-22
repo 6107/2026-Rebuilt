@@ -335,6 +335,19 @@ class VisionSubsystem(Subsystem, VisionIO):
         #     "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
 
     def simulationPeriodic(self):
+
+        """
+        This method is called periodically by the CommandScheduler (after the periodic
+        function). It is useful for updating subsystem-specific state that needs to be
+        maintained for simulations, such as for updating simulation classes and setting
+        simulated sensor readings.
+
+        Unlike the physics 'update_sim', it is not called with the current time (now)
+        or the amount of time since 'update_sim' was called (tm_diff).  It is called
+        just after the 'periodic' call and before the 'update_sim' is called. One other
+        'important' difference is 'update_sim' is called at a period >= 10 ms instead
+        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
+        """
         pass  # For now  TODO: Can any of this be common
 
     def dashboard_initialize(self) -> None:

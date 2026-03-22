@@ -580,20 +580,18 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self.gyro.sim_init(physics_controller)
 
     def simulationPeriodic(self) -> None:
+
         """
         This method is called periodically by the CommandScheduler (after the periodic
-        function. It is useful for updating subsystem-specific state that needs to be
+        function). It is useful for updating subsystem-specific state that needs to be
         maintained for simulations, such as for updating simulation classes and setting
         simulated sensor readings.
 
         Unlike the physics 'update_sim', it is not called with the current time (now)
         or the amount of time since 'update_sim' was called (tm_diff).  It is called
-        just after the 'periodic' call and before the 'update_sim' is called.
-
-        To unify the two uses, our call signature above has a kwargs parameter so we
-        know when we are being called. Typically, we only need to support one method
-        but for future simulation purposes, if called with keywords, return the amperage
-        used in this interval
+        just after the 'periodic' call and before the 'update_sim' is called. One other
+        'important' difference is 'update_sim' is called at a period >= 10 ms instead
+        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
         # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
         amperes_used = 0.0  # TODO: Support in future
@@ -792,7 +790,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         try:
             scaler = self._container._limit_chooser.getSelected()
             if not isinstance(scaler, (int, float)):
-                logger.error(f"Invalid drive rate limiter: '{scaler}")
+                logger.error(f"Invalid Drive Rate Limiter: '{scaler}")
                 scaler = 0.1
             else:
                 scaler = max(min(scaler, 1.0), 0.0)

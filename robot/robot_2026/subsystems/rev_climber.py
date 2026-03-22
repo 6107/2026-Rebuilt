@@ -22,6 +22,9 @@ from typing import Optional
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
+from pykit.autolog import autologgable_output
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, SparkMaxSim, \
     SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
@@ -33,9 +36,6 @@ from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, re
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
-from pykit.autolog import autologgable_output
-from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -265,18 +265,15 @@ class RevClimber(Subsystem, RotationMechanismIO):
     def simulationPeriodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
-        function. It is useful for updating subsystem-specific state that needs to be
+        function). It is useful for updating subsystem-specific state that needs to be
         maintained for simulations, such as for updating simulation classes and setting
         simulated sensor readings.
 
         Unlike the physics 'update_sim', it is not called with the current time (now)
         or the amount of time since 'update_sim' was called (tm_diff).  It is called
-        just after the 'periodic' call and before the 'update_sim' is called.
-
-        To unify the two uses, our call signature above has a kwargs parameter so we
-        know when we are being called. Typically, we only need to support one method
-        but for future simulation purposes, if called with keywords, return the amperage
-        used in this interval
+        just after the 'periodic' call and before the 'update_sim' is called. One other
+        'important' difference is 'update_sim' is called at a period >= 10 ms instead
+        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
         if self._robot.isEnabled():
             voltage = self._sim_motor.getAppliedOutput() * RobotController.getBatteryVoltage()

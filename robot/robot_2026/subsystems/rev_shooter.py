@@ -17,6 +17,7 @@
 
 from commands2 import Subsystem
 from commands2.button import Trigger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkMax, \
     SparkMaxSim, SparkRelativeEncoderSim
 from wpilib import RobotBase, SmartDashboard
@@ -24,7 +25,6 @@ from wpimath._controls._controls.plant import DCMotor
 from wpimath.units import revolutions_per_minute, seconds
 
 from lib_6107.util.rev_utils import try_until_ok
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 
 
 # TODO: Move following to constant
@@ -158,18 +158,15 @@ class RevShooter(Subsystem):
     def simulationPeriodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
-        function. It is useful for updating subsystem-specific state that needs to be
+        function). It is useful for updating subsystem-specific state that needs to be
         maintained for simulations, such as for updating simulation classes and setting
         simulated sensor readings.
 
         Unlike the physics 'update_sim', it is not called with the current time (now)
         or the amount of time since 'update_sim' was called (tm_diff).  It is called
-        just after the 'periodic' call and before the 'update_sim' is called.
-
-        To unify the two uses, our call signature above has a kwargs parameter so we
-        know when we are being called. Typically, we only need to support one method
-        but for future simulation purposes, if called with keywords, return the amperage
-        used in this interval
+        just after the 'periodic' call and before the 'update_sim' is called. One other
+        'important' difference is 'update_sim' is called at a period >= 10 ms instead
+        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
 
         # TODO: Anything

@@ -84,14 +84,23 @@ class PhysicsEngine:
 
     def update_sim(self, now: float, tm_diff: float) -> None:
         """
-        Called when the simulation parameters for the program need to be
-        updated.
+        Called when the simulation parameters for the program need to be updated.
+        This function is called from the '_simulationPeriodic' function of the
+        robotpy core routine and is called at a period >= 10 mS. Note that the
+        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        into all Command2 based subsystems at its update period which has a
+        default rate of 20 mS.
+
+        This routine will scan all subsystems and if it contains an 'update_sim'
+        function, it will be called.
 
         :param now:     The current time as a float
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
-        pass
+        for subsystem in self._robot.container.subsystems:
+            if hasattr(subsystem, "update_sim") and callable(getattr(subsystem, "update_sim")):
+                subsystem.update_sim(self, now, tm_diff)
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """
