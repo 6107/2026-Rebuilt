@@ -472,6 +472,24 @@ class RevIntake(Subsystem, DualMechanismIO):
         inputs.mechanism_2_supply_current = self._right_motor.getOutputCurrent()
         # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
 
+    def update_sim(self, now: float, tm_diff: float) -> None:
+        """
+        Called when the simulation parameters for the program need to be updated.
+        This function is called from the '_simulationPeriodic' function of the
+        robotpy core routine and is called at a period >= 10 mS. Note that the
+        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        into all Command2 based subsystems at its update period which has a
+        default rate of 20 mS.
+
+        This routine will scan all subsystems and if it contains an 'update_sim'
+        function, it will be called.
+
+        :param now:     The current time as a float
+        :param tm_diff: The amount of time that has passed since the last
+                        time that this function was called
+        """
+        pass
+
     def set_position(self, position: inches) -> None:
         """
         Set the desired encoder position. This is primarily for Autonomous mode when
