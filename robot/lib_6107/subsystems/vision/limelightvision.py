@@ -343,8 +343,9 @@ try:
             into all Command2 based subsystems at its update period which has a
             default rate of 20 mS.
 
-            This routine will scan all subsystems and if it contains an 'update_sim'
-            function, it will be called.
+            This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+            that function uses pykit's logging method, you should use those values in
+            your simulation.
 
             :param now:     The current time as a float
             :param tm_diff: The amount of time that has passed since the last
