@@ -722,7 +722,7 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        self._limit_chooser = LoggedDashboardChooser("Drive rate limiter")
+        self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
         # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)

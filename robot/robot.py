@@ -126,6 +126,14 @@ class MyRobot(MyRobotBase):
         self._network_tables_instance = NetworkTableInstance.getDefault()
         self._phoenix_signals = Phoenix6Signals()
 
+        # Track periodic call times
+        self._times_called = 0
+        self._total_time = 0.0
+        self._last_now = 0.0
+
+        SmartDashboard.putNumber("Periodic/Robot/called", self._times_called)
+        SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", 0)
+
         # Visualization and pose support
         self.match_started = False  # Set true on Autonomous or Teleop init
 
@@ -247,6 +255,24 @@ class MyRobot(MyRobotBase):
         LogTracer.record("ContainerPeriodic")
 
         LogTracer.recordTotal()
+
+        if self.isEnabled():
+            now = wpilib.Timer.getFPGATimestamp()
+
+            if self._last_now != 0.0:
+                self._times_called += 1
+                self._total_time += now - self._last_now
+
+            self._last_now = now
+        else:
+            # Set last-now to zero so when we get re-enabled, we skip the first pass
+            self._last_now = 0.0
+
+        if self.counter % 100 == 0 and self._times_called > 0:
+            avg_time = round(self._total_time / self._times_called * 1000, 3)
+
+            SmartDashboard.putNumber("Periodic/Robot/called", self._times_called)
+            SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", avg_time)
 
         # TODO: Can we drop our 'stats' once we have all this wonderful logging in place ?
         self._stats.add("periodic", time.monotonic() - start)

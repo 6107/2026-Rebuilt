@@ -30,6 +30,7 @@
 import logging
 
 from pyfrc.physics.core import PhysicsInterface
+from wpilib import SmartDashboard
 
 from robot import MyRobot
 from robot_2026.field.field_2026 import BLUE_TEST_POSE, RED_TEST_POSE
@@ -72,13 +73,19 @@ class PhysicsEngine:
         self.field = physics_controller.field
 
         # Register for any changes in alliance before the match starts
+        # TODO: If vision odometry is supported in simulation, this may need to be
+        #       changed to the robot's field view and not the 'overhead' view of the
+        #       playing field.
         robot.container.register_alliance_change_callback(self._alliance_change)
         self._alliance_change(self._robot.container.is_red_alliance,
                               self._robot.container.alliance_location)
 
-        # TODO: If vision odometry is supported in simulation, this may need to be
-        #       changed to the robot's field view and not the 'overhead' view of the
-        #       playing field.
+        # stats
+        self._times_called: int = 0
+        self._total_time: float = 0.0
+
+        SmartDashboard.putNumber("Periodic/Simulation/called", self._times_called)
+        SmartDashboard.putNumber("Periodic/Simulation/avg-period-mS", 0.0)
 
         logger.info("PhysicsEngine.__init__: exit")
 
@@ -102,9 +109,20 @@ class PhysicsEngine:
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
+        if self._robot.isEnabled():
+            # stats
+            self._times_called += 1
+            self._total_time += tm_diff
+
+        if self._robot.counter % 100 == 0 and self._times_called > 0:
+            avg_time = round(self._total_time / self._times_called * 1000, 3)
+
+            SmartDashboard.putNumber("Periodic/Simulation/called", self._times_called)
+            SmartDashboard.putNumber("Periodic/Simulation/avg-period-mS", avg_time)
+
         for subsystem in self._robot.container.subsystems:
             if hasattr(subsystem, "update_sim") and callable(getattr(subsystem, "update_sim")):
-                subsystem.update_sim(self, now, tm_diff)
+                subsystem.update_sim(now, tm_diff)
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """

@@ -26,7 +26,7 @@ from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, SendableChooser, SmartDashboard
+from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
@@ -198,8 +198,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
         # TODO: Remove following once all works
-        # self._enable_intake = LoggedDashboardChooser("Intake Enable")
-        self._enable_intake = SendableChooser()
+        self._enable_intake = LoggedDashboardChooser("Intake Enable")
+        # self._enable_intake = SendableChooser()
         self._enable_intake.addOption("False", False)
         self._enable_intake.setDefaultOption("True", True)
 
@@ -396,8 +396,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         self._right_mech_base.setAngle(self._inputs.mechanism_2_position)
 
         LogTracer.record("Closed Loop Control")
-        Logger.recordOutput("Intake/goal", self._position_goal)
-        Logger.recordOutput("Intake/ClosedLoop", self._closed_loop)
+        Logger.recordOutput("Intake/Pivot/goal", self._position_goal)
+        Logger.recordOutput("Intake/Pivot/closed-loop", self._closed_loop)
         LogTracer.recordTotal()
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
@@ -416,12 +416,12 @@ class RevIntake(Subsystem, DualMechanismIO):
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        SmartDashboard.putNumber("Intake/goal", self._position_goal)
-        SmartDashboard.putNumber("Intake/left-position", self.left_position)
-        SmartDashboard.putNumber("Intake/left-speed", self._inputs.mechanism_1_speed)
-        SmartDashboard.putNumber("Intake/right-position", self.right_position)
-        SmartDashboard.putNumber("Intake/right-speed", self._inputs.mechanism_2_speed)
-        SmartDashboard.putBoolean("Intake/closed-loop", self._closed_loop)
+        SmartDashboard.putNumber("Intake/Pivot/goal", self._position_goal)
+        SmartDashboard.putBoolean("Intake/Pivot/closed-loop", self._closed_loop)
+        SmartDashboard.putNumber("Intake/Pivot/left-position", self.left_position)
+        SmartDashboard.putNumber("Intake/Pivot/left-speed", self._inputs.mechanism_1_speed)
+        SmartDashboard.putNumber("Intake/Pivot/right-position", self.right_position)
+        SmartDashboard.putNumber("Intake/Pivot/right-speed", self._inputs.mechanism_2_speed)
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """
@@ -444,15 +444,28 @@ class RevIntake(Subsystem, DualMechanismIO):
         of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
         if self._robot.isEnabled() and self._left_sim_pivot is not None and self._left_sim_pivot is not None:
-            self._left_sim_pivot.setInputVoltage(self._left_sim_motor.getAppliedOutput())
+            left_output = self._left_sim_motor.getAppliedOutput()
+            right_output = self._right_sim_motor.getAppliedOutput()
+
+            input_voltage = RobotController.getInputVoltage()  # TODO: Can we use BatterySim?
+            left_applied_output = self._left_motor.getAppliedOutput() * input_voltage
+            right_applied_output = self._right_motor.getAppliedOutput() * input_voltage
+
+            # TODO: Can we use BatterySim?
+            self._left_sim_motor.iterate(left_applied_output, input_voltage, self._period)
+            self._right_sim_motor.iterate(right_applied_output, input_voltage, self._period)
+
+            self._left_sim_pivot.setInputVoltage(left_output)
             self._left_sim_pivot.update(self._period)
 
-            self._right_sim_pivot.setInputVoltage(self._right_sim_motor.getAppliedOutput())
+            self._right_sim_pivot.setInputVoltage(right_output)
             self._right_sim_pivot.update(self._period)
 
             # Set the simulated encoder
-            self._left_sim_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
-            self._right_sim_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
+            # self._left_sim_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
+            # self._right_sim_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
+            self._left_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
+            self._right_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
 
             # And simulate current drain
             RoboRioSim.setVInVoltage(BatterySim.calculate([self._left_sim_pivot.getCurrentDraw(),
@@ -472,23 +485,24 @@ class RevIntake(Subsystem, DualMechanismIO):
         inputs.mechanism_2_supply_current = self._right_motor.getOutputCurrent()
         # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
-        """
-        Called when the simulation parameters for the program need to be updated.
-        This function is called from the '_simulationPeriodic' function of the
-        robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
-        into all Command2 based subsystems at its update period which has a
-        default rate of 20 mS.
-
-        This routine will scan all subsystems and if it contains an 'update_sim'
-        function, it will be called.
-
-        :param now:     The current time as a float
-        :param tm_diff: The amount of time that has passed since the last
-                        time that this function was called
-        """
-        pass
+    # def update_sim(self, now: float, tm_diff: float) -> None:
+    #     """
+    #     Called when the simulation parameters for the program need to be updated.
+    #     This function is called from the '_simulationPeriodic' function of the
+    #     robotpy core routine and is called at a period >= 10 mS. Note that the
+    #     CommandScheduler also has an 'simulationPeriodic' function that it calls
+    #     into all Command2 based subsystems at its update period which has a
+    #     default rate of 20 mS.
+    #
+    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+    #     that function uses pykit's logging method, you should use those values in
+    #     your simulation.
+    #
+    #     :param now:     The current time as a float
+    #     :param tm_diff: The amount of time that has passed since the last
+    #                     time that this function was called
+    #     """
+    #     pass
 
     def set_position(self, position: inches) -> None:
         """
