@@ -44,16 +44,21 @@
       "linkedName": "A1-N1-A1"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.1279620853080572,
+      "rotationDegrees": 90.0
+    }
+  ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.18259023354564755,
-      "maxWaypointRelativePos": 0.0,
+      "minWaypointRelativePos": 0.47230320699708417,
+      "maxWaypointRelativePos": 1.6967930029154514,
       "constraints": {
-        "maxVelocity": 4.42,
+        "maxVelocity": 2.0,
         "maxAcceleration": 3.0,
-        "maxAngularVelocity": 360.0,
+        "maxAngularVelocity": 180.0,
         "maxAngularAcceleration": 720.0,
         "nominalVoltage": 12.0,
         "unlimited": false
@@ -71,14 +76,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 2.0,
+    "velocity": 3.0,
     "rotation": 180.0
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
-    "velocity": 2.0,
-    "rotation": 180.0
+    "velocity": 3.0,
+    "rotation": 90.0
   },
   "useDefaultConstraints": true
 }

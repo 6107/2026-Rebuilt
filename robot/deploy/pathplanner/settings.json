@@ -3,8 +3,9 @@
   "robotLength": 0.838,
   "holonomicMode": true,
   "pathFolders": [
-    "Neutral-Paths",
     "Alliance-Paths",
+    "Neutral-Paths",
+    "End-Paths",
     "Starting-Paths"
   ],
   "autoFolders": [],

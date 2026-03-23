@@ -37,7 +37,7 @@
       },
       "prevControl": {
         "x": 7.602467898821078,
-        "y": 7.226105771531166
+        "y": 7.2261057715311665
       },
       "nextControl": {
         "x": 7.649018633540372,
@@ -115,7 +115,7 @@
     },
     {
       "waypointRelativePos": 3,
-      "rotationDegrees": -95.52754015165632
+      "rotationDegrees": -95.52754015165634
     },
     {
       "waypointRelativePos": 4,
@@ -138,14 +138,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": 180.0
+    "velocity": 3.0,
+    "rotation": 90.0
   },
   "reversed": false,
   "folder": "Neutral-Paths",
   "idealStartingState": {
-    "velocity": 0,
-    "rotation": 0.07098867727909518
+    "velocity": 0.0,
+    "rotation": 29.999999999999996
   },
   "useDefaultConstraints": true
 }
