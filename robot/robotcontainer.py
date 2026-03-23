@@ -147,7 +147,7 @@ class RobotContainer:
         self.intake = Intake(self,
                              DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
                              DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
-                             False, True)
+                             True, False)
 
         ##########################################
         #   CLIMBER
@@ -506,14 +506,14 @@ class RobotContainer:
             # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
         if self.intake is not None:
-            logger.info("Enabling Driver control of intake pivot. PovLeft is DOWN, PovRight is up")
+            logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
             rotate_down = controller.povLeft()# .and_(self.intake.subsystem_trigger)
-            down_command = InstantCommand(lambda: self.intake.pivot_down())
-            rotate_down.onTrue(down_command)
+            up_command = InstantCommand(lambda: self.intake.pivot_up())
+            rotate_down.onTrue(up_command)
 
             rotate_up = controller.povRight()# .and_(self.intake.subsystem_trigger)
-            up_command = InstantCommand(lambda: self.intake.pivot_up())
-            rotate_up.onTrue(up_command)
+            down_command = InstantCommand(lambda: self.intake.pivot_down())
+            rotate_up.onTrue(down_command)
 
             """
             pov_left_trigger = controller.povLeft()
@@ -521,22 +521,22 @@ class RobotContainer:
             x_button_trigger = controller.x()
             # .and_(self.intake.subsystem_trigger)
 
-            #down_trigger = pov_left_trigger.and_(x_button_trigger.negate())
-            down_trigger = pov_left_trigger
+            #down_trigger = pov_right_trigger.and_(x_button_trigger.negate())
+            down_trigger = pov_right_trigger
             down_command = InstantCommand(lambda: self.intake.pivot_down())
             down_trigger.onTrue(down_command)
 
-            #up_trigger = pov_right_trigger.and_(x_button_trigger.negate())
-            up_trigger = pov_right_trigger
+            #up_trigger = pov_left_trigger.and_(x_button_trigger.negate())
+            up_trigger = pov_left_trigger
             up_command = InstantCommand(lambda: self.intake.pivot_down())
             up_trigger.onTrue(up_command)
 
             # # Incremental Adjustments
-            # tweak_down_trigger = pov_left_trigger.and_(x_button_trigger)
+            # tweak_down_trigger = pov_right_trigger.and_(x_button_trigger)
             # tweak_down_command = InstantCommand(lambda: self.intake.pivot_tweak_down(1))
             # tweak_down_trigger.whileTrue(tweak_down_command)
             #
-            # tweak_up_trigger = pov_right_trigger.and_(x_button_trigger)
+            # tweak_up_trigger = pov_left_trigger.and_(x_button_trigger)
             # tweak_up_command = InstantCommand(lambda: self.intake.pivot_tweak_up(1))
             # tweak_up_trigger.whileTrue(tweak_up_command)
             """

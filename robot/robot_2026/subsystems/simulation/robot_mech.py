@@ -87,6 +87,13 @@ class RobotMech(Subsystem):
         """
         return target_abs - parent_abs
 
+    def _adjust_intake_angle(self, angle: degrees) -> degrees:
+        """
+        Since we start with the intake up and the encoder considers that 0 degrees
+        and not 90, then we need to adjust
+        """
+        return 90.0 - angle
+
     def _init_drivetrain(self):
         # Chassis: 2" bar, 27" long. Top at 4.5".
         # Center of bar is at 3.5" (since it's 2" thick, 2.5" to 4.5")               # TODO: Verify location/size
@@ -134,30 +141,32 @@ class RobotMech(Subsystem):
     def _init_intake(self):
         """Stub: Intake pivot and rollers."""
         # Mounting is the lexan bracket that the intake pivot attaches to. Simulate
-        # it as a post: Sticks up 6" from top of drivetrain (Y=4.5).                # TODO: Verify location/size
+        # it as a post: Sticks up 4" from top of drivetrain (Y=4.5).                # TODO: Verify location/size
         # We place it at the front of the chassis (X = start + 27).
         self.root_intake_mount = self._mech.getRoot("intake_mount",
                                                     self._start_x + constants.ROBOT_CHASSIS_WIDTH,
                                                     inchesToMeters(4.5))
 
-        self.abs_intake_mount = 0  # Roots are 0
+        self._abs_intake_mount = 0  # Roots are 0
 
         # The vertical mount post (the lexan)
-        self.abs_intake_post = 90
+        self._abs_intake_post_angle = 90
         self.intake_post = self.root_intake_mount.appendLigament("intake_post",
-                                                                 inchesToMeters(6),
-                                                                 self._get_rel_angle(self.abs_intake_post,
-                                                                                     self.abs_intake_mount),
+                                                                 inchesToMeters(4),
+                                                                 self._get_rel_angle(self._abs_intake_post_angle,
+                                                                                     self._abs_intake_mount),
                                                                  6,
                                                                  self._color_intake)
-        # The pivoting arm. Pivot is at top of post (Y=10.5).
-        # Needs to reach ground (Y=0). Length approx 11-12".
-        self.abs_intake_arm_start = IntakeConstants.RETRACTED_ANGLE  # Initial angle
+        # The pivoting arm. Pivot is at top of post (Y=8.5).
+        # Needs to reach ground (Y=0). Length approx 11-12".\
+        # However. Since we start with the intake up and the encoder considers that 0 degrees
+        #          and not 90, then we need to adjust
+        self._abs_intake_arm_start_angle = self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE)  # Initial angle
         self.intake_arm_length = inchesToMeters(10)
         self.intake_arm = self.intake_post.appendLigament("intake_arm",
                                                           self.intake_arm_length,
-                                                          self._get_rel_angle(self.abs_intake_arm_start,
-                                                                              self.abs_intake_post),
+                                                          self._get_rel_angle(self._abs_intake_arm_start_angle,
+                                                                              self._abs_intake_post_angle),
                                                           6,
                                                           self._color_intake)
         # Animation: Spacer and Indicator (something to animate to show that it is on)
@@ -332,12 +341,12 @@ class RobotMech(Subsystem):
         update it during simulation, since simulation Periodic does that for us.
         """
         if self._robot.isEnabled() and not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
-            self._update_drivetrain(0.0)
-            self._update_intake(0.0, 0.0)
-            self._update_hopper(0.0)
-            self._update_indexer(0.0)
-            self._shooter(0.0)
-            self._update_climber(0.0)
+            self._update_drivetrain()
+            self._update_intake()
+            self._update_hopper()
+            self._update_indexer()
+            self._shooter()
+            self._update_climber()
             self._update_fuel()
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
@@ -388,20 +397,20 @@ class RobotMech(Subsystem):
 
     def _update_intake(self) -> None:
         # Pivot relative to the vertical post (which is at 90 absolute).
-        angle: degrees = self._container.intake.angle
+        angle: degrees = self._adjust_intake_angle(self._container.intake.angle)
         speed: degrees_per_second = self._container.intake.angular_velocity
 
         # Note: appendLigament angle is relative to parent. Parent is 90 deg (vertical).
-        self.intake_arm.setAngle(self._get_rel_angle(angle, self.abs_intake_post))
+        self.intake_arm.setAngle(self._get_rel_angle(angle, self._abs_intake_post_angle))
 
         # Animate bar moving along the intake arm
-        if abs(speed) > 0:
-            self.intake_anim_dist += abs(speed) * inchesToMeters(0.2)
-
-            if self.intake_anim_dist > self.intake_arm_length:
-                self.intake_anim_dist = 0
-
-            self.intake_spacer.setLength(self.intake_anim_dist)
+        # if abs(speed) > 0:
+        #     self.intake_anim_dist += abs(speed) * inchesToMeters(0.2)
+        #
+        #     if self.intake_anim_dist > self.intake_arm_length:
+        #         self.intake_anim_dist = 0
+        #
+        #     self.intake_spacer.setLength(self.intake_anim_dist)
 
     def _update_hopper(self) -> None:
         # Animate the ball moving left (at just below indexer speed)

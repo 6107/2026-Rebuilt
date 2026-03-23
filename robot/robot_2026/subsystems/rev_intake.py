@@ -30,8 +30,8 @@ from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, Se
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
-from wpimath.units import amperes, degrees, degrees_per_second, inches, inchesToMeters, kilograms, meters, \
-    revolutions_per_minute, seconds, volts
+from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
+    meters, radians, revolutions_per_minute, seconds, volts
 
 from lib_6107.pykit.LoggedMechanism2d import LoggedMechanism2d
 from lib_6107.pykit.LoggedMechanismLigament2d import LoggedMechanismLigament2d
@@ -52,8 +52,8 @@ class IntakeConstants:
     GEAR_RATIO = 1.0
     DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
-    DEPLOYED_ANGLE: degrees = 0.0
-    RETRACTED_ANGLE: degrees = 90.0
+    DEPLOYED_ANGLE: degrees = 90.0
+    RETRACTED_ANGLE: degrees = 0.0
     TOLERANCE: degrees = 2.0
 
     PIVOT_GEARING = 2.0  # Verify
@@ -132,6 +132,9 @@ class RevIntake(Subsystem, DualMechanismIO):
         logger.info(f"Intake. At startup, encoder currently at {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
 
         # Support simulation
+        self._left_sim_initial = None
+        self._right_sim_initial = None
+
         if RobotBase.isSimulation():
             gearbox = DCMotor.NEO(1)
             self._left_sim_motor = SparkFlexSim(self._left_motor, gearbox)
@@ -145,18 +148,24 @@ class RevIntake(Subsystem, DualMechanismIO):
                                                        IntakeConstants.PIVOT_GEARING,
                                                        moi,
                                                        IntakeConstants.PIVOT_LENGTH,
-                                                       IntakeConstants.DEPLOYED_ANGLE,
-                                                       IntakeConstants.RETRACTED_ANGLE,
+                                                       self._adjust_intake_angle_radians(
+                                                           IntakeConstants.DEPLOYED_ANGLE),
+                                                       self._adjust_intake_angle_radians(
+                                                           IntakeConstants.RETRACTED_ANGLE),
                                                        True,
-                                                       IntakeConstants.RETRACTED_ANGLE)
+                                                       self._adjust_intake_angle_radians(
+                                                           IntakeConstants.RETRACTED_ANGLE))
             self._right_sim_pivot = SingleJointedArmSim(gearbox,
                                                         IntakeConstants.PIVOT_GEARING,
                                                         moi,
                                                         IntakeConstants.PIVOT_LENGTH,
-                                                        IntakeConstants.DEPLOYED_ANGLE,
-                                                        IntakeConstants.RETRACTED_ANGLE,
+                                                        self._adjust_intake_angle_radians(
+                                                            IntakeConstants.DEPLOYED_ANGLE),
+                                                        self._adjust_intake_angle_radians(
+                                                            IntakeConstants.RETRACTED_ANGLE),
                                                         True,
-                                                        IntakeConstants.RETRACTED_ANGLE)
+                                                        self._adjust_intake_angle_radians(
+                                                            IntakeConstants.RETRACTED_ANGLE))
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
@@ -179,9 +188,10 @@ class RevIntake(Subsystem, DualMechanismIO):
         mech_root = left_mech_2d.getRoot("Left Pivot Root",
                                          IntakeConstants.PIVOT_LEFT_ROOT_X,
                                          IntakeConstants.PIVOT_ROOT_Y)
+
         self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
                                                          IntakeConstants.PIVOT_BASE_LENGTH,
-                                                         90,
+                                                        self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE),
                                                          color=Color8Bit(Color.kBlue))
 
         right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
@@ -190,7 +200,7 @@ class RevIntake(Subsystem, DualMechanismIO):
                                                            IntakeConstants.PIVOT_ROOT_Y)
         self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
                                                           IntakeConstants.PIVOT_BASE_LENGTH,
-                                                          90,
+                                                          self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE),
                                                           color=Color8Bit(Color.kBlue))
         mech_root.append(self._right_mech_base)
 
@@ -289,11 +299,26 @@ class RevIntake(Subsystem, DualMechanismIO):
     def angular_velocity(self) -> degrees_per_second:
         return self._left_encoder.getVelocity()
 
+    def _adjust_intake_angle(self, angle: degrees) -> degrees:
+        """
+        Since we start with the intake up and the encoder considers that 0 degrees
+        and not 90, then we need to adjust
+        """
+        return 90.0 - angle
+
+    def _adjust_intake_angle_radians(self, angle: degrees) -> radians:
+        """
+        Since we start with the intake up and the encoder considers that 0 degrees
+        and not 90, then we need to adjust
+        """
+        return degreesToRadians(self._adjust_intake_angle(angle))
+
     def reset(self) -> None:
         self.stop()
-        logger.info(f"Intake: Reset command was called")
+        logger.info(f"Intake: Reset command was called  *** *** *** ***   NOT YET SUPPORTED")
 
         self._position_goal = 0
+        raise NotImplementedError("Reset command was called but is not supported at this time")
         #self._left_encoder.setPosition(0.0)
         #self._right_encoder.setPosition(0.0)
         self._left_mech_base.setAngle(IntakeConstants.RETRACTED_ANGLE)
@@ -392,8 +417,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         LogTracer.record("UpdateInputs")
 
         # Update visualization
-        self._left_mech_base.setAngle(self._inputs.mechanism_1_position)
-        self._right_mech_base.setAngle(self._inputs.mechanism_2_position)
+        self._left_mech_base.setAngle(self._adjust_intake_angle(self._inputs.mechanism_1_position))
+        self._right_mech_base.setAngle(self._adjust_intake_angle(self._inputs.mechanism_2_position))
 
         LogTracer.record("Closed Loop Control")
         Logger.recordOutput("Intake/Pivot/goal", self._position_goal)
@@ -447,18 +472,27 @@ class RevIntake(Subsystem, DualMechanismIO):
             left_output = self._left_sim_motor.getAppliedOutput()
             right_output = self._right_sim_motor.getAppliedOutput()
 
+            # First pass, set the encoder positions to the initial setting
+            if self._left_sim_initial is None:
+                self._left_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+                self._left_sim_initial = self._left_encoder.getPosition()
+
+            if self._right_sim_initial is None:
+                self._right_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+                self._right_sim_initial = self._right_encoder.getPosition()
+
             input_voltage = RobotController.getInputVoltage()  # TODO: Can we use BatterySim?
-            left_applied_output = self._left_motor.getAppliedOutput() * input_voltage
-            right_applied_output = self._right_motor.getAppliedOutput() * input_voltage
+            left_applied_output = left_output * input_voltage
+            right_applied_output = right_output * input_voltage
 
             # TODO: Can we use BatterySim?
             self._left_sim_motor.iterate(left_applied_output, input_voltage, self._period)
             self._right_sim_motor.iterate(right_applied_output, input_voltage, self._period)
 
-            self._left_sim_pivot.setInputVoltage(left_output)
+            self._left_sim_pivot.setInputVoltage(left_applied_output)
             self._left_sim_pivot.update(self._period)
 
-            self._right_sim_pivot.setInputVoltage(right_output)
+            self._right_sim_pivot.setInputVoltage(right_applied_output)
             self._right_sim_pivot.update(self._period)
 
             # Set the simulated encoder
@@ -467,19 +501,21 @@ class RevIntake(Subsystem, DualMechanismIO):
             self._left_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
             self._right_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
 
+            pivot = self._left_sim_pivot.getAngleDegrees()
+
             # And simulate current drain
             RoboRioSim.setVInVoltage(BatterySim.calculate([self._left_sim_pivot.getCurrentDraw(),
                                                            self._right_sim_pivot.getCurrentDraw()]))
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
         inputs.mechanism_1_connected = True   # TODO: Figure this one out
-        inputs.mechanism_1_position = self._left_encoder.getPosition()
+        inputs.mechanism_1_position = self._adjust_intake_angle(self._left_encoder.getPosition())
         inputs.mechanism_1_speed = self._left_encoder.getVelocity()
         inputs.mechanism_1_applied_voltage = self._left_motor.getBusVoltage()
         inputs.mechanism_1_supply_current = self._left_motor.getOutputCurrent()
 
         inputs.mechanism_2_connected = True   # TODO: Figure this one out
-        inputs.mechanism_2_position = self._right_encoder.getPosition()
+        inputs.mechanism_2_position = self._adjust_intake_angle(self._right_encoder.getPosition())
         inputs.mechanism_2_speed = self._right_encoder.getVelocity()
         inputs.mechanism_2_applied_voltage = self._right_motor.getBusVoltage()
         inputs.mechanism_2_supply_current = self._right_motor.getOutputCurrent()
@@ -518,10 +554,12 @@ class RevIntake(Subsystem, DualMechanismIO):
 
         if position != self.left_position or position != self.right_position:
             logger.info(f"Intake: Setting position to {position}")
+
             self._inputs.mechanism_1_position = position
             self._inputs.mechanism_2_position = position
             self._left_encoder.setPosition(position)
             self._right_encoder.setPosition(position)
+
             if RobotBase.isSimulation():
                 self._left_sim_encoder.setPosition(position)
                 self._right_sim_encoder.setPosition(position)
