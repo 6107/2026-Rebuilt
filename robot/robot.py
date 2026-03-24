@@ -20,8 +20,6 @@ import logging
 import os
 import sys
 import time
-from typing import Optional
-
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
@@ -33,6 +31,7 @@ from pykit.networktables.nt4Publisher import NT4Publisher
 from pykit.wpilog.wpilogreader import WPILOGReader
 from pykit.wpilog.wpilogwriter import WPILOGWriter
 from rev import StatusLogger
+from typing import Optional
 from wpilib import DataLogManager, DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
@@ -154,22 +153,19 @@ class MyRobot(MyRobotBase):
         logger.info("robotInit: entry")
         super().robotInit()
 
-        # # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykit
-
-        DataLogManager.start()
-        SignalLogger.enable_auto_logging(True)
-        StatusLogger.start()  # .disableAutoLogging()
-        LiveWindow.enableAllTelemetry()  # .disableAllTelem
-        # if True:
-        #     # Enable all logging
-        #     SignalLogger.enable_auto_logging(True)
-        #     StatusLogger.start()  # .disableAutoLogging()
-        #     LiveWindow.enableAllTelemetry()  # .disableAllTelemetry()
-        # else:
-        #     # Disable most logging
-        #     SignalLogger.enable_auto_logging(False)
-        #     StatusLogger.disableAutoLogging()
-        # LiveWindow.disableAllTelemetry()
+        # TODO: Eventually set to false to rely only upon pykit
+        if True:
+            # Enable all logging
+            DataLogManager.start()
+            SignalLogger.enable_auto_logging(True)
+            StatusLogger.start()  # .disableAutoLogging()
+            LiveWindow.enableAllTelemetry()  # .disableAllTelem
+        else:
+            # Disable most logging
+            DataLogManager.start()
+            SignalLogger.enable_auto_logging(False)
+            StatusLogger.disableAutoLogging()
+            LiveWindow.disableAllTelemetry()
 
         command_count: dict[str, int] = {}
 

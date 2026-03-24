@@ -149,12 +149,12 @@ class RevIntake(Subsystem, DualMechanismIO):
                                                        moi,
                                                        IntakeConstants.PIVOT_LENGTH,
                                                        self._adjust_intake_angle_radians(
-                                                           IntakeConstants.DEPLOYED_ANGLE),
+                                                           IntakeConstants.DEPLOYED_ANGLE),  # Min Angle
                                                        self._adjust_intake_angle_radians(
-                                                           IntakeConstants.RETRACTED_ANGLE),
+                                                           IntakeConstants.RETRACTED_ANGLE),  # Max Angle
                                                        True,
                                                        self._adjust_intake_angle_radians(
-                                                           IntakeConstants.RETRACTED_ANGLE))
+                                                           IntakeConstants.RETRACTED_ANGLE))  # Starting Angle
             self._right_sim_pivot = SingleJointedArmSim(gearbox,
                                                         IntakeConstants.PIVOT_GEARING,
                                                         moi,

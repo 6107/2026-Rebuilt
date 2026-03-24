@@ -19,8 +19,6 @@ import json
 import logging
 import os
 import time
-from typing import Any, Callable, Dict, List, Optional
-
 from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
@@ -30,7 +28,8 @@ from phoenix6.swerve.swerve_module import SwerveModule
 from pykit.alertlogger import AlertLogger
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
+from typing import Any, Callable, Dict, List, Optional
+from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
@@ -139,6 +138,7 @@ class RobotContainer:
         ##########################################
         #   INDEXER
         #
+        self.indexer = None
 
         ##########################################
         #   INTAKE (Pivot & Rollers)
@@ -157,9 +157,9 @@ class RobotContainer:
         # self.subsystems.append(self.climber)
 
         ##########################################
-        #   Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
-        # if not DriverStation.isFMSAttached():
-        #     self._mechanism_2d = RobotMech(self)
+        # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
+        if not DriverStation.isFMSAttached():
+            self._mechanism_2d = RobotMech(self)
 
         ##########################################
         #   ALERTS
@@ -722,9 +722,8 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        # self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
-        from wpilib import SendableChooser
         self._limit_chooser = SendableChooser()
+        # self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
         # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)
@@ -734,7 +733,11 @@ class RobotContainer:
         self._limit_chooser.addOption("80%", 0.8)
         self._limit_chooser.addOption("100%", 1.0)
 
-        SmartDashboard.putData("Drive rate limiter", self._limit_chooser)
+        if isinstance(self._limit_chooser, SendableChooser):
+            SmartDashboard.putData("Drive Rate Limiter", self._limit_chooser)
+
+        elif isinstance(self._limit_chooser, LoggedDashboardChooser):
+            pass
 
     def configure_additional_autos(self):
         """

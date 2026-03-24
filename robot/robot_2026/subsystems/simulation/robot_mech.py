@@ -16,7 +16,6 @@
 # ------------------------------------------------------------------------ #
 
 import math
-
 from commands2 import Subsystem
 from wpilib import Color, Color8Bit, DriverStation, Mechanism2d, RobotBase, SmartDashboard
 from wpimath.kinematics import ChassisSpeeds
@@ -59,7 +58,7 @@ class RobotMech(Subsystem):
         self._color_chassis = Color8Bit(Color.kYellow)
         self._color_wheel = Color8Bit(Color.kWhite)
         self._color_intake = Color8Bit(Color.kOrange)
-        self._color_hopper = Color8Bit(Color.kGray)
+        self._color_hopper = Color8Bit(Color.kPurple)
         self._color_indexer = Color8Bit(Color.kCyan)
         self._color_shooter = Color8Bit(Color.kRed)
         self._color_climber = Color8Bit(Color.kGreen)
@@ -139,7 +138,9 @@ class RobotMech(Subsystem):
                                                                            self._color_wheel)
 
     def _init_intake(self):
-        """Stub: Intake pivot and rollers."""
+        """
+        Intake pivot and rollers.
+        """
         # Mounting is the lexan bracket that the intake pivot attaches to. Simulate
         # it as a post: Sticks up 4" from top of drivetrain (Y=4.5).                # TODO: Verify location/size
         # We place it at the front of the chassis (X = start + 27).
@@ -342,12 +343,20 @@ class RobotMech(Subsystem):
         """
         if self._robot.isEnabled() and not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
             self._update_drivetrain()
-            self._update_intake()
+
+            if self._container.intake is not None:
+                self._update_intake()
+
             self._update_hopper()
-            self._update_indexer()
-            self._shooter()
-            self._update_climber()
-            self._update_fuel()
+
+            if self._container.indexer is not None:
+                self._update_indexer()
+
+            if self._container.shooter is not None:
+                self._update_shooter()
+
+            if self._container.climber is not None:
+                self._update_climber()
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """
@@ -372,11 +381,21 @@ class RobotMech(Subsystem):
         """
         if self._robot.isEnabled():
             self._update_drivetrain()
-            self._update_intake()
+
+            if self._container.intake is not None:
+                self._update_intake()
+
             self._update_hopper()
-            self._update_indexer()
-            self._update_shooter()
-            self._update_climber()
+
+            if self._container.indexer is not None:
+                self._update_indexer()
+
+            if self._container.shooter is not None:
+                self._update_shooter()
+
+            if self._container.climber is not None:
+                self._update_climber()
+
             self._update_fuel()
 
     def _update_drivetrain(self) -> None:

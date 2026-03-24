@@ -52,7 +52,7 @@ class CtreSwerveModule(SwerveModuleIO):
         self._inputs = SwerveModuleIO.SwerveModuleIOInputs()
         self._previous_position = SwerveModulePosition()
 
-        self._wheel_radius: meters = constants.WHEEL_RADIUS
+        self.wheel_radius: meters = constants.WHEEL_RADIUS
         self._min_wheel_linear_velocity: meters_per_second = constants.MIN_SPEED
 
         self.prev_position = SwerveModulePosition()
@@ -100,10 +100,10 @@ class CtreSwerveModule(SwerveModuleIO):
         self._steer_motor.set_control(self.steer_request.with_position(steer_encoder_target))
 
     def getWheelLinearVelocity(self) -> float:
-        return self._inputs.drive_velocity * self._wheel_radius
+        return self._inputs.drive_velocity * constants.WHEEL_RADIUS
 
     def getWheelTotalPosition(self) -> float:
-        return self._inputs.drive_position * self._wheel_radius
+        return self._inputs.drive_position * constants.WHEEL_RADIUS
 
     def setWheelLinearVelocityTarget(self, wheel_linear_velocity_target: float) -> None:
         drive_encoder_target = wheel_linear_velocity_target / constants.RADIANS_PER_REVOLUTION
