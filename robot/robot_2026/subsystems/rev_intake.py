@@ -51,8 +51,8 @@ class IntakeConstants:
     GEAR_RATIO = 1.0
     DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
-    DEPLOYED_ANGLE: degrees = 90.0
-    RETRACTED_ANGLE: degrees = 0.0
+    DEPLOYED_ANGLE: degrees = 90.0  # This is straight forward since our encoder is set to zero on power up position
+    RETRACTED_ANGLE: degrees = 0.0  # This is straight up.
     TOLERANCE: degrees = 2.0
 
     PIVOT_GEARING = 2.0  # Verify
@@ -144,34 +144,6 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
             moi = SingleJointedArmSim.estimateMOI(IntakeConstants.PIVOT_LENGTH, IntakeConstants.PIVOT_MASS)
 
-            """
-            
-            2. __init__(self: wpilib.simulation._simulation.SingleJointedArmSim, 
-                        gearbox: wpimath._controls._controls.plant.DCMotor, 
-                        gearing: typing.SupportsFloat, 
-                        moi: wpimath.units.kilogram_square_meters, 
-                        armLength: wpimath.units.meters, 
-                        minAngle: wpimath.units.radians, 
-                        maxAngle: wpimath.units.radians, 
-                        simulateGravity: bool, 
-                        startingAngle: wpimath.units.radians,
-                         measurementStdDevs: typing.Annotated[collections.abc.Sequence[typing.SupportsFloat], "FixedSize(2)"] = [0.0, 0.0]) -> None
-            
-            Creates a simulated arm mechanism.
-            
-            :param gearbox:            The type and number of motors on the arm gearbox.
-            :param gearing:            The gear ratio of the arm (numbers greater than 1
-                                       represent reductions).
-            :param moi:                The moment of inertia of the arm. This can be
-                                       calculated from CAD software.
-            :param armLength:          The length of the arm.
-            :param minAngle:           The minimum angle that the arm is capable of.
-            :param maxAngle:           The maximum angle that the arm is capable of.
-            :param simulateGravity:    Whether gravity should be simulated or not.
-            :param startingAngle:      The initial position of the arm.
-            :param measurementStdDevs: The standard deviation of the measurement noise.
-            """
-
             self._left_sim_pivot = SingleJointedArmSim(gearbox,
                                                        IntakeConstants.PIVOT_GEARING,
                                                        moi,
@@ -217,9 +189,11 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                                          IntakeConstants.PIVOT_LEFT_ROOT_X,
                                          IntakeConstants.PIVOT_ROOT_Y)
 
+        angle = self._get_rel_angle(self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE), 90)
+
         self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
                                                         IntakeConstants.PIVOT_BASE_LENGTH,
-                                                        self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE),
+                                                        angle,
                                                         color=Color8Bit(Color.kBlue))
 
         right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
@@ -228,7 +202,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                                           IntakeConstants.PIVOT_ROOT_Y)
         self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
                                                           IntakeConstants.PIVOT_BASE_LENGTH,
-                                                          self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE),
+                                                          angle,
                                                           color=Color8Bit(Color.kBlue))
         mech_root.append(self._right_mech_base)
 
@@ -246,6 +220,13 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         elif isinstance(self._enable_chooser, LoggedDashboardChooser):
             pass
+
+    def _get_rel_angle(self, target_abs: degrees, parent_abs: degrees) -> degrees:
+        """
+        Calculates the relative angle needed for a ligament given the
+        desired absolute angle and the parent's absolute angle.
+        """
+        return target_abs - parent_abs
 
     @property
     def enabled(self) -> bool:
