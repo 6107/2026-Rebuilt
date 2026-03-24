@@ -155,17 +155,21 @@ class MyRobot(MyRobotBase):
         super().robotInit()
 
         # # Disable CTRE, Rev Robotics, and RoboRio auto-logging since we will by using pykit
+
         DataLogManager.start()
-        if False:
-            # Enable all logging
-            SignalLogger.enable_auto_logging(True)
-            StatusLogger.start()  # .disableAutoLogging()
-            LiveWindow.enableAllTelemetry()  # .disableAllTelemetry()
-        else:
-            # Disable most logging
-            SignalLogger.enable_auto_logging(False)
-            StatusLogger.disableAutoLogging()
-            LiveWindow.disableAllTelemetry()
+        SignalLogger.enable_auto_logging(True)
+        StatusLogger.start()  # .disableAutoLogging()
+        LiveWindow.enableAllTelemetry()  # .disableAllTelem
+        # if True:
+        #     # Enable all logging
+        #     SignalLogger.enable_auto_logging(True)
+        #     StatusLogger.start()  # .disableAutoLogging()
+        #     LiveWindow.enableAllTelemetry()  # .disableAllTelemetry()
+        # else:
+        #     # Disable most logging
+        #     SignalLogger.enable_auto_logging(False)
+        #     StatusLogger.disableAutoLogging()
+        # LiveWindow.disableAllTelemetry()
 
         command_count: dict[str, int] = {}
 

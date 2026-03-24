@@ -190,14 +190,14 @@ class RevIntake(Subsystem, DualMechanismIO):
                                          IntakeConstants.PIVOT_ROOT_Y)
 
         self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
-                                                         IntakeConstants.PIVOT_BASE_LENGTH,
+                                                        IntakeConstants.PIVOT_BASE_LENGTH,
                                                         self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE),
-                                                         color=Color8Bit(Color.kBlue))
+                                                        color=Color8Bit(Color.kBlue))
 
         right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
         mech_root = right_mech_2d.getRoot("Right Pivot Root",
-                                                           IntakeConstants.PIVOT_RIGHT_ROOT_X,
-                                                           IntakeConstants.PIVOT_ROOT_Y)
+                                          IntakeConstants.PIVOT_RIGHT_ROOT_X,
+                                          IntakeConstants.PIVOT_ROOT_Y)
         self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
                                                           IntakeConstants.PIVOT_BASE_LENGTH,
                                                           self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE),
@@ -210,11 +210,12 @@ class RevIntake(Subsystem, DualMechanismIO):
         # TODO: Remove following once all works
         self._enable_intake = LoggedDashboardChooser("Intake Enable")
         # self._enable_intake = SendableChooser()
-        self._enable_intake.addOption("False", False)
         self._enable_intake.setDefaultOption("True", True)
+        self._enable_intake.addOption("False", False)
 
         if isinstance(self._enable_intake, SendableChooser):
             SmartDashboard.putData("Intake Enabled", self._enable_intake)
+
         elif isinstance(self._enable_intake, LoggedDashboardChooser):
             pass
 
@@ -271,8 +272,8 @@ class RevIntake(Subsystem, DualMechanismIO):
         #
         #  Max RPM is at 12V and we should be lower if the outputRange above is in play
         #
-        # crank_max_dps = IntakeConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
-        # slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
+        crank_max_dps = IntakeConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
+        slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
         # (
         #     config.closedLoop.
         #     pidf(p=1e-5,

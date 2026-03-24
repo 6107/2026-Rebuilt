@@ -147,7 +147,7 @@ class RobotContainer:
         self.intake = Intake(self,
                              DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
                              DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
-                             True, False)
+                             False, True)
 
         ##########################################
         #   CLIMBER
@@ -158,8 +158,8 @@ class RobotContainer:
 
         ##########################################
         #   Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
-        if not DriverStation.isFMSAttached():
-            self._mechanism_2d = RobotMech(self)
+        # if not DriverStation.isFMSAttached():
+        #     self._mechanism_2d = RobotMech(self)
 
         ##########################################
         #   ALERTS
@@ -722,7 +722,9 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
+        # self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
+        from wpilib import SendableChooser
+        self._limit_chooser = SendableChooser()
 
         # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)
@@ -732,7 +734,7 @@ class RobotContainer:
         self._limit_chooser.addOption("80%", 0.8)
         self._limit_chooser.addOption("100%", 1.0)
 
-        # SmartDashboard.putData("Drive rate limiter", self._limit_chooser)
+        SmartDashboard.putData("Drive rate limiter", self._limit_chooser)
 
     def configure_additional_autos(self):
         """
