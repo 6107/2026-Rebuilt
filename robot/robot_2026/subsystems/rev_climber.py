@@ -17,8 +17,6 @@
 
 import logging
 import math
-from typing import Optional
-
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
@@ -27,8 +25,9 @@ from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, SparkMaxSim, \
     SparkRelativeEncoder, SparkRelativeEncoderSim
+from typing import Optional
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
-    SmartDashboard
+    SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
 from wpimath._controls._controls.plant import DCMotor
@@ -133,14 +132,26 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_chooser = LoggedDashboardChooser("Climber Enable")
+        # self._enable_chooser = LoggedDashboardChooser("Climber Enabled")
+        self._enable_chooser = SendableChooser()
+
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
-        # SmartDashboard.putData("Climber Enabled", self._enable_chooser)
+
+        if isinstance(self._enable_chooser, SendableChooser):
+            SmartDashboard.putData("Climber Enabled", self._enable_chooser)
+        elif isinstance(self._enable_chooser, LoggedDashboardChooser):
+            pass
 
     @property
     def enabled(self) -> bool:
-        return self._enable_chooser.getSelected()
+        """
+        Returns True if the Chooser Dialog is True, indicating the subsystem is enabled.
+
+        Note: Enabled is different from active. It is primarily used to indicate that it
+        can perform its operations.
+        """
+        return self._enable_chooser.getSelected() is True
 
     @property
     def subsystem_trigger(self) -> Trigger:

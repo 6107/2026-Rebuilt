@@ -20,7 +20,7 @@ from commands2.button import Trigger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkMax, \
     SparkMaxSim, SparkRelativeEncoderSim
-from wpilib import RobotBase, SmartDashboard
+from wpilib import RobotBase, SendableChooser, SmartDashboard
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.units import revolutions_per_minute, seconds
 
@@ -73,14 +73,26 @@ class RevShooter(Subsystem):
             self._sim_encoder = SparkRelativeEncoderSim(self._motor)
 
         # TODO: Remove following once all works
-        self._enable_chooser = LoggedDashboardChooser("Shooter Enable")
+        # self._enable_chooser = LoggedDashboardChooser("Shooter Enabled")
+        self._enable_chooser = LoggedDashboardChooser("Shooter Enabled")
+
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
-        # SmartDashboard.putData("Shooter Enabled", self._enable_chooser)
+
+        if isinstance(self._enable_chooser, SendableChooser):
+            SmartDashboard.putData("Shooter Enabled", self._enable_chooser)
+        elif isinstance(self._enable_chooser, LoggedDashboardChooser):
+            pass
 
     @property
     def enabled(self) -> bool:
-        return self._enable_chooser.getSelected()
+        """
+        Returns True if the Chooser Dialog is True, indicating the subsystem is enabled.
+
+        Note: Enabled is different from active. It is primarily used to indicate that it
+        can perform its operations.
+        """
+        return self._enable_chooser.getSelected() is True
 
     @property
     def subsystem_trigger(self) -> Trigger:

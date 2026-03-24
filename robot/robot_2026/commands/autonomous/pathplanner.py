@@ -17,15 +17,16 @@
 
 import logging
 import os
-from typing import Optional
-
 from commands2 import cmd, Command, CommandScheduler
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.auto import RobotConfig
 from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
 from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
-from wpilib import DriverStation, getDeployDirectory
+from pykit.logger import Logger
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from typing import Optional
+from wpilib import DriverStation, getDeployDirectory, SendableChooser, SmartDashboard
 from wpimath.kinematics import ChassisSpeeds
 
 from lib_6107.commands.camera.approach_tag import ApproachTag
@@ -33,8 +34,6 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
-from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.climber.climber_commands import ExtendClimber
 from robot_2026.commands.climber.climber_commands import RetractClimber
 from robot_2026.commands.intake.intake_commands import IntakeCollectFuel
@@ -44,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContainer',
-                           default_command: Optional[str] = "") -> Optional[LoggedDashboardChooser]:
+                           default_command: Optional[str] = "") -> Optional[LoggedDashboardChooser | SendableChooser]:
 
     # Register named commands first
     register_commands_and_triggers(drivetrain, container)
@@ -107,10 +106,18 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
     logger.error(f"PathPlanner settings {file_path} not found or is not readable")
     logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
 
-    return LoggedDashboardChooser("Autonomous")
+    # chooser = LoggedDashboardChooser("Autonomous")
+    chooser = SendableChooser()
+
+    if isinstance(chooser, SendableChooser):
+        SmartDashboard.putData("Autonomous", chooser)
+    elif isinstance(chooser, LoggedDashboardChooser):
+        pass
+
+    return chooser
 
 
-def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
+def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser | SendableChooser:
     """
     Create and populate a sendable chooser with all PathPlannerAutos in the project and the default auto name selected.
 
@@ -123,7 +130,9 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
     auto_folder_path = os.path.join(getDeployDirectory(), 'pathplanner', 'autos')
     auto_list = os.listdir(auto_folder_path)
 
-    chooser = LoggedDashboardChooser("Autonomous")
+    # chooser = LoggedDashboardChooser("Autonomous")
+    chooser = SendableChooser()
+
     default_auto_added = False
 
     for auto in auto_list:
@@ -138,6 +147,11 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
         chooser.setDefaultOption("None", cmd.none())
     else:
         chooser.addOption("None", cmd.none())
+
+    if isinstance(chooser, SendableChooser):
+        SmartDashboard.putData("Autonomous", chooser)
+    elif isinstance(chooser, LoggedDashboardChooser):
+        pass
 
     return chooser
 

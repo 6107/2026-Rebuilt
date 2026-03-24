@@ -48,7 +48,7 @@ from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
-from robot_2026.subsystems.rev_intake import RevIntake as Intake
+from robot_2026.subsystems.rev_intake import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
 
 logger = logging.getLogger(__name__)
@@ -144,11 +144,10 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Right Pivot Motor should be Inverted
-        self.intake = Intake(self,
-                             DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
-                             DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
-                             False, True)
-
+        self.intake_pivot = IntakePivot(self,
+                                        DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
+                                        DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
+                                        False, True)
         ##########################################
         #   CLIMBER
         #
@@ -187,13 +186,16 @@ class RobotContainer:
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
-            self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+            # self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+            self._auto_chooser: SendableChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
 
         except FileNotFoundError:
             logger.warning("PathPlanner 'autos' directory does not exist")
-            self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
+            # self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
+            self._auto_chooser: LoggedDashboardChooser = SendableChooser()
 
-        self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
+        # self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
+        self._auto_end_chooser: LoggedDashboardChooser = SendableChooser()
 
         if self.shooter is not None:
             self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
@@ -505,39 +507,39 @@ class RobotContainer:
             # extend_command = ExtendClimber(self, manual=True, position_goal=-5)
             # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
-        if self.intake is not None:
+        if self.intake_pivot is not None:
             logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
-            rotate_down = controller.povLeft()# .and_(self.intake.subsystem_trigger)
-            up_command = InstantCommand(lambda: self.intake.pivot_up())
+            rotate_down = controller.povLeft().and_(self.intake_pivot.subsystem_trigger)
+            up_command = InstantCommand(lambda: self.intake_pivot.pivot_up())
             rotate_down.onTrue(up_command)
 
-            rotate_up = controller.povRight()# .and_(self.intake.subsystem_trigger)
-            down_command = InstantCommand(lambda: self.intake.pivot_down())
+            rotate_up = controller.povRight().and_(self.intake_pivot.subsystem_trigger)
+            down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
             rotate_up.onTrue(down_command)
 
             """
             pov_left_trigger = controller.povLeft()
             pov_right_trigger = controller.povRight()
             x_button_trigger = controller.x()
-            # .and_(self.intake.subsystem_trigger)
+            # .and_(self.intake_pivot.subsystem_trigger)
 
             #down_trigger = pov_right_trigger.and_(x_button_trigger.negate())
             down_trigger = pov_right_trigger
-            down_command = InstantCommand(lambda: self.intake.pivot_down())
+            down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
             down_trigger.onTrue(down_command)
 
             #up_trigger = pov_left_trigger.and_(x_button_trigger.negate())
             up_trigger = pov_left_trigger
-            up_command = InstantCommand(lambda: self.intake.pivot_down())
+            up_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
             up_trigger.onTrue(up_command)
 
             # # Incremental Adjustments
             # tweak_down_trigger = pov_right_trigger.and_(x_button_trigger)
-            # tweak_down_command = InstantCommand(lambda: self.intake.pivot_tweak_down(1))
+            # tweak_down_command = InstantCommand(lambda: self.intake_pivot.pivot_tweak_down(1))
             # tweak_down_trigger.whileTrue(tweak_down_command)
             #
             # tweak_up_trigger = pov_left_trigger.and_(x_button_trigger)
-            # tweak_up_command = InstantCommand(lambda: self.intake.pivot_tweak_up(1))
+            # tweak_up_command = InstantCommand(lambda: self.intake_pivot.pivot_tweak_up(1))
             # tweak_up_trigger.whileTrue(tweak_up_command)
             """
 
@@ -753,8 +755,8 @@ class RobotContainer:
             if self.climber is not None:
                 self._auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
 
-            if self.intake is not None:
-                self._auto_chooser.addOption("Intake SysID", self.intake.sys_id_routine(self.intake))
+            if self.intake_pivot is not None:
+                self._auto_chooser.addOption("Intake SysID", self.intake_pivot.sys_id_routine(self.intake_pivot))
 
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))

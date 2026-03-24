@@ -16,7 +16,6 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-
 from commands2 import cmd, Subsystem
 from commands2.button import Trigger
 from commands2.command import Command
@@ -66,7 +65,7 @@ class IntakeConstants:
     PIVOT_MASS: kilograms = 1.0  # TODO: Verify
 
 @autologgable_output
-class RevIntake(Subsystem, DualMechanismIO):
+class RevIntakePivot(Subsystem, DualMechanismIO):
     """
     Intake Pivot Motor.
 
@@ -79,10 +78,10 @@ class RevIntake(Subsystem, DualMechanismIO):
     The Idle mode is currently set to 'Coast'.
 
     IMPORTANT NOTE:  On motor power-on, the internal encoder will assume that the
-                     current position is the 0. For the intake to run off of commands
-                     that pass in an angle, always start with the intake in the
-                     'up' position. That is where it will need to start anyway when
-                     starting a competition.
+                     current position is the 0 degrees. For the intake to run off
+                     of commands that pass in an angle, always start with the intake
+                     in the 'up' position. That is where it will need to start
+                     anyway when starting a competition.
 
                      A 'chooser' on the operator console will have a default setting
                      that disables the XBox Controller buttons (POV up/down) when we
@@ -144,6 +143,35 @@ class RevIntake(Subsystem, DualMechanismIO):
             self._right_sim_encoder = SparkRelativeEncoderSim(self._right_motor)
 
             moi = SingleJointedArmSim.estimateMOI(IntakeConstants.PIVOT_LENGTH, IntakeConstants.PIVOT_MASS)
+
+            """
+            
+            2. __init__(self: wpilib.simulation._simulation.SingleJointedArmSim, 
+                        gearbox: wpimath._controls._controls.plant.DCMotor, 
+                        gearing: typing.SupportsFloat, 
+                        moi: wpimath.units.kilogram_square_meters, 
+                        armLength: wpimath.units.meters, 
+                        minAngle: wpimath.units.radians, 
+                        maxAngle: wpimath.units.radians, 
+                        simulateGravity: bool, 
+                        startingAngle: wpimath.units.radians,
+                         measurementStdDevs: typing.Annotated[collections.abc.Sequence[typing.SupportsFloat], "FixedSize(2)"] = [0.0, 0.0]) -> None
+            
+            Creates a simulated arm mechanism.
+            
+            :param gearbox:            The type and number of motors on the arm gearbox.
+            :param gearing:            The gear ratio of the arm (numbers greater than 1
+                                       represent reductions).
+            :param moi:                The moment of inertia of the arm. This can be
+                                       calculated from CAD software.
+            :param armLength:          The length of the arm.
+            :param minAngle:           The minimum angle that the arm is capable of.
+            :param maxAngle:           The maximum angle that the arm is capable of.
+            :param simulateGravity:    Whether gravity should be simulated or not.
+            :param startingAngle:      The initial position of the arm.
+            :param measurementStdDevs: The standard deviation of the measurement noise.
+            """
+
             self._left_sim_pivot = SingleJointedArmSim(gearbox,
                                                        IntakeConstants.PIVOT_GEARING,
                                                        moi,
@@ -208,20 +236,26 @@ class RevIntake(Subsystem, DualMechanismIO):
         SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
         # TODO: Remove following once all works
-        self._enable_intake = LoggedDashboardChooser("Intake Enable")
-        # self._enable_intake = SendableChooser()
-        self._enable_intake.setDefaultOption("True", True)
-        self._enable_intake.addOption("False", False)
+        # self._enable_chooser = LoggedDashboardChooser("Intake Enabled")
+        self._enable_chooser = SendableChooser()
+        self._enable_chooser.addOption("True", True)
+        self._enable_chooser.setDefaultOption("False", False)
 
-        if isinstance(self._enable_intake, SendableChooser):
-            SmartDashboard.putData("Intake Enabled", self._enable_intake)
+        if isinstance(self._enable_chooser, SendableChooser):
+            SmartDashboard.putData("Intake Enabled", self._enable_chooser)
 
-        elif isinstance(self._enable_intake, LoggedDashboardChooser):
+        elif isinstance(self._enable_chooser, LoggedDashboardChooser):
             pass
 
     @property
     def enabled(self) -> bool:
-        return self._enable_intake.getSelected()
+        """
+        Returns True if the Chooser Dialog is True, indicating the subsystem is enabled.
+
+        Note: Enabled is different from active. It is primarily used to indicate that it
+        can perform its operations.
+        """
+        return self._enable_chooser.getSelected() is True
 
     @property
     def subsystem_trigger(self) -> Trigger:

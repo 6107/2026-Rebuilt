@@ -344,7 +344,7 @@ class RobotMech(Subsystem):
         if self._robot.isEnabled() and not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
             self._update_drivetrain()
 
-            if self._container.intake is not None:
+            if self._container.intake_pivot is not None:
                 self._update_intake()
 
             self._update_hopper()
@@ -382,7 +382,7 @@ class RobotMech(Subsystem):
         if self._robot.isEnabled():
             self._update_drivetrain()
 
-            if self._container.intake is not None:
+            if self._container.intake_pivot is not None:
                 self._update_intake()
 
             self._update_hopper()
@@ -416,8 +416,8 @@ class RobotMech(Subsystem):
 
     def _update_intake(self) -> None:
         # Pivot relative to the vertical post (which is at 90 absolute).
-        angle: degrees = self._adjust_intake_angle(self._container.intake.angle)
-        speed: degrees_per_second = self._container.intake.angular_velocity
+        angle: degrees = self._adjust_intake_angle(self._container.intake_pivot.angle)
+        speed: degrees_per_second = self._container.intake_pivot.angular_velocity
 
         # Note: appendLigament angle is relative to parent. Parent is 90 deg (vertical).
         self.intake_arm.setAngle(self._get_rel_angle(angle, self._abs_intake_post_angle))
