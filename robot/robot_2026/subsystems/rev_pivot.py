@@ -16,6 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+
 from commands2 import cmd, Subsystem
 from commands2.button import Trigger
 from commands2.command import Command
@@ -24,7 +25,7 @@ from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
-    SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim, ClosedLoopConfig
+    SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
@@ -40,7 +41,8 @@ from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
-class IntakeConstants:
+
+class PivotConstants:
     TARGET_RPM: revolutions_per_minute = 10
     PROPORTIONAL_COEFFICIENT = 10  # 1e-2  # kP
     INTEGRAL_COEFFICIENT = 0       # 1e-5  # kI
@@ -49,13 +51,11 @@ class IntakeConstants:
 
     MAX_RPM = 6784
     GEAR_RATIO = 1.0  # TODO: Need more torque. Get working in Rev Client 2.0 first and transfer numbers here
-    DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
     DEPLOYED_ANGLE: degrees = 90.0  # This is straight forward since our encoder is set to zero on power up position
     RETRACTED_ANGLE: degrees = 0.0  # This is straight up.
     TOLERANCE: degrees = 2.0
 
-    PIVOT_GEARING = 2.0  # Verify
     PIVOT_LEFT_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
     PIVOT_RIGHT_ROOT_X: meters = inchesToMeters(24.5)
     PIVOT_ROOT_Y: meters = inchesToMeters(24.5)
@@ -96,7 +96,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                  can_left_device_id: int, can_right_device_id: int,
                  left_inverted: bool, right_inverted: bool) -> None:
         Subsystem.__init__(self)
-        DualMechanismIO.__init__(self, "Intake")
+        DualMechanismIO.__init__(self, "IntakePivot")
 
         # General attributes
         self.setName(self.__class__.__name__)
@@ -128,7 +128,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
 
-        logger.info(f"Intake. At startup, encoder currently at {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+        logger.info(
+            f"Intake Pivot. At startup, encoder currently at {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
 
         # Support simulation
         self._left_sim_initial = None
@@ -142,37 +143,38 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
             self._left_sim_encoder = SparkRelativeEncoderSim(self._left_motor)
             self._right_sim_encoder = SparkRelativeEncoderSim(self._right_motor)
 
-            moi = SingleJointedArmSim.estimateMOI(IntakeConstants.PIVOT_LENGTH, IntakeConstants.PIVOT_MASS)
+            moi = SingleJointedArmSim.estimateMOI(PivotConstants.PIVOT_LENGTH, PivotConstants.PIVOT_MASS)
 
             self._left_sim_pivot = SingleJointedArmSim(gearbox,
-                                                       IntakeConstants.PIVOT_GEARING,
+                                                       PivotConstants.GEAR_RATIO,
                                                        moi,
-                                                       IntakeConstants.PIVOT_LENGTH,
+                                                       PivotConstants.PIVOT_LENGTH,
                                                        self._adjust_intake_angle_radians(
-                                                           IntakeConstants.DEPLOYED_ANGLE),  # Min Angle
+                                                           PivotConstants.DEPLOYED_ANGLE),  # Min Angle
                                                        self._adjust_intake_angle_radians(
-                                                           IntakeConstants.RETRACTED_ANGLE),  # Max Angle
+                                                           PivotConstants.RETRACTED_ANGLE),  # Max Angle
                                                        True,
                                                        self._adjust_intake_angle_radians(
-                                                           IntakeConstants.RETRACTED_ANGLE))  # Starting Angle
+                                                           PivotConstants.RETRACTED_ANGLE))  # Starting Angle
             self._right_sim_pivot = SingleJointedArmSim(gearbox,
-                                                        IntakeConstants.PIVOT_GEARING,
+                                                        PivotConstants.GEAR_RATIO,
                                                         moi,
-                                                        IntakeConstants.PIVOT_LENGTH,
+                                                        PivotConstants.PIVOT_LENGTH,
                                                         self._adjust_intake_angle_radians(
-                                                            IntakeConstants.DEPLOYED_ANGLE),
+                                                            PivotConstants.DEPLOYED_ANGLE),
                                                         self._adjust_intake_angle_radians(
-                                                            IntakeConstants.RETRACTED_ANGLE),
+                                                            PivotConstants.RETRACTED_ANGLE),
                                                         True,
                                                         self._adjust_intake_angle_radians(
-                                                            IntakeConstants.RETRACTED_ANGLE))
+                                                            PivotConstants.RETRACTED_ANGLE))
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
         self._left_pid_controller: SparkClosedLoopController = self._left_motor.getClosedLoopController()
         self._right_pid_controller: SparkClosedLoopController = self._right_motor.getClosedLoopController()
 
-        logger.info(f"Intake. At startup, pid setpoints are {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
+        logger.info(
+            f"Intake Pivot. At startup, pid setpoints are {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
 
         self._left_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
         self._right_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
@@ -186,22 +188,22 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         # Visualization support
         left_mech_2d = Mechanism2d(inchesToMeters(20), inchesToMeters(50))
         mech_root = left_mech_2d.getRoot("Left Pivot Root",
-                                         IntakeConstants.PIVOT_LEFT_ROOT_X,
-                                         IntakeConstants.PIVOT_ROOT_Y)
+                                         PivotConstants.PIVOT_LEFT_ROOT_X,
+                                         PivotConstants.PIVOT_ROOT_Y)
 
-        angle = self._get_rel_angle(self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE), 90)
+        angle = self._get_rel_angle(self._adjust_intake_angle(PivotConstants.RETRACTED_ANGLE), 90)
 
         self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
-                                                        IntakeConstants.PIVOT_BASE_LENGTH,
+                                                        PivotConstants.PIVOT_BASE_LENGTH,
                                                         angle,
                                                         color=Color8Bit(Color.kBlue))
 
         right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
         mech_root = right_mech_2d.getRoot("Right Pivot Root",
-                                          IntakeConstants.PIVOT_RIGHT_ROOT_X,
-                                          IntakeConstants.PIVOT_ROOT_Y)
+                                          PivotConstants.PIVOT_RIGHT_ROOT_X,
+                                          PivotConstants.PIVOT_ROOT_Y)
         self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
-                                                          IntakeConstants.PIVOT_BASE_LENGTH,
+                                                          PivotConstants.PIVOT_BASE_LENGTH,
                                                           angle,
                                                           color=Color8Bit(Color.kBlue))
         mech_root.append(self._right_mech_base)
@@ -250,14 +252,14 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         """
         config = (SparkFlexConfig().
                   inverted(inverted).
-                  smartCurrentLimit(IntakeConstants.LIMIT_CURRENT).
+                  smartCurrentLimit(PivotConstants.LIMIT_CURRENT).
                   setIdleMode(SparkFlexConfig.IdleMode.kBrake)
                   )
         config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
 
         # Set the position conversion factor (e.g., to convert rotations to degrees)
         # The native unit is rotations. So use 360.0 as conversion factor to get degrees
-        deploy_degrees_per_motor_rotation = 360 * IntakeConstants.GEAR_RATIO
+        deploy_degrees_per_motor_rotation = 360 * PivotConstants.GEAR_RATIO
         config.encoder.positionConversionFactor(deploy_degrees_per_motor_rotation)
 
         # Set the velocity conversion factor (e.g., to convert RPM to degrees/second)
@@ -266,14 +268,25 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         # Closed loop configuration parameters, slot=0
         # TODO: Use SysID to determine actual values
+        #
+        #   P:     If you’re not where you want to be, get there.
+        #
+        #   I:     If you haven’t been where you want to be for a while, apply more effort
+        #          to get there”, since it really isn’t about speed.
+        #
+        #   D:     If you’re getting close to where you want to be, slow down.
+        #
+        #   IZone: If you are really far from where you want to be, don’t start applying
+        #          more effort to get there until you are within this margin
+        #
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
             config.closedLoop.
             # IMaxAccum(0.03, slot=slot0).
             # IZone(3, slot=slot0).
-            pidf(p=IntakeConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
-                 i=IntakeConstants.INTEGRAL_COEFFICIENT,
-                 d=IntakeConstants.DERIVATIVE_COEFFICIENT,
+            pidf(p=PivotConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+                 i=PivotConstants.INTEGRAL_COEFFICIENT,
+                 d=PivotConstants.DERIVATIVE_COEFFICIENT,
                  ff=0,
                  slot=slot0)
             .outputRange(-1, 1)
@@ -288,7 +301,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         #
         #  Max RPM is at 12V and we should be lower if the outputRange above is in play
         #
-        crank_max_dps = IntakeConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
+        crank_max_dps = PivotConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
         slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
         # (
         #     config.closedLoop.
@@ -338,8 +351,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         raise NotImplementedError("Reset command was called but is not supported at this time")
         #self._left_encoder.setPosition(0.0)
         #self._right_encoder.setPosition(0.0)
-        self._left_mech_base.setAngle(IntakeConstants.RETRACTED_ANGLE)
-        self._right_mech_base.setAngle(IntakeConstants.RETRACTED_ANGLE)
+        self._left_mech_base.setAngle(PivotConstants.RETRACTED_ANGLE)
+        self._right_mech_base.setAngle(PivotConstants.RETRACTED_ANGLE)
         # self._left_pid_controller.reset()
         # self._right_pid_controller.reset()
 
@@ -363,7 +376,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         logger.info(f"Intake: Pivot up, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
         logger.info(f"Intake: Pivot up. Position goal before command is: {self._position_goal}")
 
-        self.set_position_goal(IntakeConstants.RETRACTED_ANGLE)
+        self.set_position_goal(PivotConstants.RETRACTED_ANGLE)
 
     def pivot_tweak_up(self, increment: degrees = 1.0)-> None:
         self.set_position_goal(self._position_goal + increment)
@@ -376,7 +389,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         logger.info(f"Intake: Pivot down, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
         logger.info(f"Intake: Pivot down. Position goal before command is: {self._position_goal}")
 
-        self.set_position_goal(IntakeConstants.DEPLOYED_ANGLE)
+        self.set_position_goal(PivotConstants.DEPLOYED_ANGLE)
 
     def set_position_goal(self, goal: degrees) -> None:
         if self._position_goal != goal:
@@ -395,14 +408,14 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         right_pos = self._inputs.mechanism_2_position
         match left:
             case True:
-                return left_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE
+                return left_pos <= PivotConstants.DEPLOYED_ANGLE + PivotConstants.TOLERANCE
 
             case False:
-                return right_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE
+                return right_pos <= PivotConstants.DEPLOYED_ANGLE + PivotConstants.TOLERANCE
 
             case None:
-                return left_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE and \
-                    right_pos <= IntakeConstants.DEPLOYED_ANGLE + IntakeConstants.TOLERANCE
+                return left_pos <= PivotConstants.DEPLOYED_ANGLE + PivotConstants.TOLERANCE and \
+                    right_pos <= PivotConstants.DEPLOYED_ANGLE + PivotConstants.TOLERANCE
         return True
 
     def at_retracted_angle(self, left: bool | None) -> bool:
@@ -410,27 +423,27 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         right_pos = self._inputs.mechanism_2_position
         match left:
             case True:
-                return left_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE
+                return left_pos >= PivotConstants.RETRACTED_ANGLE - PivotConstants.TOLERANCE
 
             case False:
-                return right_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE
+                return right_pos >= PivotConstants.RETRACTED_ANGLE - PivotConstants.TOLERANCE
 
             case None:
-                return left_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE and \
-                    right_pos >= IntakeConstants.RETRACTED_ANGLE - IntakeConstants.TOLERANCE
+                return left_pos >= PivotConstants.RETRACTED_ANGLE - PivotConstants.TOLERANCE and \
+                    right_pos >= PivotConstants.RETRACTED_ANGLE - PivotConstants.TOLERANCE
         return True
 
     def stop(self) -> None:
-        logger.info(f"Intake: Stop command was called")
+        logger.info(f"Intake Pivot: Stop command was called")
         self._left_motor.stopMotor()
         self._right_motor.stopMotor()
 
     def periodic(self) -> None:
-        LogTracer.resetOuter("IntakeSubsystem periodic")
+        LogTracer.resetOuter("Intake Pivot periodic")
 
         self.updateInputs(self._inputs)
 
-        Logger.processInputs("Intake", self._inputs)
+        Logger.processInputs("Intake Pivot", self._inputs)
         LogTracer.record("UpdateInputs")
 
         # Update visualization
@@ -491,11 +504,11 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
             # First pass, set the encoder positions to the initial setting
             if self._left_sim_initial is None:
-                self._left_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+                self._left_encoder.setPosition(PivotConstants.RETRACTED_ANGLE)
                 self._left_sim_initial = self._left_encoder.getPosition()
 
             if self._right_sim_initial is None:
-                self._right_encoder.setPosition(IntakeConstants.RETRACTED_ANGLE)
+                self._right_encoder.setPosition(PivotConstants.RETRACTED_ANGLE)
                 self._right_sim_initial = self._right_encoder.getPosition()
 
             input_voltage = RobotController.getInputVoltage()  # TODO: Can we use BatterySim?
@@ -566,8 +579,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
             position (rotations +/-): The desired number of rotations
         """
         # Limit to max/min
-        position = max(min(position, IntakeConstants.RETRACTED_ANGLE),
-                       IntakeConstants.DEPLOYED_ANGLE)
+        position = max(min(position, PivotConstants.RETRACTED_ANGLE),
+                       PivotConstants.DEPLOYED_ANGLE)
 
         if position != self.left_position or position != self.right_position:
             logger.info(f"Intake: Setting position to {position}")
@@ -618,7 +631,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                                                 SysIdRoutine.Mechanism(self.set_voltage,
                                                                        (lambda _: None),
                                                                        subsystem,
-                                                                       "Climber"))
+                                                                       "Intake Pivot"))
         return cmd.sequence(
             cmd.runOnce(lambda: self.set_closed_loop(False), self),
             characterization_routine.quasistatic(SysIdRoutine.Direction.kForward).until(

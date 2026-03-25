@@ -16,6 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import math
+
 from commands2 import Subsystem
 from wpilib import Color, Color8Bit, DriverStation, Mechanism2d, RobotBase, SmartDashboard
 from wpimath.kinematics import ChassisSpeeds
@@ -23,7 +24,7 @@ from wpimath.units import degrees, degrees_per_second, inchesToMeters, meters, m
     revolutions_per_minute
 
 import constants
-from robot_2026.subsystems.rev_intake import IntakeConstants
+from robot_2026.subsystems.rev_pivot import PivotConstants
 
 
 class RobotMech(Subsystem):
@@ -162,7 +163,7 @@ class RobotMech(Subsystem):
         # Needs to reach ground (Y=0). Length approx 11-12".\
         # However. Since we start with the intake up and the encoder considers that 0 degrees
         #          and not 90, then we need to adjust
-        self._abs_intake_arm_start_angle = self._adjust_intake_angle(IntakeConstants.RETRACTED_ANGLE)  # Initial angle
+        self._abs_intake_arm_start_angle = self._adjust_intake_angle(PivotConstants.RETRACTED_ANGLE)  # Initial angle
         self.intake_arm_length = inchesToMeters(10)
         self.intake_arm = self.intake_post.appendLigament("intake_arm",
                                                           self.intake_arm_length,

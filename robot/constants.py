@@ -137,11 +137,13 @@ class DeviceID(IntEnum):
     SHOOTER_DEVICE_ID = 30
 
     # Intake Subsystem
-    INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID = 31
-    INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID = 32
+    INTAKE_LEFT_PIVOT_DEVICE_ID = 31
+    INTAKE_RIGHT_PIVOT_DEVICE_ID = 32
+    INTAKE_ROLLER_DEVICE_ID = 33
+    INTAKE_INDEXER_DEVICE_ID = 34
 
     # Climber Subsystem
-    CLIMBER_DEVICE_ID = 33
+    CLIMBER_DEVICE_ID = 35
 
 #################################################################################
 # IP Address Assignments.  Not used in code, but kept here for recording purposes

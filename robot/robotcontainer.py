@@ -19,6 +19,8 @@ import json
 import logging
 import os
 import time
+from typing import Any, Callable, Dict, List, Optional
+
 from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
@@ -28,7 +30,6 @@ from phoenix6.swerve.swerve_module import SwerveModule
 from pykit.alertlogger import AlertLogger
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from typing import Any, Callable, Dict, List, Optional
 from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
@@ -48,7 +49,10 @@ from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
-from robot_2026.subsystems.rev_intake import RevIntakePivot as IntakePivot
+from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
+from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
+from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
+from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
 
 logger = logging.getLogger(__name__)
@@ -129,25 +133,30 @@ class RobotContainer:
         self.subsystems.extend(camera_subsystems)
 
         ##########################################
-        #   SHOOTER
-        #
-        self.shooter = None
-        # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        # self.subsystems.append(self.shooter)
-
-        ##########################################
-        #   INDEXER
-        #
-        self.indexer = None
-
-        ##########################################
         #   INTAKE (Pivot & Rollers)
         #
         # Right Pivot Motor should be Inverted
         self.intake_pivot = IntakePivot(self,
-                                        DeviceID.INTAKE_LEFT_PIVOT_MOTOR_DEVICE_ID,
-                                        DeviceID.INTAKE_RIGHT_PIVOT_MOTOR_DEVICE_ID,
+                                        DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
+                                        DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
                                         False, True)
+
+        self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID,
+                                          False)
+
+        ##########################################
+        #   INDEXER
+        #
+        self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID,
+                                     False)
+
+        ##########################################
+        #   SHOOTER
+        #
+        # self.shooter = None
+        self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        self.subsystems.append(self.shooter)
+
         ##########################################
         #   CLIMBER
         #
