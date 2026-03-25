@@ -24,7 +24,7 @@ from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
-    SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
+    SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim, ClosedLoopConfig
 from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
@@ -42,13 +42,13 @@ logger = logging.getLogger(__name__)
 
 class IntakeConstants:
     TARGET_RPM: revolutions_per_minute = 10
-    PROPORTIONAL_COEFFICIENT = 1e-2  # kP
-    INTEGRAL_COEFFICIENT = 1e-5  # kI
-    DERIVATIVE_COEFFICIENT = 1e-2  # kD
+    PROPORTIONAL_COEFFICIENT = 10  # 1e-2  # kP
+    INTEGRAL_COEFFICIENT = 0       # 1e-5  # kI
+    DERIVATIVE_COEFFICIENT = 100   # 1e-2  # kD
     LIMIT_CURRENT: amperes = 30
 
     MAX_RPM = 6784
-    GEAR_RATIO = 1.0
+    GEAR_RATIO = 1.0  # TODO: Need more torque. Get working in Rev Client 2.0 first and transfer numbers here
     DRIVE_VOLTAGE: volts = 0.10     # Start at 10% power
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
     DEPLOYED_ANGLE: degrees = 90.0  # This is straight forward since our encoder is set to zero on power up position
@@ -269,14 +269,15 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
             config.closedLoop.
-            IMaxAccum(0.03, slot=slot0).
-            IZone(3, slot=slot0).
+            # IMaxAccum(0.03, slot=slot0).
+            # IZone(3, slot=slot0).
             pidf(p=IntakeConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
                  i=IntakeConstants.INTEGRAL_COEFFICIENT,
                  d=IntakeConstants.DERIVATIVE_COEFFICIENT,
                  ff=0,
                  slot=slot0)
-            .outputRange(-0.1, 0.1)
+            .outputRange(-1, 1)
+   #        .feedForward.kG(0.05)
         )
         # TODO: For control over acceleration and velocity, use maxMotion on slot 1
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/maxmotion-position-control
