@@ -41,7 +41,7 @@ class IntakeConstants:
 
     GEAR_REDUCTION = 6.75  # TODO: Get number
     MEASUREMENT_STD_DEV = [0.0, 0.0]  # TODO: Get number for noise
-    MAX_RPM: revolutions_per_minute = 6784
+    MAX_RPM: revolutions_per_minute = 6784.0
 
     TARGET_RPM: revolutions_per_minute = 100  # Start slow
 

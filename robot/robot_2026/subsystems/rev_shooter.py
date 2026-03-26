@@ -46,7 +46,7 @@ class ShooterConstants:
 
     GEAR_REDUCTION = 6.75  # TODO: Get number
     MEASUREMENT_STD_DEV = [0.0, 0.0]  # TODO: Get number for noise
-    MAX_RPM: revolutions_per_minute = 5676
+    MAX_RPM: revolutions_per_minute = 5676.0
 
 
 @autologgable_output

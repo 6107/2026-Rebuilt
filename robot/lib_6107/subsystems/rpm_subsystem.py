@@ -68,7 +68,7 @@ class DefaultConstants:
     # Following optional. Need a way to allow this
     GEAR_REDUCTION = 1.0
     MEASUREMENT_STD_DEV = [0.0, 0.0]
-    MAX_RPM: revolutions_per_minute = 6784
+    MAX_RPM: revolutions_per_minute = 6784.0
 
 @autologgable_output
 class RpmSubsystem(Subsystem, RpmMechanismIO):
@@ -130,11 +130,11 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
         self._pid_controller: SparkClosedLoopController = self._motor.getClosedLoopController()
-        self._pid_controller.setSetpoint(0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
+        self._pid_controller.setSetpoint(0.0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
 
         # The critical attributes/properties for operation
-        self._velocity_goal: revolutions_per_minute = 0
-        self._velocity_tolerance: revolutions_per_minute = 0
+        self._velocity_goal: revolutions_per_minute = 0.0
+        self._velocity_tolerance: revolutions_per_minute = 0.0
 
         # SysID Support
         self._sysid_routine = SysIdRoutine(SysIdRoutine.Config(),
