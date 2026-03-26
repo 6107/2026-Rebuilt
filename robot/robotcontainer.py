@@ -137,26 +137,29 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Right Pivot Motor should be Inverted
-        self.intake_pivot = IntakePivot(self,
-                                        DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
-                                        DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                        False, True)
+        self.intake_pivot = None
+        # self.intake_pivot = IntakePivot(self,
+        #                                 DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
+        #                                 DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+        #                                 False, True)
 
-        self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID,
-                                          False)
+        self.intake_roller = None
+        # self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID,
+        #                                   False)
 
         ##########################################
         #   INDEXER
         #
-        self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID,
-                                     False)
+        self.indexer = None
+        # self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID,
+        #                              False)
 
         ##########################################
         #   SHOOTER
         #
-        # self.shooter = None
-        self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        self.subsystems.append(self.shooter)
+        self.shooter = None
+        # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        # self.subsystems.append(self.shooter)
 
         ##########################################
         #   CLIMBER
@@ -532,42 +535,6 @@ class RobotContainer:
             # extend_command = ExtendClimber(self, manual=True, position_goal=-5)
             # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
-        if self.intake_pivot is not None:
-            logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
-            rotate_down = controller.povLeft().and_(self.intake_pivot.subsystem_trigger)
-            up_command = InstantCommand(lambda: self.intake_pivot.pivot_up())
-            rotate_down.onTrue(up_command)
-
-            rotate_up = controller.povRight().and_(self.intake_pivot.subsystem_trigger)
-            down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
-            rotate_up.onTrue(down_command)
-
-            """
-            pov_left_trigger = controller.povLeft()
-            pov_right_trigger = controller.povRight()
-            x_button_trigger = controller.x()
-            # .and_(self.intake_pivot.subsystem_trigger)
-
-            #down_trigger = pov_right_trigger.and_(x_button_trigger.negate())
-            down_trigger = pov_right_trigger
-            down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
-            down_trigger.onTrue(down_command)
-
-            #up_trigger = pov_left_trigger.and_(x_button_trigger.negate())
-            up_trigger = pov_left_trigger
-            up_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
-            up_trigger.onTrue(up_command)
-
-            # # Incremental Adjustments
-            # tweak_down_trigger = pov_right_trigger.and_(x_button_trigger)
-            # tweak_down_command = InstantCommand(lambda: self.intake_pivot.pivot_tweak_down(1))
-            # tweak_down_trigger.whileTrue(tweak_down_command)
-            #
-            # tweak_up_trigger = pov_left_trigger.and_(x_button_trigger)
-            # tweak_up_command = InstantCommand(lambda: self.intake_pivot.pivot_tweak_up(1))
-            # tweak_up_trigger.whileTrue(tweak_up_command)
-            """
-
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
 
@@ -585,9 +552,9 @@ class RobotContainer:
 
         D-Pad == Directional Pad
                 - Up       - Retract the climbing arm (robot goes up)
-                - Right
+                - Right    - Lower the Intake (pivot down)
                 - Down     - Extend the climbing arm (robot goes down)
-                - Left
+                - Left     - Raise the Intake (pivot up)
 
         LB == Left Bumper
         RB == Right Bumper - Follow an april tag around the room
@@ -595,7 +562,7 @@ class RobotContainer:
         LT == Left Trigger  - Keep robot shooter pointing toward our alliance hub (while pressed)
         RT == Right Trigger
 
-        A == A Button (Bottom) -
+        A == A Button (Bottom) - Brake
         B == B Button (Right)  -
         Y == Y Button (Top)    -
         X == X Button (Left)   -
@@ -645,6 +612,42 @@ class RobotContainer:
             climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
             extend_command = ExtendClimber(self, manual=True, position_goal=-5)
             climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+
+        if self.intake_pivot is not None:
+            logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
+            rotate_down = controller.povLeft().and_(self.intake_pivot.subsystem_trigger)
+            up_command = InstantCommand(lambda: self.intake_pivot.pivot_up())
+            rotate_down.onTrue(up_command)
+
+            rotate_up = controller.povRight().and_(self.intake_pivot.subsystem_trigger)
+            down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
+            rotate_up.onTrue(down_command)
+
+            """
+            pov_left_trigger = controller.povLeft()
+            pov_right_trigger = controller.povRight()
+            x_button_trigger = controller.x()
+            # .and_(self.intake_pivot.subsystem_trigger)
+
+            #down_trigger = pov_right_trigger.and_(x_button_trigger.negate())
+            down_trigger = pov_right_trigger
+            down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
+            down_trigger.onTrue(down_command)
+
+            #up_trigger = pov_left_trigger.and_(x_button_trigger.negate())
+            up_trigger = pov_left_trigger
+            up_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
+            up_trigger.onTrue(up_command)
+
+            # # Incremental Adjustments
+            # tweak_down_trigger = pov_right_trigger.and_(x_button_trigger)
+            # tweak_down_command = InstantCommand(lambda: self.intake_pivot.pivot_tweak_down(1))
+            # tweak_down_trigger.whileTrue(tweak_down_command)
+            #
+            # tweak_up_trigger = pov_left_trigger.and_(x_button_trigger)
+            # tweak_up_command = InstantCommand(lambda: self.intake_pivot.pivot_tweak_up(1))
+            # tweak_up_trigger.whileTrue(tweak_up_command)
+            """
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """

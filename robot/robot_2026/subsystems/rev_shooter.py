@@ -25,7 +25,7 @@ from wpilib import SendableChooser, SmartDashboard
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
-from lib_6107.subsystems.rpm_subsystem import MotorType, RpmSubsystem
+from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmSubsystem
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class RevShooter(RpmSubsystem):
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "roller",
-                         DCMotor.NEO(1), MotorType.SparkMax, ShooterConstants(),
+                         DCMotor.NEO(1), ControllerType.SparkMax, ShooterConstants(),
                          long_name="Intake/Roller",
                          coast=True,
                          persist_config=persist_config)
@@ -89,11 +89,8 @@ class RevShooter(RpmSubsystem):
     def subsystem_trigger(self) -> Trigger:
         return Trigger(lambda: self.enabled)
 
-    def reset(self) -> None:
-        self.stop()
-        logger.info(f"Shooter Roller: Reset command was called  *** *** *** ***   NOT YET SUPPORTED")
-        self._rpm_goal = 0
-
     def shoot_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Shoot fuel toward whatever we are aimed at.
+        logger.info(f"Roller: Expel Fuel, currently (RPM): {self.velocity_in_rpm}, Goal: {self.goal}")
+
         self._set_velocity_goal(rpm, rpm_tolerance)

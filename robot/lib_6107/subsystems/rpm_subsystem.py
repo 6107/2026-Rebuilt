@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 @unique
-class MotorType(Enum):
+class ControllerType(Enum):
     """
     Currently the following motor/controller types are supported
     """
@@ -50,7 +50,8 @@ class MotorType(Enum):
     SparkFlex = "SparkFlex"
 
 
-def _default_max_rpm(motor_type: MotorType) -> revolutions_per_minute:
+def _default_max_rpm(controller_type: ControllerType, motor: DCMotor) -> revolutions_per_minute:
+    # TODO: Future, for when None passed in for MAX_RPM
     return 0.0
 
 
@@ -78,7 +79,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
     This is the rolly-grabber at the front of the intake.
     """
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
-                 motor: DCMotor, motor_type: MotorType, constants: Any,
+                 motor: DCMotor, controller_type: ControllerType, constants: Any,
                  long_name: Optional[str] = None,
                  coast: Optional[bool] = True,
                  persist_config: Optional[bool] = False) -> None:
@@ -100,24 +101,24 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         self._inputs = RpmMechanismIO.RpmMechanismIOInputs()
 
         self._constants = constants
-        self._motor_type = motor_type
+        self._controller_type = controller_type
 
         self._physics_controller = None
 
         # Set up the motor controller
-        match motor_type:
-            case MotorType.SparkMax:
+        match controller_type:
+            case ControllerType.SparkMax:
                 self._motor = SparkMax(self._device_id, SparkFlex.MotorType.kBrushless)
                 if RobotBase.isSimulation():
                     self._sim_motor = SparkMaxSim(self._motor, motor)
 
-            case MotorType.SparkFlex:
+            case ControllerType.SparkFlex:
                 self._motor = SparkFlex(self._device_id, SparkFlex.MotorType.kBrushless)
 
                 if RobotBase.isSimulation():
                     self._sim_motor = SparkFlexSim(self._motor, motor)
             case _:
-                raise NotImplementedError(f"Unsupported motor type: {motor_type}")
+                raise NotImplementedError(f"Unsupported motor type: {controller_type}")
 
         persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
         try_until_ok(name, 5,
@@ -167,11 +168,11 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         Motor config for the intake Indexer. Using the default Primary Encoder
         as the Feedback Sensor.
         """
-        match self._motor_type:
-            case MotorType.SparkMax:
+        match self._controller_type:
+            case ControllerType.SparkMax:
                 config = SparkMaxConfig()
 
-            case MotorType.SparkFlex:
+            case ControllerType.SparkFlex:
                 config = SparkFlexConfig()
 
         config = (config
@@ -221,6 +222,14 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         return config
 
     @property
+    def goal(self) -> revolutions_per_minute:
+        return self._velocity_goal
+
+    @property
+    def tolerance(self) -> revolutions_per_minute:
+        return self._velocity_tolerance
+
+    @property
     def velocity_in_rpm(self) -> revolutions_per_minute:
         return radiansPerSecondToRotationsPerMinute(self.velocity_in_rps)
 
@@ -234,13 +243,20 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         return self._encoder.getPosition()
 
     @property
+    def active(self) -> bool:
+        """
+        True if the goal RPM is non-zero or the mechanism is still spinning
+        """
+        return self.goal != 0.0 and self.velocity_in_rps != 0.0
+
+    @property
     def not_ready(self) -> str:
         velocity = self.velocity_in_rpm
-        if velocity < self._velocity_goal - self._velocity_tolerance:
-            return f"under velocity goal: {velocity} < {self._velocity_goal}"
+        if velocity < self.goal - self.tolerance:
+            return f"under velocity goal: {velocity} < {self.goal}"
 
-        if velocity > self._velocity_goal + self._velocity_tolerance:
-            return f"above velocity goal: {velocity} > {self._velocity_goal}"
+        if velocity > self.goal + self.tolerance:
+            return f"above velocity goal: {velocity} > {self.goal}"
 
         return ""  # indexer is ready (within tolerated limits
 
@@ -248,7 +264,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         self._velocity_tolerance = rpm_tolerance or 0.0
         self._velocity_goal, previous = max(0.0, min(self._constants.MAX_RPM, abs(rpm))), self._velocity_goal
 
-        if self._velocity_goal != previous:
+        if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
             logger.info(f"{self.getName()}: Setting goal RPM to {self._velocity_goal}. previous: {previous}")
             logger.info(
                 f"{self.getName()}: current PID controller setpoint before command: {self._pid_controller.getSetpoint()}")
@@ -273,9 +289,9 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
         # TODO: Look what we need to do if we provide replay?
 
-        Logger.recordOutput(f"{self._long_name}/goal", self._velocity_goal)
+        Logger.recordOutput(f"{self._long_name}/goal", self.goal)
         Logger.recordOutput(f"{self._long_name}/current", self.velocity_in_rpm)
-        Logger.recordOutput(f"{self._long_name}/tolerance", self._velocity_tolerance)
+        Logger.recordOutput(f"{self._long_name}/tolerance", self.tolerance)
         LogTracer.recordTotal()
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
@@ -294,11 +310,11 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        SmartDashboard.putNumber(f"{self._long_name}/Goal", self._velocity_goal)
+        SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
         SmartDashboard.putNumber(f"{self._long_name}/Current", self.velocity_in_rpm)
-        SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self._velocity_tolerance)
+        SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
         SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._motor.getAppliedOutput())
-        SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getAppliedOutput())
+        SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getOutputCurrent())
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """

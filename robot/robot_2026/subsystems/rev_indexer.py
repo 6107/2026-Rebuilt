@@ -23,7 +23,7 @@ from pykit.autolog import autologgable_output
 from wpimath._controls._controls.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
-from lib_6107.subsystems.rpm_subsystem import MotorType, RpmSubsystem
+from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmSubsystem
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class IntakeConstants:
 
     GEAR_REDUCTION = 6.75  # TODO: Get number
     MEASUREMENT_STD_DEV = [0.0, 0.0]  # TODO: Get number for noise
-    MAX_RPM: revolutions_per_minute = 6784.0
+    MAX_RPM: revolutions_per_minute = 5676.0
 
     TARGET_RPM: revolutions_per_minute = 100  # Start slow
 
@@ -53,11 +53,10 @@ class RevIntakeIndexer(RpmSubsystem):
 
     This is the rolly-grabber at the front of the intake.
     """
-
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "Indexer",
-                         DCMotor.NEO(1), MotorType.SparkFlex, IntakeConstants(),
+                         DCMotor.NEO(1), ControllerType.SparkMax, IntakeConstants(),
                          long_name="Intake/Indexer",
                          coast=True,
                          persist_config=persist_config)
@@ -78,8 +77,12 @@ class RevIntakeIndexer(RpmSubsystem):
 
     def intake_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Consume fuel from the playing area
+        logger.info(f"Indexer: Intake Fuel, currently (RPM): {self.velocity_in_rpm}, Goal: {self.goal}")
+
         self._set_velocity_goal(rpm, rpm_tolerance)
 
     def expel_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Expel any fuel we may have
+        logger.info(f"Indexer: Expel Fuel, currently (RPM): {self.velocity_in_rpm}, Goal: {self.goal}")
+
         self._set_velocity_goal(-rpm, rpm_tolerance)  # TODO: Should this be separate function or maybe lower value
