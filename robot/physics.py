@@ -131,7 +131,7 @@ class PhysicsEngine:
                     current_used.append(amps)
 
         if current_used:
-            RoboRioSim.setVInVoltage(BatterySim.calculate([self._sim_motor.getMotorCurrent()]))
+            RoboRioSim.setVInVoltage(BatterySim.calculate(current_used))
             # TODO: Do we want a SmartDashboard item for the simulated battery or RoboRio
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
