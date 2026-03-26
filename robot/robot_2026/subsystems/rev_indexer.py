@@ -32,6 +32,11 @@ class IntakeConstants:
     PROPORTIONAL_COEFFICIENT = 10  # kP
     INTEGRAL_COEFFICIENT = 0  # kI
     DERIVATIVE_COEFFICIENT = 0  # kD
+
+    VELOCITY_FEEDFORWARD = None
+    IMAX_ACCUM = None
+    IZONE = None
+
     LIMIT_CURRENT: amperes = 30
 
     GEAR_REDUCTION = 6.75  # TODO: Get number

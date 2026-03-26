@@ -49,7 +49,7 @@ class PivotConstants:
     DERIVATIVE_COEFFICIENT = 100   # 1e-2  # kD
     LIMIT_CURRENT: amperes = 30
 
-    MAX_RPM = 6784
+    MAX_RPM: revolutions_per_minute = 6784
     GEAR_RATIO = 1.0  # TODO: Need more torque. Get working in Rev Client 2.0 first and transfer numbers here
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
     DEPLOYED_ANGLE: degrees = 90.0  # This is straight forward since our encoder is set to zero on power up position
@@ -290,7 +290,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                  ff=0,
                  slot=slot0)
             .outputRange(-1, 1)
-   #        .feedForward.kG(0.05)
+            #   .feedForward.kG(0.05)
         )
         # TODO: For control over acceleration and velocity, use maxMotion on slot 1
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/maxmotion-position-control

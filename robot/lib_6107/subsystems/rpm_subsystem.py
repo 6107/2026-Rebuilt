@@ -43,9 +43,32 @@ logger = logging.getLogger(__name__)
 
 @unique
 class MotorType(Enum):
+    """
+    Currently the following motor/controller types are supported
+    """
     SparkMax = "SparkMax"
     SparkFlex = "SparkFlex"
 
+
+def _default_max_rpm(motor_type: MotorType) -> revolutions_per_minute:
+    return 0.0
+
+
+class DefaultConstants:
+    PROPORTIONAL_COEFFICIENT = 10  # kP
+    INTEGRAL_COEFFICIENT = 0  # kI
+    DERIVATIVE_COEFFICIENT = 0  # kD
+
+    VELOCITY_FEEDFORWARD = None
+    IMAX_ACCUM = None
+    IZONE = None
+
+    LIMIT_CURRENT: amperes = 40
+
+    # Following optional. Need a way to allow this
+    GEAR_REDUCTION = 1.0
+    MEASUREMENT_STD_DEV = [0.0, 0.0]
+    MAX_RPM: revolutions_per_minute = 6784
 
 @autologgable_output
 class RpmSubsystem(Subsystem, RpmMechanismIO):
@@ -54,14 +77,17 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
     This is the rolly-grabber at the front of the intake.
     """
-
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
                  motor: DCMotor, motor_type: MotorType, constants: Any,
                  long_name: Optional[str] = None,
                  coast: Optional[bool] = True,
                  persist_config: Optional[bool] = False) -> None:
+
         Subsystem.__init__(self)
         RpmMechanismIO.__init__(self, name)
+
+        # Sanity / defaults check
+        constants = self._validate_constants(constants, name)
 
         # General attributes
         self.setName(name)
@@ -117,6 +143,25 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                                                                   self,
                                                                   name))
 
+    @staticmethod
+    def _validate_constants(constants: Any, obj_name: str) -> Any:
+        """
+        Validate that the constants passed in have values/properties this class needs. They
+        can be None if you want this class to use a default value (often zero), but they do need
+        to exist as an explicit attribute of the object passed in
+        """
+        required = ["MAX_RPM", "LIMIT_CURRENT", "PROPORTIONAL_COEFFICIENT",
+                    "INTEGRAL_COEFFICIENT", "DERIVATIVE_COEFFICIENT"]
+        for attribute in required:
+            # Needs to be there, even if set to None
+            assert hasattr(constants, attribute), f"{attribute} was not found in {obj_name} object constants"
+
+            # If set to None, use our default values (which may be None as well)
+            if getattr(constants, attribute, None) is None:
+                setattr(constants, attribute, getattr(DefaultConstants(), obj_name))
+
+        return constants
+
     def _motor_config(self, coast: bool) -> SparkBaseConfig:
         """
         Motor config for the intake Indexer. Using the default Primary Encoder
@@ -129,15 +174,15 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
             case MotorType.SparkFlex:
                 config = SparkFlexConfig()
 
-        config = (config.inverted(self._inverted).
-                  smartCurrentLimit(self._constants.LIMIT_CURRENT).
-                  setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
+        config = (config
+                  .inverted(self._inverted)
+                  .smartCurrentLimit(self._constants.LIMIT_CURRENT)
+                  .setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
                   )
 
         config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
 
         # Closed loop configuration parameters, slot=0
-        # TODO: Use SysID to determine actual values
         #
         #   P:     If you’re not where you want to be, get there.
         #
@@ -151,15 +196,26 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         #
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
-            config.closedLoop.
-            # IMaxAccum(0.03, slot=slot0).
-            # IZone(3, slot=slot0).
-            pid(p=self._constants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
-                i=self._constants.INTEGRAL_COEFFICIENT,
-                d=self._constants.DERIVATIVE_COEFFICIENT,
-                slot=slot0)
+            config.closedLoop
+            # .IMaxAccum(0.03, slot=slot0)
+            # .IZone(3, slot=slot0)
+            .pid(p=self._constants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+                 i=self._constants.INTEGRAL_COEFFICIENT,
+                 d=self._constants.DERIVATIVE_COEFFICIENT,
+                 slot=slot0)
             .outputRange(-1, 1)
         )
+        # Apply any optional config
+        if self._constants.VELOCITY_FEEDFORWARD is not None:
+            config = config.closedLoop.velocityFF(self._constants.VELOCITY_FEEDFORWARD,
+                                                  slot=slot0)
+
+        if self._constants.IMAX_ACCUM is not None:
+            config = config.IMaxAccum(self._constants.IMAX_ACCUM, slot=slot0)
+
+        if self._constants.IZONE is not None:
+            config = config.IZone(self._constants.IZONE, slot=slot0)
+
         # Set the encoder to return its position in radians
         config.encoder.positionConversionFactor(2 * math.pi)
         return config
@@ -189,8 +245,8 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         return ""  # indexer is ready (within tolerated limits
 
     def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
-        self._velocity_tolerance = rpm_tolerance or 0
-        self._velocity_goal, previous = max(0, min(self._constants.MAX_RPM, abs(rpm))), self._velocity_goal
+        self._velocity_tolerance = rpm_tolerance or 0.0
+        self._velocity_goal, previous = max(0.0, min(self._constants.MAX_RPM, abs(rpm))), self._velocity_goal
 
         if self._velocity_goal != previous:
             logger.info(f"{self.getName()}: Setting goal RPM to {self._velocity_goal}. previous: {previous}")
