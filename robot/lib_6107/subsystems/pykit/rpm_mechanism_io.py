@@ -18,7 +18,7 @@
 from dataclasses import dataclass
 
 from pykit.autolog import autolog
-from wpimath.units import amperes, revolutions_per_minute, volts
+from wpimath.units import amperes, radians, radians_per_second, volts
 
 
 class RpmMechanismIO:
@@ -28,12 +28,12 @@ class RpmMechanismIO:
     @autolog
     @dataclass
     class RpmMechanismIOInputs:
-        drive_connected: bool = False
-        encoder_connected: bool = False
+        mechanism_connected: bool = False
 
-        drive_velocity: revolutions_per_minute = 0.0
-        drive_applied: volts = 0.0  # volts
-        drive_supply_current: amperes = 0.0  # amps
+        mechanism_position: radians = 0.0
+        mechanism_velocity: radians_per_second = 0.0
+        mechanism_applied_voltage: volts = 0.0
+        mechanism_supply_current: amperes = 0.0
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -45,10 +45,3 @@ class RpmMechanismIO:
             inputs (RpmMechanismIOInputs): The drive I/O inputs to update.
         """
         pass
-
-    def setVelocityGoal(self, goal: revolutions_per_minute) -> None:
-        """Set the drive.
-
-        Args:
-            goal (Radians/Sec): The desired RPM in radians per second.
-        """

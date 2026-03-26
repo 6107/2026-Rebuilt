@@ -20,6 +20,8 @@ import logging
 import os
 import sys
 import time
+from typing import Optional
+
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
@@ -31,7 +33,6 @@ from pykit.networktables.nt4Publisher import NT4Publisher
 from pykit.wpilog.wpilogreader import WPILOGReader
 from pykit.wpilog.wpilogwriter import WPILOGWriter
 from rev import StatusLogger
-from typing import Optional
 from wpilib import DataLogManager, DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
@@ -85,7 +86,17 @@ class MyRobot(MyRobotBase):
                     Logger.recordMetadata("Git Description", deploy_config.get("git-desc", ""))
 
                 Logger.addDataReciever(NT4Publisher(True))
-                Logger.addDataReciever(WPILOGWriter())
+                usb_mount = "/U"
+                usb_logs = os.path.join(usb_mount, "logs")
+
+                if os.path.ismount(usb_mount) or os.path.exists(usb_mount):
+                    os.makedirs(usb_logs, exist_ok=True)
+                    Logger.addDataReciever(WPILOGWriter())
+                else:
+                    fallback_dir = os.path.abspath("pyLogs")
+                    os.makedirs(fallback_dir, exist_ok=True)
+                    Logger.addDataReciever(WPILOGWriter(filename=None,
+                                                        path=fallback_dir))
 
             case constants.RobotModes.SIMULATION:
                 Logger.addDataReciever(WPILOGWriter())

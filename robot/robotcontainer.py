@@ -49,6 +49,7 @@ from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
+from robot_2026.preflight import PreflightChecklist
 from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
@@ -175,13 +176,28 @@ class RobotContainer:
         # TODO: validate this all works (including shift active_
         AlertLogger.registerGroup("Alerts")
 
-        self.driver_disconnected = Alert("Driver controller disconnected (port 0)", Alert.AlertType.kWarning)
-        self.operator_disconnected = Alert("Operator controller disconnected (port 1)", Alert.AlertType.kWarning)
-        self.dead_in_the_water_alert = Alert("No auto selected!!!", Alert.AlertType.kWarning)
+        self.driver_disconnected = Alert("Driver controller disconnected (port 0)",
+                                         Alert.AlertType.kWarning)
+        self.operator_disconnected = Alert("Operator controller disconnected (port 1)",
+                                           Alert.AlertType.kWarning)
+        self.dead_in_the_water_alert = Alert("No auto selected!!!",
+                                             Alert.AlertType.kWarning)
 
         # TODO: also maybe a vibrate...
         self.shift_active_alert = Alert("SHIFT ACTIVE!", Alert.AlertType.kInfo)
         self.shift_active_alert.set(True)
+
+        self.usbAlert = Alert(
+            "No USB Drive in robot!", Alert.AlertType.kError
+        )
+        if RobotBase.isReal() and not os.path.exists("/U/logs"):
+            self.usbAlert.set(True)
+
+        self.preflightAlert = Alert("preflight checking not complete",
+                                    Alert.AlertType.kError)
+        # preflight checklist
+        AlertLogger.registerGroup("preflight")
+        self.preflight = PreflightChecklist()
 
         ##########################################
         #   TELEMETRY

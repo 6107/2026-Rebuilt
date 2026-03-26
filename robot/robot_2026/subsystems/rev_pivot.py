@@ -608,6 +608,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         Model the behavior of the intake (for better control) by sweeping through
         the max and min heights.
         """
+
+        # TODO: Add to non-competition AUTO chooser
         def log_state(sys_id_state: State) -> None:
             match sys_id_state:
                 case State.kQuasistaticForward:

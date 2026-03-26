@@ -28,9 +28,12 @@
 #
 # Examples can be found at https://github.com/robotpy/examples
 import logging
+from typing import List
 
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import SmartDashboard
+from wpilib.simulation import BatterySim, RoboRioSim
+from wpimath.units import amperes
 
 from robot import MyRobot
 from robot_2026.field.field_2026 import BLUE_TEST_POSE, RED_TEST_POSE
@@ -120,9 +123,16 @@ class PhysicsEngine:
             SmartDashboard.putNumber("Periodic/Simulation/called", self._times_called)
             SmartDashboard.putNumber("Periodic/Simulation/avg-period-mS", avg_time)
 
+        current_used: List[amperes] = []
         for subsystem in self._robot.container.subsystems:
             if hasattr(subsystem, "update_sim") and callable(getattr(subsystem, "update_sim")):
-                subsystem.update_sim(now, tm_diff)
+                amps: amperes | None = subsystem.update_sim(now, tm_diff)
+                if amps is not None:
+                    current_used.append(amps)
+
+        if current_used:
+            RoboRioSim.setVInVoltage(BatterySim.calculate([self._sim_motor.getMotorCurrent()]))
+            # TODO: Do we want a SmartDashboard item for the simulated battery or RoboRio
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """
