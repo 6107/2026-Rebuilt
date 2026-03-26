@@ -44,9 +44,9 @@ logger = logging.getLogger(__name__)
 
 class PivotConstants:
     TARGET_RPM: revolutions_per_minute = 10
-    PROPORTIONAL_COEFFICIENT = 10  # 1e-2  # kP
+    PROPORTIONAL_COEFFICIENT = 0#  10  # 1e-2  # kP
     INTEGRAL_COEFFICIENT = 0       # 1e-5  # kI
-    DERIVATIVE_COEFFICIENT = 100   # 1e-2  # kD
+    DERIVATIVE_COEFFICIENT = 0 #100   # 1e-2  # kD
     LIMIT_CURRENT: amperes = 30
 
     MAX_RPM: revolutions_per_minute = 6784

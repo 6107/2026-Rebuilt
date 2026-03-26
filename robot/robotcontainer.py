@@ -51,6 +51,7 @@ from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.preflight import PreflightChecklist
 from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
+from robot_2026.subsystems.rev_climber import RevClimber as Climber
 from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
 from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
@@ -137,36 +138,44 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Right Pivot Motor should be Inverted
-        self.intake_pivot = None
-        # self.intake_pivot = IntakePivot(self,
-        #                                 DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
-        #                                 DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-        #                                 False, True)
+        if RobotBase.isSimulation():
+            self.intake_pivot = IntakePivot(self,
+                                            DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
+                                            DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+                                            False, True)
 
-        self.intake_roller = None
-        # self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID,
-        #                                   False)
+            self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID,
+                                              False)
+        else:
+            self.intake_pivot = None
+            self.intake_roller = None
 
         ##########################################
         #   INDEXER
         #
-        self.indexer = None
-        # self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID,
-        #                              False)
+        if RobotBase.isSimulation():
+            self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID,
+                                         False)
+        else:
+            self.indexer = None
 
         ##########################################
         #   SHOOTER
         #
-        self.shooter = None
-        # self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        # self.subsystems.append(self.shooter)
+        if RobotBase.isSimulation():
+            self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+            self.subsystems.append(self.shooter)
+        else:
+            self.shooter = None
 
         ##########################################
         #   CLIMBER
         #
-        self.climber = None
-        # self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
-        # self.subsystems.append(self.climber)
+        if RobotBase.isSimulation():
+            self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
+            self.subsystems.append(self.climber)
+        else:
+            self.climber = None
 
         ##########################################
         # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
