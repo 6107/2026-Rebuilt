@@ -49,13 +49,13 @@ from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
-from robot_2026.preflight import PreflightChecklist
-from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
+from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
 from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
+from robot_2026.util.preflight import PreflightChecklist
 
 logger = logging.getLogger(__name__)
 
@@ -135,47 +135,61 @@ class RobotContainer:
         self.subsystems.extend(camera_subsystems)
 
         ##########################################
+        self.intake_pivot: IntakePivot | None = None
+        self.intake_roller: IntakeRoller | None = None
+        self.indexer: IntakeIndexer | None = None
+        self.shooter: Shooter | None = None
+        self.climber: Climber | None = None
+
+        ##########################################
         #   INTAKE (Pivot & Rollers)
         #
         # Right Pivot Motor should be Inverted
         if RobotBase.isSimulation():
-            self.intake_pivot = IntakePivot(self,
-                                            DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
-                                            DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                            False, True)
+            # TODO: These are not fully supported right now
+            try:
+                self.intake_pivot = IntakePivot(self,
+                                                DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
+                                                DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+                                                False, True)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Pivot initialization: {_e}")
 
-            self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID,
-                                              False)
-        else:
-            self.intake_pivot = None
-            self.intake_roller = None
+            try:
+                self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, False)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Roller initialization: {_e}")
 
-        ##########################################
-        #   INDEXER
-        #
-        if RobotBase.isSimulation():
-            self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID,
-                                         False)
-        else:
-            self.indexer = None
+            ##########################################
+            #   INDEXER
+            #
+            try:
+                self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Indexer initialization: {_e}")
 
-        ##########################################
-        #   SHOOTER
-        #
-        if RobotBase.isSimulation():
-            self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-            self.subsystems.append(self.shooter)
-        else:
-            self.shooter = None
+            ##########################################
+            #   SHOOTER
+            #
+            try:
+                self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+            except Exception as _e:
+                logger.exception(f"Exception during Shooter initialization: {_e}")
 
-        ##########################################
-        #   CLIMBER
-        #
-        if RobotBase.isSimulation():
-            self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
-            self.subsystems.append(self.climber)
-        else:
-            self.climber = None
+            ##########################################
+            #   CLIMBER
+            #
+            try:
+                self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Initialization: {_e}")
+
+        # Add subsystems that got initialized
+        for sub in (self.intake_pivot, self.intake_roller, self.indexer,
+                    self.shooter, self.climber):
+
+            if sub is not None and sub.is_connected:
+                self.subsystems.append(sub)
 
         ##########################################
         # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
@@ -185,31 +199,7 @@ class RobotContainer:
         ##########################################
         #   ALERTS
         #
-        # TODO: validate this all works (including shift active_
-        AlertLogger.registerGroup("Alerts")
-
-        self.driver_disconnected = Alert("Driver controller disconnected (port 0)",
-                                         Alert.AlertType.kWarning)
-        self.operator_disconnected = Alert("Operator controller disconnected (port 1)",
-                                           Alert.AlertType.kWarning)
-        self.dead_in_the_water_alert = Alert("No auto selected!!!",
-                                             Alert.AlertType.kWarning)
-
-        # TODO: also maybe a vibrate...
-        self.shift_active_alert = Alert("SHIFT ACTIVE!", Alert.AlertType.kInfo)
-        self.shift_active_alert.set(True)
-
-        self.usbAlert = Alert(
-            "No USB Drive in robot!", Alert.AlertType.kError
-        )
-        if RobotBase.isReal() and not os.path.exists("/U/logs"):
-            self.usbAlert.set(True)
-
-        self.preflightAlert = Alert("preflight checking not complete",
-                                    Alert.AlertType.kError)
-        # preflight checklist
-        AlertLogger.registerGroup("preflight")
-        self.preflight = PreflightChecklist()
+        self._alert_setup()
 
         ##########################################
         #   TELEMETRY
@@ -223,16 +213,16 @@ class RobotContainer:
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
-            # self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
-            self._auto_chooser: SendableChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+            self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+            # self._auto_chooser: SendableChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
 
         except FileNotFoundError:
             logger.warning("PathPlanner 'autos' directory does not exist")
-            # self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
-            self._auto_chooser: LoggedDashboardChooser = SendableChooser()
+            self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
+            # self._auto_chooser: SendableChooser = SendableChooser()
 
-        # self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
-        self._auto_end_chooser: LoggedDashboardChooser = SendableChooser()
+        self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
+        # self._auto_end_chooser: SendableChooser = SendableChooser()
 
         if self.shooter is not None:
             self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
@@ -390,6 +380,32 @@ class RobotContainer:
         """
         self._alliance_change_callbacks.append(callback)
 
+    def _alert_setup(self) -> None:
+
+        # TODO: Need to validate all alerts so we can trust them
+        AlertLogger.registerGroup("Alerts")
+
+        self.driver_disconnected = Alert("Driver controller disconnected (port 0)",
+                                         Alert.AlertType.kWarning)
+        self.operator_disconnected = Alert("Operator controller disconnected (port 1)",
+                                           Alert.AlertType.kWarning)
+        self.dead_in_the_water_alert = Alert("No auto selected!!!",
+                                             Alert.AlertType.kWarning)
+
+        self.shift_active_alert = Alert("SHIFT ACTIVE!", Alert.AlertType.kInfo)  # TODO: also maybe a vibrate?
+        self.shift_active_alert.set(True)
+
+        self.usbAlert = Alert("No USB Drive in robot!", Alert.AlertType.kError)
+
+        if RobotBase.isReal() and not os.path.exists("/U/logs"):
+            self.usbAlert.set(True)
+
+        self._preflight_alert = Alert("preflight checking not complete",
+                                      Alert.AlertType.kError)
+        # preflight checklist
+        AlertLogger.registerGroup("preflight")
+        self._preflight = PreflightChecklist()
+
     def set_start_time(self) -> None:  # call in teleopInit and autonomousInit in the robot
         self.start_time = time.time()
 
@@ -528,7 +544,7 @@ class RobotContainer:
         #     self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
         # )
 
-        if self.climber is not None:
+        if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
             climb_up = controller.povUp()  # .and_(self.climber.subsystem_trigger)
             extend = InstantCommand(lambda: self.climber.extend())
@@ -582,7 +598,7 @@ class RobotContainer:
         # Right trigger - Start the shooter
         # TODO: Figure out our tolerances
         # TODO: Adjust RPM higher. Start out slow so we cantest it
-        if self.shooter is not None:
+        if self.shooter is not None and self.shooter.is_connected:
             rpm = 120                   # TODO : tie into chooser
             tolerance = 40
 
@@ -611,7 +627,7 @@ class RobotContainer:
                                                               threshold=0.5)
             right_bumper_pressed.whileTrue(track_any_tag)
 
-        if self.climber is not None:
+        if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
             climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
             retract_command = RetractClimber(self, manual=True, position_goal=5)
@@ -622,7 +638,7 @@ class RobotContainer:
             extend_command = ExtendClimber(self, manual=True, position_goal=-5)
             climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
-        if self.intake_pivot is not None:
+        if self.intake_pivot is not None and self.intake_pivot.is_connected:
             logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
             rotate_down = controller.povLeft().and_(self.intake_pivot.subsystem_trigger)
             up_command = InstantCommand(lambda: self.intake_pivot.pivot_up())
@@ -761,8 +777,8 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        self._limit_chooser = SendableChooser()
-        # self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
+        # self._limit_chooser = SendableChooser()
+        self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
         # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)
@@ -812,6 +828,9 @@ class RobotContainer:
 
         return PrintCommand("Do-Nothing Command")
 
+    def disable_periodic(self) -> None:
+        self._preflight.update()
+
     def robotPeriodic(self) -> None:
         """
         This is called from Robot.robotPeriodic() after the Phoenix6 signal updates
@@ -853,3 +872,5 @@ class RobotContainer:
         self.operator_disconnected.set(not DriverStation.isJoystickConnected(1))
 
         self.dead_in_the_water_alert.set(self._auto_chooser.getSelected() == self.get_do_nothing)
+
+        self._preflight_alert.set(not self._preflight.is_complete())

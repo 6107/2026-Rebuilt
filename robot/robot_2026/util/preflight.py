@@ -27,9 +27,13 @@ class PreflightChecklist:
             self._name = name
             self._value = LoggedNetworkBoolean(key, not expected)
             self._expected = expected
-            self.alert = Alert("preflight",
-                               f"Check Failed: {name}",
-                               Alert.AlertType.kError)
+            self.alert = Alert("preflight", f"Check Failed: {name}", Alert.AlertType.kError)
+
+        def __str__(self) -> str:
+            return repr(self)
+
+        def __repr__(self):
+            return f"PreflightCheck({self._name}: {self._value.value})"
 
         def update(self):
             """
@@ -67,13 +71,16 @@ class PreflightChecklist:
                 "E-Stop is Disengaged", "Preflight/E-Stop", True
             ),
             PreflightChecklist.PreflightCheck(
-                "Xbox is Connected", "Preflight/Xbox", True
+                "Driver Xbox is Connected", "Preflight/Driver", True
             ),
             PreflightChecklist.PreflightCheck(
-                "Farm is Connected", "Preflight/Farm", True
+                "Shooter Xbox is Connected", "Preflight/Shooter", True
             ),
             PreflightChecklist.PreflightCheck(
                 "Autonomous is Selected", "Preflight/Autonomous", True
+            ),
+            PreflightChecklist.PreflightCheck(
+                "Autonomous Ending is Selected", "Preflight/AutoEnds", True
             ),
             PreflightChecklist.PreflightCheck(
                 "Robot in correct autonomous position", "Preflight/AutoLoc", True

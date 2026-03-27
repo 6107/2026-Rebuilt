@@ -25,9 +25,10 @@ from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
-from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkBaseConfig, SparkClosedLoopController, \
-    SparkFlex, SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder
-from wpilib import RobotBase, SmartDashboard, CANStatus
+from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, \
+    SparkClosedLoopController, SparkFlex, SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, \
+    SparkRelativeEncoder
+from wpilib import RobotBase, SmartDashboard
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
 from wpimath._controls._controls.plant import DCMotor
@@ -120,14 +121,16 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
             case _:
                 raise NotImplementedError(f"Unsupported motor type: {controller_type}")
 
-        self._is_connected = self._check_is_connected()
-
         persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
 
-        try_until_ok(name, 5,
-                     lambda: self._motor.configure(self._motor_config(coast),
-                                                   ResetMode.kResetSafeParameters,
-                                                   persist))
+        config_status = try_until_ok(name, 5,
+                                     lambda: self._motor.configure(self._motor_config(coast),
+                                                                   ResetMode.kResetSafeParameters,
+                                                                   persist))
+
+        # Check if the device was successfully configured and can be reached over the
+        # CAN bus.
+        self._is_connected = self._check_is_connected(config_status)
 
         # Set up the encoders
         self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
@@ -167,13 +170,79 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
         return constants
 
-    def _check_is_connected(self) -> bool:
+    def _motor_config(self, coast: bool) -> SparkBaseConfig:
+        """
+        Motor config for the intake Indexer. Using the default Primary Encoder
+        as the Feedback Sensor.
+        """
+        match self._controller_type:
+            case ControllerType.SparkMax:
+                config = SparkMaxConfig()
+
+            case ControllerType.SparkFlex:
+                config = SparkFlexConfig()
+
+        config = (config
+                  .inverted(self._inverted)
+                  .smartCurrentLimit(self._constants.LIMIT_CURRENT)
+                  .setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
+                  )
+
+        config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
+
+        # Closed loop configuration parameters, slot=0
+        #
+        #   P:     If you’re not where you want to be, get there.
+        #
+        #   I:     If you haven’t been where you want to be for a while, apply more effort
+        #          to get there”, since it really isn’t about speed.
+        #
+        #   D:     If you’re getting close to where you want to be, slow down.
+        #
+        #   IZone: If you are really far from where you want to be, don’t start applying
+        #          more effort to get there until you are within this margin
+        #
+        slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
+        (
+            config.closedLoop
+            # .IMaxAccum(0.03, slot=slot0)
+            # .IZone(3, slot=slot0)
+            .pid(p=self._constants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+                 i=self._constants.INTEGRAL_COEFFICIENT,
+                 d=self._constants.DERIVATIVE_COEFFICIENT,
+                 slot=slot0)
+            .outputRange(-1, 1)
+        )
+        # Apply any optional config
+        if self._constants.VELOCITY_FEEDFORWARD is not None:
+            config = config.closedLoop.velocityFF(self._constants.VELOCITY_FEEDFORWARD,
+                                                  slot=slot0)
+
+        if self._constants.IMAX_ACCUM is not None:
+            config = config.IMaxAccum(self._constants.IMAX_ACCUM, slot=slot0)
+
+        if self._constants.IZONE is not None:
+            config = config.IZone(self._constants.IZONE, slot=slot0)
+
+        # Set the encoder to return its position in radians
+        config.encoder.positionConversionFactor(2 * math.pi)
+        return config
+
+    def _check_is_connected(self, config_status: REVLibError | None) -> bool:
+        """
+        For Rev Robotics, the only way to check if all is well i
+        """
         match self._controller_type:
             case ControllerType.SparkFlex | ControllerType.SparkMax:
                 version = self._motor.getFirmwareVersion()
                 logger.info(f"{self.getName()} firmware version: {version}")
 
-                return version != 0     # or RobotBase.isSimulation()
+                ok = (version != 0 and (config_status is None or
+                                        config_status == REVLibError.kOk))
+                # or RobotBase.isSimulation()
+                if not ok:
+                    logger.warning(f"{self.getName()} firmware version: {version}, status: {config_status}")
+                return ok
 
     @property
     def is_connected(self) -> bool:

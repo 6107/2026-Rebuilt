@@ -37,12 +37,13 @@ from wpilib import DataLogManager, DriverStation, Field2d, LiveWindow, RobotBase
 from wpimath.units import seconds
 
 import constants
+from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
 from robot_2026.util.logtracer import LogTracer
 from robotcontainer import RobotContainer
 
-if True:
+if False:
     from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot as MyRobotBase
 else:
     from pykit.loggedrobot import LoggedRobot as MyRobotBase
@@ -144,6 +145,9 @@ class MyRobot(MyRobotBase):
         SmartDashboard.putNumber("Periodic/Robot/called", self._times_called)
         SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", 0)
 
+        self._game_over_notification = Notification(title="Game Over",
+                                                    description="The competition has ended",
+                                                    display_time=5000)
         # Visualization and pose support
         self.match_started = False  # Set true on Autonomous or Teleop init
 
@@ -165,12 +169,13 @@ class MyRobot(MyRobotBase):
         super().robotInit()
 
         # TODO: Eventually set to false to rely only upon pykit
-        if True:
+        if not RobotBase.isSimulation():
             # Enable all logging
             DataLogManager.start()
             SignalLogger.enable_auto_logging(True)
             StatusLogger.start()  # .disableAutoLogging()
             LiveWindow.enableAllTelemetry()  # .disableAllTelem
+
         else:
             # Disable most logging
             DataLogManager.start()
@@ -214,6 +219,8 @@ class MyRobot(MyRobotBase):
         self._container = RobotContainer(self)
         self.disabledTimer = wpilib.Timer()
 
+        # Start off in the preflight screen
+        select_tab("PREFLIGHT")
         logger.info("robotInit: exit")
 
     def _logging_init(self):
@@ -240,6 +247,9 @@ class MyRobot(MyRobotBase):
         print("Robot Statistics:")
         self._stats.print("all", 1)
         print("========================================")
+
+        send_notification(self._game_over_notification)
+
         # self._network_tables_instance.stopClient()
 
     def robotPeriodic(self) -> None:
@@ -319,6 +329,9 @@ class MyRobot(MyRobotBase):
         start = time.monotonic()
         logger.debug("called disabledPeriodic")
 
+        # Alert updates for pre-flight
+        self.container.disable_periodic()
+
         if self.disabledTimer.hasElapsed(constants.WHEEL_LOCK_TIME):
             self.container.robot_drive.set_motor_brake(False)
             self.disabledTimer.stop()
@@ -367,6 +380,11 @@ class MyRobot(MyRobotBase):
 
         if self._autonomous_command:
             self._autonomous_command.schedule()
+
+        if RobotBase.isSimulation():
+            select_tab("Autonomous (Development)")
+        else:
+            select_tab("Autonomous")
 
     def autonomousPeriodic(self) -> None:
         """
@@ -431,6 +449,11 @@ class MyRobot(MyRobotBase):
         if not self.match_started:
             self.container.check_alliance()
             self.match_started = True
+
+        if RobotBase.isSimulation():
+            select_tab("Teleop (Development)")
+        else:
+            select_tab("Teleop")
 
     def teleopPeriodic(self) -> None:
         """

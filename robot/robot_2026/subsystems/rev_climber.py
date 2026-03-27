@@ -17,15 +17,15 @@
 
 import logging
 import math
+
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, SparkMaxSim, \
-    SparkRelativeEncoder, SparkRelativeEncoderSim
-from typing import Optional
+from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, \
+    SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
     SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
@@ -84,10 +84,12 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         # Set up the motor controller
         self._motor = SparkMax(can_device_id, SparkBase.MotorType.kBrushless)
-        try_until_ok("Climber", 5,
-                     lambda: self._motor.configure(self._motor_config(self._inverted),
-                                                   ResetMode.kResetSafeParameters,
-                                                   PersistMode.kNoPersistParameters))
+        status = try_until_ok("Climber", 5,
+                              lambda: self._motor.configure(self._motor_config(self._inverted),
+                                                            ResetMode.kResetSafeParameters,
+                                                            PersistMode.kNoPersistParameters))
+        self._is_connected = self._check_is_connected(status)
+
         # Set up the encoder
         self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
         self._encoder.setPosition(0.0)
@@ -142,6 +144,30 @@ class RevClimber(Subsystem, RotationMechanismIO):
             SmartDashboard.putData("Climber Enabled", self._enable_chooser)
         elif isinstance(self._enable_chooser, LoggedDashboardChooser):
             pass
+
+    @property
+    def is_connected(self) -> bool:
+        """
+        Detect if this device is connected to the CAN Bus.  For Rev Robotics,
+        the default way is based on config results. When we support CTRE, they
+        have a 'isStatusOK' call that is useful.
+        """
+        return self._is_connected
+
+    def _check_is_connected(self, status: REVLibError | None) -> bool:
+        """
+        For Rev Robotics, the only way to check if all is well i
+        """
+        version = self._motor.getFirmwareVersion()
+
+        logger.info(f"{self.getName()} firmware version: {version}")
+
+        ok = (version != 0 and (status is None or status == REVLibError.kOk))
+
+        if not ok:
+            logger.warning(f"{self.getName()} firmware version: {version}, status: {status}")
+
+        return ok
 
     @property
     def enabled(self) -> bool:
@@ -207,9 +233,11 @@ class RevClimber(Subsystem, RotationMechanismIO):
     def reset(self) -> None:
         self._motor.stopMotor()
         self._position_goal = 0.0
-        self._encoder.setPosition(0.0)
-        self._pid_controller.reset()
+        # self._encoder.setPosition(0.0)
+        # self._pid_controller.reset()
         self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT)
+        # self._position_goal = 0
+        raise NotImplementedError("Reset command was called but is not supported at this time")
 
     def stop(self, brake: bool) -> None:
         self._pid_controller.setSetpoint(self.position, SparkLowLevel.ControlType.kPosition,
@@ -258,13 +286,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
     def retract(self) -> None:
         self.position = 0.0
         self._motor.set(-0.1)
-
-    def stop(self, brake: Optional[bool] = True) -> None:
-        self._motor.stopMotor()
-
-        if brake:
-            # TODO: Anything else to brake?
-            pass
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """
@@ -325,9 +346,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
         Logger.processInputs("Climber", self._inputs)
         LogTracer.record("UpdateInputs")
 
-        if self._closed_loop:
-            self.set_position(self._position_goal)
-
         # Update visualization
         self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT + self.position_meters)
 
@@ -358,7 +376,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putBoolean("Climber/closed-loop", self._closed_loop)
 
     def updateInputs(self, inputs: RotationMechanismIO.RotationMechanismIOInputs) -> None:
-        inputs.mechanism_connected = True   # TODO: Figure this one out
+        inputs.mechanism_connected = self.is_connected
         inputs.mechanism_position = self._encoder.getPosition()
         inputs.mechanism_speed = self._encoder.getVelocity()
 

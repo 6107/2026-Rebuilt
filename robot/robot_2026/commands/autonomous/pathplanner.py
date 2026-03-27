@@ -17,6 +17,8 @@
 
 import logging
 import os
+from typing import Optional
+
 from commands2 import cmd, Command, CommandScheduler
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.auto import RobotConfig
@@ -25,7 +27,6 @@ from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from typing import Optional
 from wpilib import DriverStation, getDeployDirectory, SendableChooser, SmartDashboard
 from wpimath.kinematics import ChassisSpeeds
 
@@ -106,8 +107,8 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
     logger.error(f"PathPlanner settings {file_path} not found or is not readable")
     logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
 
-    # chooser = LoggedDashboardChooser("Autonomous")
-    chooser = SendableChooser()
+    chooser = LoggedDashboardChooser("Autonomous")
+    # chooser = SendableChooser()
 
     if isinstance(chooser, SendableChooser):
         SmartDashboard.putData("Autonomous", chooser)
@@ -130,8 +131,8 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser | 
     auto_folder_path = os.path.join(getDeployDirectory(), 'pathplanner', 'autos')
     auto_list = os.listdir(auto_folder_path)
 
-    # chooser = LoggedDashboardChooser("Autonomous")
-    chooser = SendableChooser()
+    chooser = LoggedDashboardChooser("Autonomous")
+    # chooser = SendableChooser()
 
     default_auto_added = False
 
@@ -142,11 +143,6 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser | 
             chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
         else:
             chooser.addOption(auto, AutoBuilder.buildAuto(auto))
-
-    if not default_auto_added:
-        chooser.setDefaultOption("None", cmd.none())
-    else:
-        chooser.addOption("None", cmd.none())
 
     if isinstance(chooser, SendableChooser):
         SmartDashboard.putData("Autonomous", chooser)

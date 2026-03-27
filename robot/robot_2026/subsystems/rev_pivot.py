@@ -16,6 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+from typing import Tuple
 
 from commands2 import cmd, Subsystem
 from commands2.button import Trigger
@@ -24,7 +25,7 @@ from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from rev import ClosedLoopSlot, PersistMode, ResetMode, SparkBase, SparkClosedLoopController, SparkFlex, \
+from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
@@ -99,7 +100,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         DualMechanismIO.__init__(self, "IntakePivot")
 
         # General attributes
-        self.setName(self.__class__.__name__)
+        self.setName("IntakePivot")
         self._container = container
         self._robot = container.robot
         self._period: seconds = container.robot.getPeriod()
@@ -114,16 +115,21 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         # Set up the motor controller
         self._left_motor = SparkFlex(self._left_device_id, SparkFlex.MotorType.kBrushless)
-        try_until_ok("Left Intake", 5,
-                     lambda: self._left_motor.configure(self._motor_config(self._left_inverted),
-                                                        ResetMode.kResetSafeParameters,
-                                                        PersistMode.kNoPersistParameters))
+        l_status = try_until_ok("Left Intake", 5,
+                                lambda: self._left_motor.configure(self._motor_config(self._left_inverted),
+                                                                   ResetMode.kResetSafeParameters,
+                                                                   PersistMode.kNoPersistParameters))
 
         self._right_motor = SparkFlex(self._right_device_id, SparkFlex.MotorType.kBrushless)
-        try_until_ok("Right Intake", 5,
-                     lambda: self._right_motor.configure(self._motor_config(self._right_inverted),
-                                                         ResetMode.kResetSafeParameters,
-                                                         PersistMode.kNoPersistParameters))
+        r_status = try_until_ok("Right Intake", 5,
+                                lambda: self._right_motor.configure(self._motor_config(self._right_inverted),
+                                                                    ResetMode.kResetSafeParameters,
+                                                                    PersistMode.kNoPersistParameters))
+
+        # Check if the device was successfully configured and can be reached over the
+        # CAN bus.
+        self._l_is_connected, self._r_is_connected = self._check_is_connected(l_status, r_status)
+
         # Set up the encoders
         self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
@@ -320,6 +326,35 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         #       https://docs.revrobotics.com/revlib/spark/closed-loop/position-control-mode
 
         return config
+
+    @property
+    def is_connected(self) -> bool:
+        """
+        Detect if this device is connected to the CAN Bus.  For Rev Robotics,
+        the default way is based on config results. When we support CTRE, they
+        have a 'isStatusOK' call that is useful.
+        """
+        return self._l_is_connected and self._r_is_connected  # Need both to work
+
+    def _check_is_connected(self, l_status: REVLibError | None, r_status: REVLibError | None) -> Tuple[bool, bool]:
+        """
+        For Rev Robotics, the only way to check if all is well i
+        """
+        l_version = self._left_motor.getFirmwareVersion()
+        r_version = self._right_motor.getFirmwareVersion()
+
+        logger.info(f"{self.getName()} firmware versions: {l_version}/{r_version}")
+
+        l_ok = (l_version != 0 and (l_status is None or l_status == REVLibError.kOk))
+        r_ok = (r_version != 0 and (r_status is None or r_status == REVLibError.kOk))
+
+        if not l_ok:
+            logger.warning(f"{self.getName()} (left) firmware version: {l_version}, status: {l_status}")
+
+        if not r_ok:
+            logger.warning(f"{self.getName()} (right) firmware version: {r_version}, status: {r_status}")
+
+        return l_ok, r_ok
 
     @property
     def angle(self) -> degrees:
@@ -538,13 +573,13 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                                                            self._right_sim_pivot.getCurrentDraw()]))
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
-        inputs.mechanism_1_connected = True   # TODO: Figure this one out
+        inputs.mechanism_1_connected = self._l_is_connected
         inputs.mechanism_1_position = self._adjust_intake_angle(self._left_encoder.getPosition())
         inputs.mechanism_1_speed = self._left_encoder.getVelocity()
         inputs.mechanism_1_applied_voltage = self._left_motor.getBusVoltage()
         inputs.mechanism_1_supply_current = self._left_motor.getOutputCurrent()
 
-        inputs.mechanism_2_connected = True   # TODO: Figure this one out
+        inputs.mechanism_2_connected = self._r_is_connected
         inputs.mechanism_2_position = self._adjust_intake_angle(self._right_encoder.getPosition())
         inputs.mechanism_2_speed = self._right_encoder.getVelocity()
         inputs.mechanism_2_applied_voltage = self._right_motor.getBusVoltage()
