@@ -131,7 +131,7 @@ class MyRobot(MyRobotBase):
         self.disabledTimer: Timer = Timer()
 
         self.field: Optional[wpilib.Field2d] = None
-        self._stats: RobotStatistics = RobotStatistics()
+        self._stats: RobotStatistics = RobotStatistics(self)
         self._is_simulation = RobotBase.isSimulation()
 
         self._network_tables_instance = NetworkTableInstance.getDefault()
@@ -143,11 +143,16 @@ class MyRobot(MyRobotBase):
         self._last_now = 0.0
 
         SmartDashboard.putNumber("Periodic/Robot/called", self._times_called)
-        SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", 0)
+        SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/auto-max-ms", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/auto-min-ms", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/auto-avg-ms", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/teleop-max-ms", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/teleop-min-ms", 0.0)
+        SmartDashboard.putNumber("Periodic/Robot/teleop-avg-ms", 0.0)
 
-        self._game_over_notification = Notification(title="Game Over",
-                                                    description="The competition has ended",
-                                                    display_time=5000)
         # Visualization and pose support
         self.match_started = False  # Set true on Autonomous or Teleop init
 
@@ -248,9 +253,10 @@ class MyRobot(MyRobotBase):
         self._stats.print("all", 1)
         print("========================================")
 
-        send_notification(self._game_over_notification)
-
-        # self._network_tables_instance.stopClient()
+        send_notification(Notification(title="Game Over",
+                                       description="The competition has ended",
+                                       display_time=5000))
+        # That's All Folks...
 
     def robotPeriodic(self) -> None:
         """
@@ -296,7 +302,9 @@ class MyRobot(MyRobotBase):
             SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", avg_time)
 
         # TODO: Can we drop our 'stats' once we have all this wonderful logging in place ?
-        self._stats.add("periodic", time.monotonic() - start)
+        now = time.monotonic()
+        self._stats.add("periodic", now - start)
+        self._stats.add("periodic-duration", now - start)
 
     def disabledInit(self) -> None:
         """
@@ -381,6 +389,14 @@ class MyRobot(MyRobotBase):
         if self._autonomous_command:
             self._autonomous_command.schedule()
 
+        self._stats.clear("auto-duration")
+
+        if self.counter % 100 == 0 and self._times_called > 0:
+            avg_time = round(self._total_time / self._times_called * 1000, 3)
+
+            SmartDashboard.putNumber("Periodic/Robot/called", self._times_called)
+            SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", avg_time)
+
         if RobotBase.isSimulation():
             select_tab("Autonomous (Development)")
         else:
@@ -394,7 +410,6 @@ class MyRobot(MyRobotBase):
         new packet is received from the driver station and the robot is in
         autonomous mode.
         """
-        # super().autonomousPeriodic()
         start = time.monotonic()
 
         if not self._auto_end_started:
@@ -412,7 +427,22 @@ class MyRobot(MyRobotBase):
                     # Run it
                     end_command.schedule()
 
-            self._stats.add("auto", time.monotonic() - start)
+        if self.counter % 75 == 5:  # Call every 1.5 seconds, but not on the first pass
+            moving_avg = self._stats.get("auto-duration")
+            if moving_avg is not None:
+                # What percentage of time are we using up before the next periodic tick event
+                average_percent = (moving_avg.average / self.getPeriod()) * 100
+                SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", average_percent)
+
+            maximum, minimum, average = self._stats.get("auto").max, self._stats.get("auto").min, self._stats.get(
+                "auto").average
+            SmartDashboard.putNumber("Periodic/Robot/auto-max-ms", maximum or 0.0)
+            SmartDashboard.putNumber("Periodic/Robot/auto-min-ms", minimum or 0.0)
+            SmartDashboard.putNumber("Periodic/Robot/auto-avg-ms", average or 0.0)
+
+        now = time.monotonic()
+        self._stats.add("auto", now - start)
+        self._stats.add("auto-duration", now - start)
 
     def autonomousExit(self) -> None:
         """
@@ -450,6 +480,8 @@ class MyRobot(MyRobotBase):
             self.container.check_alliance()
             self.match_started = True
 
+        self._stats.clear("teleop-duration")
+
         if RobotBase.isSimulation():
             select_tab("Teleop (Development)")
         else:
@@ -463,11 +495,25 @@ class MyRobot(MyRobotBase):
         new packet is received from the driver station and the robot is in teleop
         mode.
         """
-        # super().teleopPeriodic()
         start = time.monotonic()
-        pass
 
-        self._stats.add("teleop", time.monotonic() - start)
+        if self.counter % 75 == 5:  # Call every 1.5 seconds, but not on the first pass
+            moving_avg = self._stats.get("teleop-duration")
+            if moving_avg is not None:
+                # What percentage of time are we using up before the next periodic tick event
+                average_percent = (moving_avg.average / self.getPeriod()) * 100
+
+                SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", average_percent)
+
+            maximum, minimum, average = self._stats.get("teleop").max, self._stats.get("auto").min, self._stats.get(
+                "auto").average
+            SmartDashboard.putNumber("Periodic/Robot/teleop-max-ms", maximum or 0.0)
+            SmartDashboard.putNumber("Periodic/Robot/teleop-min-ms", minimum or 0.0)
+            SmartDashboard.putNumber("Periodic/Robot/teleop-avg-ms", average or 0.0)
+
+        now = time.monotonic()
+        self._stats.add("teleop", now - start)
+        self._stats.add("teleop-duration", now - start)
 
     def teleopExit(self) -> None:
         """
