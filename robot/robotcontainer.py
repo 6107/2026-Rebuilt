@@ -190,11 +190,14 @@ class RobotContainer:
 
             if sub is not None and sub.is_connected:
                 self.subsystems.append(sub)
+            else:
+                logging.warning(f"Subsystem {sub} not connected to robot or failed to initialize")
 
         ##########################################
         # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
         if not DriverStation.isFMSAttached():
             self._mechanism_2d = RobotMech(self)
+            self.subsystems.append(self._mechanism_2d)
 
         ##########################################
         #   ALERTS
@@ -859,7 +862,11 @@ class RobotContainer:
                             drive.get_angular_velocity(),
                             drive.get_field_relative_speeds(),
                             drive.get_module_positions())
-        # TODO: Add more mechanisms as they get coded
+
+        from pykit.loggedrobot import LoggedRobot
+        if isinstance(self.robot, LoggedRobot):
+            for subsystem in self.subsystems:
+                subsystem.periodic()
 
         we_won = self._field.won_autonomous
         if we_won is not None:

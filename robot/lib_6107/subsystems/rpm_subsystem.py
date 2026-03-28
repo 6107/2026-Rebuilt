@@ -253,7 +253,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         have a 'isStatusOK' call that is useful.
         """
         match self._controller_type:
-            case (ControllerType.SparkFlex, ControllerType.SparkMax):
+            case ControllerType.SparkFlex | ControllerType.SparkMax:
                 return self._is_connected
         return False
 
@@ -385,6 +385,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         if self._robot.isEnabled() and self._sim_motor is not None:
             voltage = RoboRioSim.getVInVoltage()
+            # logger.info(f"{self.getName()} iterate")
             self._sim_motor.iterate(self.velocity_in_rpm, voltage, tm_diff)
 
             # And simulate current drain

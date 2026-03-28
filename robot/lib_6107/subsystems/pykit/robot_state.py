@@ -58,7 +58,6 @@ class RobotState:
         cls.module_positions = module_positions
         cls.robot_pose = pose
 
-        # TODO: Start here tomorrow
         estimated_field_pose = cls.odometry.update(heading, module_positions)
 
         cls.robot_field_velocity = field_relative_robot_velocity

@@ -366,8 +366,28 @@ class RobotMech(Subsystem):
         self._physics_controller = physics_controller
         # TODO: Anything
 
-    def simulationPeriodic(self) -> None:
+    def update_sim(self, now: float, tm_diff: float) -> None:
+        """
+        Called when the simulation parameters for the program need to be updated.
+        This function is called from the '_simulationPeriodic' function of the
+        robotpy core routine and is called at a period >= 10 mS. Note that the
+        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        into all Command2 based subsystems at its update period which has a
+        default rate of 20 mS.
 
+        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+        that function uses pykit's logging method, you should use those values in
+        your simulation.
+
+        :param now:     The current time as a float
+        :param tm_diff: The amount of time that has passed since the last
+                        time that this function was called
+        """
+        from pykit.loggedrobot import LoggedRobot
+        if isinstance(self._robot, LoggedRobot):
+            self.simulationPeriodic()
+
+    def simulationPeriodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function). It is useful for updating subsystem-specific state that needs to be

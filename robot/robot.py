@@ -43,7 +43,7 @@ from lib_6107.util.statistics import RobotStatistics
 from robot_2026.util.logtracer import LogTracer
 from robotcontainer import RobotContainer
 
-if True:
+if False:
     from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot as MyRobotBase
 else:
     from pykit.loggedrobot import LoggedRobot as MyRobotBase
@@ -280,7 +280,6 @@ class MyRobot(MyRobotBase):
 
         self.container.robotPeriodic()
         LogTracer.record("ContainerPeriodic")
-
         LogTracer.recordTotal()
 
         if self.isEnabled():

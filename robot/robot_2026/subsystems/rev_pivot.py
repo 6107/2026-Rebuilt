@@ -551,8 +551,12 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
             right_applied_output = right_output * input_voltage
 
             # TODO: Can we use BatterySim?
-            self._left_sim_motor.iterate(left_applied_output, input_voltage, self._period)
-            self._right_sim_motor.iterate(right_applied_output, input_voltage, self._period)
+            # logger.info("pivot iterate")
+            if left_applied_output != 0.0:
+                self._left_sim_motor.iterate(left_applied_output, input_voltage, self._period)
+
+            if right_applied_output != 0.0:
+                self._right_sim_motor.iterate(right_applied_output, input_voltage, self._period)
 
             self._left_sim_pivot.setInputVoltage(left_applied_output)
             self._left_sim_pivot.update(self._period)
@@ -586,24 +590,26 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         inputs.mechanism_2_supply_current = self._right_motor.getOutputCurrent()
         # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
 
-    # def update_sim(self, now: float, tm_diff: float) -> None:
-    #     """
-    #     Called when the simulation parameters for the program need to be updated.
-    #     This function is called from the '_simulationPeriodic' function of the
-    #     robotpy core routine and is called at a period >= 10 mS. Note that the
-    #     CommandScheduler also has an 'simulationPeriodic' function that it calls
-    #     into all Command2 based subsystems at its update period which has a
-    #     default rate of 20 mS.
-    #
-    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
-    #     that function uses pykit's logging method, you should use those values in
-    #     your simulation.
-    #
-    #     :param now:     The current time as a float
-    #     :param tm_diff: The amount of time that has passed since the last
-    #                     time that this function was called
-    #     """
-    #     pass
+    def update_sim(self, now: float, tm_diff: float) -> None:
+        """
+        Called when the simulation parameters for the program need to be updated.
+        This function is called from the '_simulationPeriodic' function of the
+        robotpy core routine and is called at a period >= 10 mS. Note that the
+        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        into all Command2 based subsystems at its update period which has a
+        default rate of 20 mS.
+
+        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+        that function uses pykit's logging method, you should use those values in
+        your simulation.
+
+        :param now:     The current time as a float
+        :param tm_diff: The amount of time that has passed since the last
+                        time that this function was called
+        """
+        from pykit.loggedrobot import LoggedRobot
+        if isinstance(self._robot, LoggedRobot):
+            self.simulationPeriodic()
 
     def set_position(self, position: inches) -> None:
         """
