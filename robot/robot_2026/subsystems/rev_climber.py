@@ -18,6 +18,8 @@
 import logging
 import math
 
+from typing import Optional
+
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
@@ -239,7 +241,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         # self._position_goal = 0
         raise NotImplementedError("Reset command was called but is not supported at this time")
 
-    def stop(self, brake: bool) -> None:
+    def stop(self, brake: Optional[bool] = True) -> None:
         self._pid_controller.setSetpoint(self.position, SparkLowLevel.ControlType.kPosition,
                                          ClosedLoopSlot(ClosedLoopSlot.kSlot0))
         self._motor.stopMotor()
