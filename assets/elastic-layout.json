@@ -1054,6 +1054,19 @@
                 }
               },
               {
+                "title": "Climber Retracted to 8\"",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Toggle Switch",
+                "properties": {
+                  "topic": "Preflight/ClimbZero",
+                  "period": 0.06,
+                  "data_type": "boolean"
+                }
+              },
+              {
                 "title": "Starting Location Selected?",
                 "x": 0.0,
                 "y": 0.0,

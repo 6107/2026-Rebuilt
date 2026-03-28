@@ -84,7 +84,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                  long_name: Optional[str] = None,
                  coast: Optional[bool] = True,
                  persist_config: Optional[bool] = False) -> None:
-
+        self._initialized = False
         Subsystem.__init__(self)
         RpmMechanismIO.__init__(self, name)
 
@@ -227,6 +227,10 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         # Set the encoder to return its position in radians
         config.encoder.positionConversionFactor(2 * math.pi)
         return config
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._initialized
 
     def _check_is_connected(self, config_status: REVLibError | None) -> bool:
         """

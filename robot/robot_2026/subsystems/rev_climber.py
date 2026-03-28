@@ -44,16 +44,18 @@ logger = logging.getLogger(__name__)
 
 class ClimberConstants:
     TARGET_RPM: revolutions_per_minute = 10
+
     PROPORTIONAL_COEFFICIENT = 0.1  # kP
     INTEGRAL_COEFFICIENT = 0.1  # kI
-    DERIVATIVE_COEFFICIENT = 0.0  # kD
+    DERIVATIVE_COEFFICIENT = 0.1  # kD
+
     LIMIT_CURRENT: amperes = 35
     IZONE_RANGE = 0.0
     GEAR_RATIO = 25.0
     DRIVE_VOLTAGE: volts = 0.10  # Start at 10% power
-    SPOOL_DIAMETER: meters = inchesToMeters(1.0)  # TODO: Use an algorythm to compensate for cord already spooled in
-    CLIMBER_MIN_HEIGHT: meters = 0.0
-    CLIMBER_MAX_HEIGHT: meters = inchesToMeters(9.0)  # TODO: Guess for now
+    SPOOL_DIAMETER: inches = 1.0  # TODO: Use an algorythm to compensate for cord already spooled in
+    CLIMBER_MIN_HEIGHT: inches = 0.0
+    CLIMBER_MAX_HEIGHT: inches = 8.0  # Actual length is 8.275
     CLIMBER_TOLERANCE: meters = 0.05  # 5 cm
 
     CLIMBER_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
@@ -70,6 +72,8 @@ class ClimberConstants:
 class RevClimber(Subsystem, RotationMechanismIO):
 
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool) -> None:
+        self._initialized = False
+
         Subsystem.__init__(self)
         RotationMechanismIO.__init__(self, "Climber")
 
@@ -146,6 +150,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
             SmartDashboard.putData("Climber Enabled", self._enable_chooser)
         elif isinstance(self._enable_chooser, LoggedDashboardChooser):
             pass
+        self._initialized = True
 
     @property
     def is_connected(self) -> bool:
@@ -172,6 +177,10 @@ class RevClimber(Subsystem, RotationMechanismIO):
         return ok
 
     @property
+    def is_initialized(self) -> bool:
+        return self._initialized
+
+    @property
     def enabled(self) -> bool:
         """
         Returns True if the Chooser Dialog is True, indicating the subsystem is enabled.
@@ -179,7 +188,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._enable_chooser.getSelected() is True
+        return self._enable_chooser.getSelected() is True and self.is_initialized
 
     @property
     def subsystem_trigger(self) -> Trigger:
@@ -195,22 +204,30 @@ class RevClimber(Subsystem, RotationMechanismIO):
         config.smartCurrentLimit(ClimberConstants.LIMIT_CURRENT)
 
         # Set the position conversion factor (e.g., to convert rotations to inches or meters)
-        # The native unit is rotations. For a 1-inch spool, the factor to get inches would be (math.pi * 1.0)
-        config.encoder.positionConversionFactor(math.pi * ClimberConstants.SPOOL_DIAMETER)
+        # The native unit is rotations. For a 1-inch spool, the factor to get inches would be
+        # (math.pi * 1.0).   Value is: 0.12566370614359174
+        #   1"   -> 0.12566370614359174
+        #   1.25 -> 0.15707963267948966
+        #   1.5  -> 0.18849555921538758
+        pos_factor_1_0 = (math.pi * 1.0) / ClimberConstants.GEAR_RATIO
+        pos_factor_1_25 = (math.pi * 1.25) / ClimberConstants.GEAR_RATIO
+        pos_factor_1_5  = (math.pi * 1.5) / ClimberConstants.GEAR_RATIO
+        pos_factor = (math.pi * ClimberConstants.SPOOL_DIAMETER) / ClimberConstants.GEAR_RATIO
+        config.encoder.positionConversionFactor(pos_factor)
+        config.encoder.inverted(False)
 
         # Set the velocity conversion factor (e.g., to convert RPM to inches/second)
         # The native unit is RPM. So to go to inches / second use:
-        #    inches/rev) / 60 seconds
+        #    inches/rev) / 60 seconds.  Value is: 0.0002122065907891938
         velocity_factor = (ClimberConstants.SPOOL_DIAMETER / math.pi) / (ClimberConstants.GEAR_RATIO * 60.0)
-
         config.encoder.velocityConversionFactor(velocity_factor)
 
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
-            config.closedLoop.
-            IMaxAccum(0.03, slot=slot0).
-            IZone(3, slot=slot0).
-            pidf(p=ClimberConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+            config.closedLoop
+            # .IMaxAccum(0.03, slot=slot0)
+            # .IZone(3, slot=slot0)
+            .pidf(p=ClimberConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
                  i=ClimberConstants.INTEGRAL_COEFFICIENT,
                  d=ClimberConstants.DERIVATIVE_COEFFICIENT,
                  ff=0,
@@ -309,7 +326,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         'important' difference is 'update_sim' is called at a period >= 10 ms instead
         of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
-        if self._robot.isEnabled():
+        if self._robot.isEnabled() and self.is_initialized:
             voltage = self._sim_motor.getAppliedOutput() * RobotController.getBatteryVoltage()
 
             self._sim_climber.setInputVoltage(voltage)
@@ -321,26 +338,30 @@ class RevClimber(Subsystem, RotationMechanismIO):
             # And simulate current drain
             RoboRioSim.setVInVoltage(BatterySim.calculate([self._sim_climber.getCurrentDraw()]))
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
-        """
-        Called when the simulation parameters for the program need to be updated.
-        This function is called from the '_simulationPeriodic' function of the
-        robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
-        into all Command2 based subsystems at its update period which has a
-        default rate of 20 mS.
-
-        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
-        that function uses pykit's logging method, you should use those values in
-        your simulation.
-
-        :param now:     The current time as a float
-        :param tm_diff: The amount of time that has passed since the last
-                        time that this function was called
-        """
-        pass
+    # def update_sim(self, now: float, tm_diff: float) -> None:
+    #     """
+    #     Called when the simulation parameters for the program need to be updated.
+    #     This function is called from the '_simulationPeriodic' function of the
+    #     robotpy core routine and is called at a period >= 10 mS. Note that the
+    #     CommandScheduler also has an 'simulationPeriodic' function that it calls
+    #     into all Command2 based subsystems at its update period which has a
+    #     default rate of 20 mS.
+    #
+    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+    #     that function uses pykit's logging method, you should use those values in
+    #     your simulation.
+    #
+    #     :param now:     The current time as a float
+    #     :param tm_diff: The amount of time that has passed since the last
+    #                     time that this function was called
+    #     """
+    #     if not self.is_initialized:
+    #         return
 
     def periodic(self) -> None:
+        if not self.is_initialized:
+            return
+
         LogTracer.resetOuter("ClimberSubsystem periodic")
 
         self.updateInputs(self._inputs)
@@ -378,6 +399,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putBoolean("Climber/closed-loop", self._closed_loop)
 
     def updateInputs(self, inputs: RotationMechanismIO.RotationMechanismIOInputs) -> None:
+        if not self.is_initialized:
+            return
+
         inputs.mechanism_connected = self.is_connected
         inputs.mechanism_position = self._encoder.getPosition()
         inputs.mechanism_speed = self._encoder.getVelocity()

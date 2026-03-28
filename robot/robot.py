@@ -281,7 +281,7 @@ class MyRobot(LoggedRobot):
         LogTracer.record("ContainerPeriodic")
 
         if isinstance(self, LoggedRobot):
-            # If using pykit, we need to explicily call the command scheduler
+            # If using pykit, we need to explicitly call the command scheduler
             # to run our commands
             CommandScheduler.getInstance().run()
             LogTracer.record("CommandsPeriodic")

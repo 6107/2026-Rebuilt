@@ -59,6 +59,9 @@ class PreflightChecklist:
                 "DriverStation restarted?", "Preflight/DSR", True
             ),
             PreflightChecklist.PreflightCheck(
+                "Climber Retracted to 8 at last power-off", "Preflight/ClimbZero", True
+            ),
+            PreflightChecklist.PreflightCheck(
                 "Robot has Power", "Preflight/RobotPower", True
             ),
             PreflightChecklist.PreflightCheck(

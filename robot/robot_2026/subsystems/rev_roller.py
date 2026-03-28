@@ -60,6 +60,7 @@ class RevIntakeRoller(RpmSubsystem):
                          long_name="Intake/Roller",
                          coast=True,
                          persist_config=persist_config)
+        self._initialized = True
 
     @property
     def enabled(self) -> bool:
@@ -69,7 +70,7 @@ class RevIntakeRoller(RpmSubsystem):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._container.intake_pivot.enabled  # Use a single enable for all the intake frontend
+        return self._container.intake_pivot.enabled and self.is_initialized # Use a single enable for all the intake frontend
 
     @property
     def subsystem_trigger(self) -> Trigger:

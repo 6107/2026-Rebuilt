@@ -130,8 +130,6 @@ class PhysicsEngine:
                     amps: amperes | None = subsystem.update_sim(now, tm_diff)
                     if amps is not None:
                         current_used.append(amps)
-                else:
-                    logger.warning(f"Subsystem {subsystem.getName()} does not have an update_sim method")
 
             except Exception as e:
                 logger.exception(f"Subsystem {subsystem.getName()} threw an exception during update_sim: {e}")

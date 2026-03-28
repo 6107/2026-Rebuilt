@@ -96,6 +96,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
     def __init__(self, container: 'RobotContainer',
                  can_left_device_id: int, can_right_device_id: int,
                  left_inverted: bool, right_inverted: bool) -> None:
+        self._initialized = False
+
         Subsystem.__init__(self)
         DualMechanismIO.__init__(self, "IntakePivot")
 
@@ -229,12 +231,18 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         elif isinstance(self._enable_chooser, LoggedDashboardChooser):
             pass
 
+        self._initialized = True
+
     def _get_rel_angle(self, target_abs: degrees, parent_abs: degrees) -> degrees:
         """
         Calculates the relative angle needed for a ligament given the
         desired absolute angle and the parent's absolute angle.
         """
         return target_abs - parent_abs
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._initialized
 
     @property
     def enabled(self) -> bool:
@@ -244,7 +252,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._enable_chooser.getSelected() is True
+        return self._enable_chooser.getSelected() is True and self.is_initialized
 
     @property
     def subsystem_trigger(self) -> Trigger:
@@ -474,6 +482,9 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         self._right_motor.stopMotor()
 
     def periodic(self) -> None:
+        if not self.is_initialized:
+            return
+
         LogTracer.resetOuter("Intake Pivot periodic")
 
         self.updateInputs(self._inputs)
@@ -577,6 +588,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                                                            self._right_sim_pivot.getCurrentDraw()]))
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
+        if not self.is_initialized:
+            return
         inputs.mechanism_1_connected = self._l_is_connected
         inputs.mechanism_1_position = self._adjust_intake_angle(self._left_encoder.getPosition())
         inputs.mechanism_1_speed = self._left_encoder.getVelocity()

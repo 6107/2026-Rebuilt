@@ -75,6 +75,8 @@ class RevShooter(RpmSubsystem):
         elif isinstance(self._enable_chooser, LoggedDashboardChooser):
             pass
 
+        self._initialized = False
+
     @property
     def enabled(self) -> bool:
         """
@@ -83,7 +85,7 @@ class RevShooter(RpmSubsystem):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._enable_chooser.getSelected() is True
+        return self._enable_chooser.getSelected() is True and self.is_initialized
 
     @property
     def subsystem_trigger(self) -> Trigger:

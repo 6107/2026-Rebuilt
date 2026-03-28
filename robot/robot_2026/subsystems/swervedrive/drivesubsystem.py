@@ -125,6 +125,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
     """Red alliance sees forward as 180 degrees (toward blue alliance wall)"""
 
     def __init__(self, consts, modules, container: 'RobotContainer') -> None:
+        self._initialized = False
 
         Subsystem.__init__(self)
         TunerSwerveDrivetrain.__init__(self, consts, modules)
@@ -325,6 +326,8 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         if utils.is_simulation():
             self._start_sim_thread()
 
+        self._initialized = True
+
     @property
     def robot(self) -> 'MyRobot':
         return self._robot
@@ -332,6 +335,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
     @property
     def container(self) -> 'RobotContainer':
         return self._container
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._initialized
 
     @property
     def drive_request(self) -> swerve.requests.FieldCentric:
@@ -523,6 +530,9 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
     def periodic(self) -> None:
         # Note: The gyro is its own subsystem and its pykit I/O is handle by the gyro
         #       periodic function
+        if not self.is_initialized:
+            return
+
         LogTracer.resetOuter("DriveSubsystemPeriodic")
         self._last_module_positions = self.get_module_positions()
 
@@ -596,6 +606,9 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         'important' difference is 'update_sim' is called at a period >= 10 ms instead
         of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
+        if not self.is_initialized:
+            return
+
         # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
         amperes_used = 0.0  # TODO: Support in future
 
@@ -617,24 +630,25 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
             if x != pose.x or y != pose.y:
                 self.pose = Pose2d(x, y, pose.rotation())
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
-        """
-        Called when the simulation parameters for the program need to be updated.
-        This function is called from the '_simulationPeriodic' function of the
-        robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
-        into all Command2 based subsystems at its update period which has a
-        default rate of 20 mS.
-
-        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
-        that function uses pykit's logging method, you should use those values in
-        your simulation.
-
-        :param now:     The current time as a float
-        :param tm_diff: The amount of time that has passed since the last
-                        time that this function was called
-        """
-        pass
+    # def update_sim(self, now: float, tm_diff: float) -> None:
+    #     """
+    #     Called when the simulation parameters for the program need to be updated.
+    #     This function is called from the '_simulationPeriodic' function of the
+    #     robotpy core routine and is called at a period >= 10 mS. Note that the
+    #     CommandScheduler also has an 'simulationPeriodic' function that it calls
+    #     into all Command2 based subsystems at its update period which has a
+    #     default rate of 20 mS.
+    #
+    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+    #     that function uses pykit's logging method, you should use those values in
+    #     your simulation.
+    #
+    #     :param now:     The current time as a float
+    #     :param tm_diff: The amount of time that has passed since the last
+    #                     time that this function was called
+    #     """
+    #         if not self.is_initialized:
+    #             return
 
     @property
     def heading(self) -> Rotation2d:

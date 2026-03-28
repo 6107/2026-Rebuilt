@@ -60,6 +60,7 @@ class RevIntakeIndexer(RpmSubsystem):
                          long_name="Intake/Indexer",
                          coast=True,
                          persist_config=persist_config)
+        self._initialized = True
 
     @property
     def enabled(self) -> bool:
@@ -73,7 +74,7 @@ class RevIntakeIndexer(RpmSubsystem):
 
     @property
     def subsystem_trigger(self) -> Trigger:
-        return Trigger(lambda: self.enabled)
+        return Trigger(lambda: self.enabled and self.is_initialized)
 
     def intake_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Consume fuel from the playing area
