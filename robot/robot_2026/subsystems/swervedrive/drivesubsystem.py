@@ -558,6 +558,9 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         # Update the odometry in the periodic block
         # TODO: For phoenix6 library, just need to pass in vision measurements
+        if self._last_pose != self.pose:
+            logger.info(f"DriveSubsystem: Updating pose")
+
         self._last_pose = self.pose
 
         if self._last_pose is not None:
@@ -598,7 +601,6 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         # Since simulation, limit it to the field of play.
         pose = self.pose
-
         # self.gyro.sim_yaw = pose.rotation().degrees()     # Not saving this yet.
 
         # Limit it to the field size (manually)
@@ -632,9 +634,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
-        from pykit.loggedrobot import LoggedRobot
-        if isinstance(self._robot, LoggedRobot):
-            self.simulationPeriodic()
+        pass
 
     @property
     def heading(self) -> Rotation2d:

@@ -43,10 +43,8 @@ from lib_6107.util.statistics import RobotStatistics
 from robot_2026.util.logtracer import LogTracer
 from robotcontainer import RobotContainer
 
-if False:
-    from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot as MyRobotBase
-else:
-    from pykit.loggedrobot import LoggedRobot as MyRobotBase
+# from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot
+from pykit.loggedrobot import LoggedRobot
 
 # Setup Logging
 logger = logging.getLogger(__name__)
@@ -58,7 +56,8 @@ each mode, as described in the TimedRobot documentation. If you change the name 
 the package after creating this project, you must also update the build.gradle file in the
 project.
 """
-class MyRobot(MyRobotBase):
+# class MyRobot(LoggedTimedCommandRobot):
+class MyRobot(LoggedRobot):
     """
     Our default robot class
 
@@ -280,6 +279,13 @@ class MyRobot(MyRobotBase):
 
         self.container.robotPeriodic()
         LogTracer.record("ContainerPeriodic")
+
+        if isinstance(self, LoggedRobot):
+            # If using pykit, we need to explicily call the command scheduler
+            # to run our commands
+            CommandScheduler.getInstance().run()
+            LogTracer.record("CommandsPeriodic")
+
         LogTracer.recordTotal()
 
         if self.isEnabled():

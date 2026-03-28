@@ -383,7 +383,4 @@ class VisionSubsystem(Subsystem, VisionIO):
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
-        from pykit.loggedrobot import LoggedRobot
-
-        if isinstance(self._robot, LoggedRobot):
-            self.simulationPeriodic()
+        pass

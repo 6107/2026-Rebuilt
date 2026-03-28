@@ -863,11 +863,6 @@ class RobotContainer:
                             drive.get_field_relative_speeds(),
                             drive.get_module_positions())
 
-        from pykit.loggedrobot import LoggedRobot
-        if isinstance(self.robot, LoggedRobot):
-            for subsystem in self.subsystems:
-                subsystem.periodic()
-
         we_won = self._field.won_autonomous
         if we_won is not None:
             Logger.recordOutput("Game/WonAuto", we_won)
