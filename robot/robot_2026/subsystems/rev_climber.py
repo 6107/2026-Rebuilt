@@ -44,18 +44,30 @@ logger = logging.getLogger(__name__)
 class ClimberConstants:
     TARGET_RPM: revolutions_per_minute = 10
 
-    PROPORTIONAL_COEFFICIENT = 0.1  # kP
-    INTEGRAL_COEFFICIENT = 0.1  # kI
-    DERIVATIVE_COEFFICIENT = 0.1  # kD
+    PROPORTIONAL_COEFFICIENT = 1.0    # kP
+    INTEGRAL_COEFFICIENT     = 0.0  # kI
+    DERIVATIVE_COEFFICIENT   = 0.2  # kD
 
     LIMIT_CURRENT: amperes = 35
-    IZONE_RANGE = 0.0
+
     GEAR_RATIO = 25.0
-    DRIVE_VOLTAGE: volts = 0.10  # Start at 10% power
-    SPOOL_DIAMETER: inches = 1.0  # TODO: Use an algorythm to compensate for cord already spooled in
+    DRIVE_INPUT_MIN: float = -0.3  # [-1.0 .. 1.0]
+    DRIVE_INPUT_MAX: float = -0.3  # [-1.0 .. 1.0]
+
+    SPOOL_DIAMETER: inches = 1.25
+
+    # The Actual Height is about 8.375 inches. We start with the climber retracted to the 8" mark
+    # and since we are using the internal encoder, turning that on will set the encoder to 0 at that
+    # offset. The position compensation factor is set so that 5" hits the 5" mark, but to go the
+    # full 8", the setpoint below is used (so it is not in inches)
+    CLIMBER_POS_FACTOR = 2.25        # TODO: Need to look this up with Rev Client 2.0
+
     CLIMBER_MIN_HEIGHT: inches = 0.0
-    CLIMBER_MAX_HEIGHT: inches = 8.0  # Actual length is 8.275
-    CLIMBER_TOLERANCE: meters = 0.05  # 5 cm
+    CLIMBER_MAX_HEIGHT: inches = 8.375
+
+    CLIMBER_RETRACTED_SETPOINT = 0.0    # Fully retracted to the 8" mark
+    CLIMBER_EXTENDED_SETPOINT = -12.833 # Fully extended with a slightly snug line
+    CLIMBER_TOLERANCE = 0.5
 
     CLIMBER_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
     CLIMBER_ROOT_Y: meters = inchesToMeters(12.5)
@@ -65,7 +77,6 @@ class ClimberConstants:
     #################################################################################
     # Simulation Support
     CARRIAGE_MASS: kilograms = 1.0  # The part that extends up
-
 
 @autologgable_output
 class RevClimber(Subsystem, RotationMechanismIO):
@@ -119,7 +130,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._pid_controller = self._motor.getClosedLoopController()
 
         # The critical attributes/properties for operation
-        self._position_goal: inches = 0.0
+        self._position_goal: float = ClimberConstants.CLIMBER_RETRACTED_SETPOINT
         self._applied_voltage: volts = 0.0
 
         #####################################
@@ -202,69 +213,42 @@ class RevClimber(Subsystem, RotationMechanismIO):
         config.limitSwitch.reverseLimitSwitchEnabled(False)
         config.smartCurrentLimit(ClimberConstants.LIMIT_CURRENT)
 
-        # Set the position conversion factor (e.g., to convert rotations to inches or meters)
-        # The native unit is rotations. For a 1-inch spool, the factor to get inches would be
-        # (math.pi * 1.0).   Value is: 0.12566370614359174
-        #   1"   -> 0.12566370614359174
-        #   1.25 -> 0.15707963267948966
-        #   1.5  -> 0.18849555921538758
-        pos_factor_1_0 = (math.pi * 1.0) / ClimberConstants.GEAR_RATIO
-        pos_factor_1_25 = (math.pi * 1.25) / ClimberConstants.GEAR_RATIO
-        pos_factor_1_5  = (math.pi * 1.5) / ClimberConstants.GEAR_RATIO
-        pos_factor = (math.pi * ClimberConstants.SPOOL_DIAMETER) / ClimberConstants.GEAR_RATIO
-        config.encoder.positionConversionFactor(pos_factor)
-        config.encoder.inverted(False)
+        # Following is set from experimentation since we have a cloth cord that
+        # stretches and the diameter increases as more cord is spooled in
+
+        config.encoder.positionConversionFactor(ClimberConstants.CLIMBER_POS_FACTOR)
+        config.encoder.inverted(True)
 
         # Set the velocity conversion factor (e.g., to convert RPM to inches/second)
         # The native unit is RPM. So to go to inches / second use:
         #    inches/rev) / 60 seconds.  Value is: 0.0002122065907891938
-        velocity_factor = (ClimberConstants.SPOOL_DIAMETER / math.pi) / (ClimberConstants.GEAR_RATIO * 60.0)
-        config.encoder.velocityConversionFactor(velocity_factor)
+        #velocity_factor = (ClimberConstants.SPOOL_DIAMETER / math.pi) / (ClimberConstants.GEAR_RATIO * 60.0)
+        #config.encoder.velocityConversionFactor(velocity_factor)
 
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
             config.closedLoop
             # .IMaxAccum(0.03, slot=slot0)
             # .IZone(3, slot=slot0)
-            .pidf(p=ClimberConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
+            .pid(p=ClimberConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
                  i=ClimberConstants.INTEGRAL_COEFFICIENT,
                  d=ClimberConstants.DERIVATIVE_COEFFICIENT,
-                 ff=0,
                  slot=slot0)
-            .outputRange(-0.1, 0.1)
+            .outputRange(ClimberConstants.DRIVE_INPUT_MIN, ClimberConstants.DRIVE_INPUT_MAX)
         )
-        # crank_max_dps = ClimberConstants.MAX_RPM * deploy_degrees_per_motor_rotation / 60
-        # slot1 = ClosedLoopSlot(ClosedLoopSlot.kSlot1)
-        # (
-        #     config.closedLoop.
-        #     pidf(p=1e-5,
-        #          i=0,
-        #          d=0,
-        #          ff=1 / crank_max_dps,
-        #          slot=slot1)
-        #     .maxMotion.cruiseVelocity(250, slot=slot1)
-        #     .maxAcceleration(500, slot=slot1)
-        #     .allowedClosedLoopError(0, slot=slot1)
-        # )
         return config
 
     def reset(self) -> None:
         self._motor.stopMotor()
         self._position_goal = 0.0
-        # self._encoder.setPosition(0.0)
-        # self._pid_controller.reset()
+
         self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT)
-        # self._position_goal = 0
         raise NotImplementedError("Reset command was called but is not supported at this time")
 
-    def stop(self, brake: Optional[bool] = True) -> None:
+    def stop(self) -> None:
         self._pid_controller.setSetpoint(self.position, SparkLowLevel.ControlType.kPosition,
                                          ClosedLoopSlot(ClosedLoopSlot.kSlot0))
         self._motor.stopMotor()
-
-        if brake:
-            # TODO: Anything else to brake?
-            pass
 
     @property
     def closed_loop(self) -> bool:
@@ -274,15 +258,15 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._closed_loop = closed_loop
 
     @property
-    def position(self) -> inches:
+    def position(self) -> float:
         return self._inputs.mechanism_position
 
     @property
-    def position_meters(self) -> meters:
+    def position_meters(self) -> float:
         return inches(self.position)
 
     @position.setter
-    def position(self, position: inches) -> None:
+    def position(self, position: float) -> None:
         if self._position_goal != position:
             self._position_goal = position
             self._pid_controller.setSetpoint(position, SparkLowLevel.ControlType.kPosition,
@@ -298,19 +282,18 @@ class RevClimber(Subsystem, RotationMechanismIO):
             ClimberConstants.CLIMBER_TOLERANCE
 
     def extend(self) -> None:
-        self.position = 5.0
-        self._motor.set(0.1)
+        logger.info(f"Climber Extend: Setting position to {ClimberConstants.CLIMBER_EXTENDED_SETPOINT}")
+        self.position = ClimberConstants.CLIMBER_EXTENDED_SETPOINT
 
     def retract(self) -> None:
-        self.position = 0.0
-        self._motor.set(-0.1)
+        logger.info(f"Climber Retract: Setting position to {ClimberConstants.CLIMBER_RETRACTED_SETPOINT}")
+        self.position = ClimberConstants.CLIMBER_RETRACTED_SETPOINT
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """
         Initialize any simulation only needed parameters
         """
         self._physics_controller = physics_controller
-        # TODO: Anything
 
     def simulationPeriodic(self) -> None:
         """
