@@ -43,7 +43,7 @@ from lib_6107.util.statistics import RobotStatistics
 from robot_2026.util.logtracer import LogTracer
 from robotcontainer import RobotContainer
 
-if False:
+if True:
     from lib_6107.util.logged_timed_command_robot import LoggedTimedCommandRobot as MyRobotBase
 else:
     from pykit.loggedrobot import LoggedRobot as MyRobotBase

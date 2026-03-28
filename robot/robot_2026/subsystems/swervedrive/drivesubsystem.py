@@ -338,6 +338,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         return self._field_centric_drive if self._is_field_centric else self._robot_centric_drive
 
     def set_field_centric_drive(self, field_centric: bool) -> None:
+        logger.info(f"Setting field centric drive to {field_centric}")
         self._field_centric_drive = field_centric
 
     @property

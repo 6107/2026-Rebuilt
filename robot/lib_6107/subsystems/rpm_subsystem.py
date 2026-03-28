@@ -238,8 +238,9 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                 logger.info(f"{self.getName()} firmware version: {version}")
 
                 ok = (version != 0 and (config_status is None or
-                                        config_status == REVLibError.kOk))
-                # or RobotBase.isSimulation()
+                                        config_status == REVLibError.kOk)) or \
+                     RobotBase.isSimulation()
+
                 if not ok:
                     logger.warning(f"{self.getName()} firmware version: {version}, status: {config_status}")
                 return ok

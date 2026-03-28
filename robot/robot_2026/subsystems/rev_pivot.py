@@ -345,8 +345,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         logger.info(f"{self.getName()} firmware versions: {l_version}/{r_version}")
 
-        l_ok = (l_version != 0 and (l_status is None or l_status == REVLibError.kOk))
-        r_ok = (r_version != 0 and (r_status is None or r_status == REVLibError.kOk))
+        l_ok = (l_version != 0 and (l_status is None or l_status == REVLibError.kOk)) or RobotBase.isSimulation()
+        r_ok = (r_version != 0 and (r_status is None or r_status == REVLibError.kOk)) or RobotBase.isSimulation()
 
         if not l_ok:
             logger.warning(f"{self.getName()} (left) firmware version: {l_version}, status: {l_status}")
