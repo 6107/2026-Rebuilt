@@ -17,7 +17,6 @@
 
 import logging
 import math
-
 from typing import Optional
 
 from commands2 import cmd, Command, Subsystem
@@ -32,7 +31,7 @@ from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, Mechanism
     SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
-from wpimath._controls._controls.plant import DCMotor
+from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO

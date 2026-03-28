@@ -30,7 +30,7 @@ from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, 
 from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, SendableChooser, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
-from wpimath._controls._controls.plant import DCMotor
+from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
     meters, radians, revolutions_per_minute, seconds, volts
 

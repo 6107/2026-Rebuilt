@@ -31,7 +31,7 @@ from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, 
 from wpilib import RobotBase, SmartDashboard
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
-from wpimath._controls._controls.plant import DCMotor
+from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
     revolutions_per_minute, seconds, volts
 

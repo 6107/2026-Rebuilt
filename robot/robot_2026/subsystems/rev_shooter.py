@@ -22,7 +22,7 @@ from commands2.button import Trigger
 from pykit.autolog import autologgable_output
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import SendableChooser, SmartDashboard
-from wpimath._controls._controls.plant import DCMotor
+from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
 from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmSubsystem
