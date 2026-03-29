@@ -67,11 +67,11 @@ class Field:
         self._layout_callbacks: List[Callable[[Optional[AprilTagField], Optional[AprilTagFieldLayout]], None]] = []
 
         # And the current field and layout
-        self._field: Optional[AprilTagField] = None
+        self._field: Optional[AprilTagField] = self._field_info[0][1]
         self._layout: Optional[AprilTagFieldLayout] = None
 
         # Set up the default field and layout
-        self._init_april_tags()
+        self._load_april_tag_field()
 
     @property
     def field(self) -> Optional[AprilTagField]:
@@ -118,37 +118,38 @@ class Field:
 
     def _init_april_tags(self) -> None:
         # Load the current default and register a callback for changes
-        self._load_april_tag_field(self._april_tag_chooser.getSelected())
+        self._field = self._april_tag_chooser.getSelected()
+        self._load_april_tag_field()
 
     def _on_field_changed(self, entry, key, value, param) -> None:
         logger.info(f"Field selector changed: {entry}, {key}, {value}, {param}")
-        new_field = self._april_tag_chooser.getSelected()
-        self._load_april_tag_field(new_field)
+        prev_field = self._field
+        self._field = self._april_tag_chooser.getSelected()
+        self._load_april_tag_field(prev_field)
 
-    def _load_april_tag_field(self, field: AprilTagField) -> None:
+    def _load_april_tag_field(self, prev_field: Optional[AprilTagField] = None) -> None:
         """
         Load up the selected field
         """
-        existing = (self._field, self._layout)
-        self._field, self._layout = field, None
+        previous = (prev_field, self._layout)
 
         try:
             # Get from library first
-            self._layout = AprilTagFieldLayout.loadField(field)
-            logger.info(f"AprilTagLayout loaded for field {field}")
+            self._layout = AprilTagFieldLayout.loadField(self._field)
+            logger.info(f"AprilTagLayout loaded for field {self._field}")
 
         except Exception as _e:
             # Fallback to directory load method
             april_tag_dir = os.path.join(getDeployDirectory(), 'fields', 'apriltags')
 
             if os.path.isdir(april_tag_dir) and os.access(april_tag_dir, os.R_OK):
-                filename = self._file_map.get(field)
+                filename = self._file_map.get(self._field)
 
                 if filename:
                     file_path = os.path.join(april_tag_dir, filename)
                     try:
                         self._layout = AprilTagFieldLayout(file_path)
-                        logger.info(f"AprilTagLayout field {field} loaded from {file_path}")
+                        logger.info(f"AprilTagLayout field {self._field} loaded from {file_path}")
 
                     except Exception as _e:
                         logger.warning(f"AprilTag JSON {file_path} does not exist or is not valid")
@@ -156,6 +157,6 @@ class Field:
                 logger.warning(f"AprilTag directory {april_tag_dir} does not exist or is not accessible")
 
         # Any callbacks needed
-        if existing != (self._field, self._layout):
+        if previous != (self._field, self._layout):
             for func in self._layout_callbacks:
                 func(self._field, self._layout)

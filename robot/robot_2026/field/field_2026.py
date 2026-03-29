@@ -99,7 +99,6 @@ class RebuiltField(Field):
 
     def __init__(self):
         super().__init__()
-
         self._won_autonomous: Optional[bool] = None
 
 
