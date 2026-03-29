@@ -24,7 +24,7 @@ from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
-from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmSubsystem
+from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
 
 logger = logging.getLogger(__name__)
 
@@ -32,38 +32,30 @@ logger = logging.getLogger(__name__)
 # TODO: Run the REV Hardware Client and come up with our numbers
 #
 
-class ShooterConstants:
-    PROPORTIONAL_COEFFICIENT = 0.5 / 10000  # kP        # TODO: All of this needs tuning
-    INTEGRAL_COEFFICIENT = 0  # kI
-    DERIVATIVE_COEFFICIENT = 0.0 / 10000
+class FlywheelConstants(RpmConfig):
+    proportional_coefficient = 10  # kP - If you’re not where you want to be, get there.
+    integral_coefficient = 0  # kI - If you haven’t been where you want to be for a while, apply more effort
+    #      to get there”, since it really isn’t about speed.
+    derivative_coefficient = 0  # kD - If you’re getting close to where you want to be, slow down.
+    izone = None  # If you are really far from where you want to be, don’t start applying
+    #      more effort to get there until you are within this margin
 
-    VELOCITY_FEEDFORWARD = None  # 18.5 / 10000
-    IMAX_ACCUM = None  # 0.03
-    IZONE = None  # 3
-
-    LIMIT_CURRENT: amperes = 40
-
-    GEAR_REDUCTION = 6.75  # TODO: Get number
-    MEASUREMENT_STD_DEV = [0.0, 0.0]  # TODO: Get number for noise
-    MAX_RPM: revolutions_per_minute = 5676.0
+    limit_current: amperes = 40
 
 
 @autologgable_output
-class RevShooter(RpmSubsystem):
+class RevFlywheel(RpmSubsystem):
     """
     Rev NEO 21-1650
     """
-
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "roller",
-                         DCMotor.NEO(1), ControllerType.SparkMax, ShooterConstants(),
+                         DCMotor.NEO(1), ControllerType.SparkMax, FlywheelConstants(),
                          long_name="Intake/Roller",
                          coast=True,
                          persist_config=persist_config)
 
-        # TODO: Remove following once all works
-        # self._enable_chooser = LoggedDashboardChooser("Shooter Enabled")
         self._enable_chooser = LoggedDashboardChooser("Shooter Enabled")
 
         self._enable_chooser.setDefaultOption("False", False)

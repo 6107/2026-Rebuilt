@@ -217,7 +217,6 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         # SmartDashboard.putData("Left-Pivot", left_mech_2d)
         # SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
-        # TODO: Remove following once all works
         self._enable_chooser = LoggedDashboardChooser("Intake Enabled")
         self._enable_chooser.addOption("True", True)
         self._enable_chooser.setDefaultOption("False", False)

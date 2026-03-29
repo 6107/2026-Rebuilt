@@ -21,29 +21,20 @@ from typing import Optional
 from commands2.button import Trigger
 from pykit.autolog import autologgable_output
 from wpimath.system.plant import DCMotor
-from wpimath.units import amperes, revolutions_per_minute
+from wpimath.units import revolutions_per_minute
 
-from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmSubsystem
+from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
 
 logger = logging.getLogger(__name__)
 
 
-class IntakeConstants:
-    PROPORTIONAL_COEFFICIENT = 10  # kP
-    INTEGRAL_COEFFICIENT = 0  # kI
-    DERIVATIVE_COEFFICIENT = 0  # kD
-
-    VELOCITY_FEEDFORWARD = None
-    IMAX_ACCUM = None
-    IZONE = None
-
-    LIMIT_CURRENT: amperes = 30
-
-    GEAR_REDUCTION = 6.75  # TODO: Get number
-    MEASUREMENT_STD_DEV = [0.0, 0.0]  # TODO: Get number for noise
-    MAX_RPM: revolutions_per_minute = 5676.0
-
-    TARGET_RPM: revolutions_per_minute = 100  # Start slow
+class IntakeConstants(RpmConfig):
+    proportional_coefficient = 10  # kP - If you’re not where you want to be, get there.
+    integral_coefficient = 0  # kI - If you haven’t been where you want to be for a while, apply more effort
+    #      to get there”, since it really isn’t about speed.
+    derivative_coefficient = 0  # kD - If you’re getting close to where you want to be, slow down.
+    izone = None  # If you are really far from where you want to be, don’t start applying
+    #      more effort to get there until you are within this margin
 
 
 @autologgable_output

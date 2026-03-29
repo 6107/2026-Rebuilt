@@ -14,14 +14,17 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
+# Modified from westwood-2026-Rebuilt project
 
+from typing import Optional
 
 from commands2.button import Trigger
 from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 
 
 class NetworkTableButton(Trigger):
-    def __init__(self, key: str) -> None:
-        self.logBool = LoggedNetworkBoolean(key, False)
-        self.logBool.value = False
-        super().__init__(lambda: self.logBool.value)
+    def __init__(self, key: str, default: Optional[bool] = False) -> None:
+        self._log_bool = LoggedNetworkBoolean(key, default)
+        self._log_bool.value = default
+
+        super().__init__(lambda: self._log_bool.value)

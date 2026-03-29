@@ -147,10 +147,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
                                                                          color=Color8Bit(Color.kYellow))
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
-        # TODO: Remove following once all works
         self._enable_chooser = LoggedDashboardChooser("Climber Enabled")
-        self._enable_chooser.setDefaultOption("False", False)
-        self._enable_chooser.addOption("True", True)
+        self._enable_chooser.setDefaultOption("False", True)
+        self._enable_chooser.addOption("True", False)
 
         self._initialized = True
 
