@@ -27,10 +27,11 @@ from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from phoenix6.swerve.swerve_module import SwerveModule
-from pykit.alertlogger import AlertLogger
+
+`
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
+from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
@@ -47,6 +48,7 @@ from lib_6107.util.numerical_chooser import IntegerEditBox
 from lib_6107.util.phoenix6_telemetry import Telemetry
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
+from robot_2026.field.alerts import RobotAlerts
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
@@ -55,7 +57,6 @@ from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
-from robot_2026.util.preflight import PreflightChecklist
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +203,7 @@ class RobotContainer:
         ##########################################
         #   ALERTS
         #
-        self._alert_setup()
+        self._alerts = RobotAlerts(self)
 
         ##########################################
         #   TELEMETRY
@@ -216,11 +217,11 @@ class RobotContainer:
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
-            self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
+            self.auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
 
         except FileNotFoundError:
             logger.warning("PathPlanner 'autos' directory does not exist")
-            self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
+            self.auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
 
         self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
 
@@ -379,38 +380,6 @@ class RobotContainer:
         match begins.
         """
         self._alliance_change_callbacks.append(callback)
-
-    def _alert_setup(self) -> None:
-
-        # TODO: Need to validate all alerts so we can trust them
-        AlertLogger.registerGroup("Alerts")
-
-        self.driver_disconnected = Alert("Driver controller disconnected (port 0)",
-                                         Alert.AlertType.kWarning)
-        self.operator_disconnected = Alert("Operator controller disconnected (port 1)",
-                                           Alert.AlertType.kWarning)
-        self.dead_in_the_water_alert = Alert("No auto selected!!!",
-                                             Alert.AlertType.kWarning)
-        self.flywheel_disabled_alert = Alert("Flywheel is disabled!!!",
-                                             Alert.AlertType.kWarning)
-        self.climber_disabled_alert = Alert("Climber is disabled!!!",
-                                            Alert.AlertType.kWarning)
-        self.intake_disabled_alert = Alert("Intake is disabled!!!",
-                                           Alert.AlertType.kWarning)
-
-        self.shift_active_alert = Alert("SHIFT ACTIVE!", Alert.AlertType.kInfo)  # TODO: also maybe a vibrate?
-        self.shift_active_alert.set(True)
-
-        self.usbAlert = Alert("No USB Drive in robot!", Alert.AlertType.kError)
-
-        if RobotBase.isReal() and not os.path.exists("/U/logs"):
-            self.usbAlert.set(True)
-
-        self._preflight_alert = Alert("preflight checking not complete",
-                                      Alert.AlertType.kError)
-        # preflight checklist
-        AlertLogger.registerGroup("preflight")
-        self._preflight = PreflightChecklist()
 
     def set_start_time(self) -> None:  # call in teleopInit and autonomousInit in the robot
         self.start_time = time.time()
@@ -774,7 +743,7 @@ class RobotContainer:
         """
         :returns: the command to run in autonomous
         """
-        command = self._auto_chooser.getSelected()
+        command = self.auto_chooser.getSelected()
         return command
 
     def get_autonomous_end_game_command(self) -> Optional[Command]:
@@ -804,20 +773,20 @@ class RobotContainer:
 
         TODO:  THIS IS JUST A TEST.  USE PATHPLANNER FOR ALL AUTONOMOUS MODE PATHS
         """
-        self._auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
+        self.auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
 
         # Put sys IDs to run as automation (if not in competition)
         if not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
             if self.climber is not None:
-                self._auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
+                self.auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
 
             if self.intake_pivot is not None:
-                self._auto_chooser.addOption("Intake SysID", self.intake_pivot.sys_id_routine(self.intake_pivot))
+                self.auto_chooser.addOption("Intake SysID", self.intake_pivot.sys_id_routine(self.intake_pivot))
 
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
 
-        # SmartDashboard.putData("Chosen Auto", self._auto_chooser)
+        # SmartDashboard.putData("Chosen Auto", self.auto_chooser)
         # SmartDashboard.putData("Chosen Auto End Game", self._auto_end_chooser)
 
     def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
@@ -832,7 +801,7 @@ class RobotContainer:
         return PrintCommand("Do-Nothing Command")
 
     def disable_periodic(self) -> None:
-        self._preflight.update()
+        self._alerts.preflight_update()
 
     def robotPeriodic(self) -> None:
         """
@@ -864,18 +833,7 @@ class RobotContainer:
             Logger.recordOutput("Game/WonAuto", we_won)
             Logger.recordOutput("Game/HubActive", self._field.hub_active)
 
-        self.update_alerts()
+        self._alerts.update()
         #
         # TODO: Next returns 3d poses for all mechanisms.  Might be good for our devices as well.
         # Logger.recordOutput("Component Poses", RobotMechanism.getPoses())
-
-    def update_alerts(self):
-        self.driver_disconnected.set(not DriverStation.isJoystickConnected(0))
-        self.operator_disconnected.set(not DriverStation.isJoystickConnected(1))
-
-        self.dead_in_the_water_alert.set(self._auto_chooser.getSelected() == self.get_do_nothing)
-        self.flywheel_disabled_alert.set(not self.flywheel.enabled)
-        self.climber_disabled_alert.set(not self.climber.enabled)
-        self.intake_disabled_alert.set(not self.intake_pivot.enabled)  # Controls entire system
-
-        self._preflight_alert.set(not self._preflight.is_complete())
