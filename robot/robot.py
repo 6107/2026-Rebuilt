@@ -247,6 +247,7 @@ class MyRobot(LoggedRobot):
                                        description="The competition has ended",
                                        display_time=5000))
         # That's All Folks...
+        super().endCompetition()
 
     def robotPeriodic(self) -> None:
         """
@@ -422,12 +423,6 @@ class MyRobot(LoggedRobot):
                 # What percentage of time are we using up before the next periodic tick event
                 average_percent = (moving_avg.average / self.getPeriod()) * 100
                 SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", average_percent)
-
-            maximum, minimum, average = self._stats.get("auto").max, self._stats.get("auto").min, self._stats.get(
-                "auto").average
-            SmartDashboard.putNumber("Periodic/Robot/auto-max-ms", maximum or 0.0)
-            SmartDashboard.putNumber("Periodic/Robot/auto-min-ms", minimum or 0.0)
-            SmartDashboard.putNumber("Periodic/Robot/auto-avg-ms", average or 0.0)
 
         self._stats.add("auto-duration", time.monotonic() - start)
 
