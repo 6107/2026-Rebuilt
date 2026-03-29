@@ -243,11 +243,6 @@ class MyRobot(LoggedRobot):
                 logging.getLogger("commands2").setLevel(logging.ERROR)
 
     def endCompetition(self):  # real signature unknown; restored from __doc__
-        print("========================================")
-        print("Robot Statistics:")
-        self._stats.print("all", 1)
-        print("========================================")
-
         send_notification(Notification(title="Game Over",
                                        description="The competition has ended",
                                        display_time=5000))
@@ -302,10 +297,7 @@ class MyRobot(LoggedRobot):
             SmartDashboard.putNumber("Periodic/Robot/called", self._times_called)
             SmartDashboard.putNumber("Periodic/Robot/avg-period-mS", avg_time)
 
-        # TODO: Can we drop our 'stats' once we have all this wonderful logging in place ?
-        now = time.monotonic()
-        self._stats.add("periodic", now - start)
-        self._stats.add("periodic-duration", now - start)
+        self._stats.add("periodic-duration", time.monotonic() - start)
 
     def disabledInit(self) -> None:
         """
@@ -334,8 +326,6 @@ class MyRobot(LoggedRobot):
         new packet is received from the driver station and the robot is in disabled
         mode.
         """
-        # super().disabledPeriodic()
-        start = time.monotonic()
         logger.debug("called disabledPeriodic")
 
         # Alert updates for pre-flight
@@ -349,8 +339,6 @@ class MyRobot(LoggedRobot):
         # Validate who we are working for
         if not self.match_started:
             self.container.check_alliance()
-
-        self._stats.add("disabled", time.monotonic() - start)
 
     def disabledExit(self) -> None:
         """
@@ -441,9 +429,7 @@ class MyRobot(LoggedRobot):
             SmartDashboard.putNumber("Periodic/Robot/auto-min-ms", minimum or 0.0)
             SmartDashboard.putNumber("Periodic/Robot/auto-avg-ms", average or 0.0)
 
-        now = time.monotonic()
-        self._stats.add("auto", now - start)
-        self._stats.add("auto-duration", now - start)
+        self._stats.add("auto-duration", time.monotonic() - start)
 
     def autonomousExit(self) -> None:
         """
@@ -506,15 +492,7 @@ class MyRobot(LoggedRobot):
 
                 SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", average_percent)
 
-            maximum, minimum, average = self._stats.get("teleop").max, self._stats.get("auto").min, self._stats.get(
-                "auto").average
-            SmartDashboard.putNumber("Periodic/Robot/teleop-max-ms", maximum or 0.0)
-            SmartDashboard.putNumber("Periodic/Robot/teleop-min-ms", minimum or 0.0)
-            SmartDashboard.putNumber("Periodic/Robot/teleop-avg-ms", average or 0.0)
-
-        now = time.monotonic()
-        self._stats.add("teleop", now - start)
-        self._stats.add("teleop-duration", now - start)
+        self._stats.add("teleop-duration", time.monotonic() - start)
 
     def teleopExit(self) -> None:
         """
