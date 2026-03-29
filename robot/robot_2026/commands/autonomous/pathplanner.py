@@ -27,7 +27,7 @@ from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import DriverStation, getDeployDirectory, SendableChooser, SmartDashboard
+from wpilib import DriverStation, getDeployDirectory
 from wpimath.kinematics import ChassisSpeeds
 
 from lib_6107.commands.camera.approach_tag import ApproachTag
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContainer',
-                           default_command: Optional[str] = "") -> Optional[LoggedDashboardChooser | SendableChooser]:
+                           default_command: Optional[str] = "") -> Optional[LoggedDashboardChooser]:
 
     # Register named commands first
     register_commands_and_triggers(drivetrain, container)
@@ -107,18 +107,10 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
     logger.error(f"PathPlanner settings {file_path} not found or is not readable")
     logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
 
-    chooser = LoggedDashboardChooser("Autonomous")
-    # chooser = SendableChooser()
-
-    if isinstance(chooser, SendableChooser):
-        SmartDashboard.putData("Autonomous", chooser)
-    elif isinstance(chooser, LoggedDashboardChooser):
-        pass
-
-    return chooser
+    return LoggedDashboardChooser("Autonomous")
 
 
-def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser | SendableChooser:
+def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
     """
     Create and populate a sendable chooser with all PathPlannerAutos in the project and the default auto name selected.
 
@@ -132,7 +124,6 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser | 
     auto_list = os.listdir(auto_folder_path)
 
     chooser = LoggedDashboardChooser("Autonomous")
-    # chooser = SendableChooser()
 
     default_auto_added = False
 
@@ -143,11 +134,6 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser | 
             chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
         else:
             chooser.addOption(auto, AutoBuilder.buildAuto(auto))
-
-    if isinstance(chooser, SendableChooser):
-        SmartDashboard.putData("Autonomous", chooser)
-    elif isinstance(chooser, LoggedDashboardChooser):
-        pass
 
     return chooser
 

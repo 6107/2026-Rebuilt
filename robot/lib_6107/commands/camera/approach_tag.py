@@ -9,7 +9,8 @@ from typing import Callable, Optional
 
 from commands2 import Command
 from pathplannerlib.auto import NamedCommands
-from wpilib import SendableChooser, SmartDashboard, Timer
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from wpilib import SmartDashboard, Timer
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import meters, percent, seconds
 
@@ -41,7 +42,7 @@ class Tunable:
             return
 
         # if that chooser was not created yet, create it now
-        Tunable._choosers[prefix + name] = self.chooser = SendableChooser()
+        Tunable._choosers[prefix + name] = self.chooser = LoggedDashboardChooser(prefix + name)
 
         for index, factor in enumerate([0, 0.1, 0.17, 0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0]):
             label, value = f"{factor * default}", factor * default
@@ -52,8 +53,6 @@ class Tunable:
                     self.chooser.setDefaultOption(label, value)
                 else:
                     self.chooser.addOption(label, value)
-
-        SmartDashboard.putData(prefix + name, self.chooser)
 
     def fetch(self):
         if self.chooser is not None:

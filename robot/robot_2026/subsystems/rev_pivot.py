@@ -27,15 +27,13 @@ from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, RobotController, SendableChooser, SmartDashboard
+from wpilib import RobotBase, RobotController, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
     meters, radians, revolutions_per_minute, seconds, volts
 
-from lib_6107.pykit.LoggedMechanism2d import LoggedMechanism2d
-from lib_6107.pykit.LoggedMechanismLigament2d import LoggedMechanismLigament2d
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
@@ -194,46 +192,40 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         #####################################
         # Visualization support
-        left_mech_2d = Mechanism2d(inchesToMeters(20), inchesToMeters(50))
-        mech_root = left_mech_2d.getRoot("Left Pivot Root",
-                                         PivotConstants.PIVOT_LEFT_ROOT_X,
-                                         PivotConstants.PIVOT_ROOT_Y)
-
-        angle = self._get_rel_angle(self._adjust_intake_angle(PivotConstants.RETRACTED_ANGLE), 90)
-
-        self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
-                                                        PivotConstants.PIVOT_BASE_LENGTH,
-                                                        angle,
-                                                        color=Color8Bit(Color.kBlue))
-
-        right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
-        mech_root = right_mech_2d.getRoot("Right Pivot Root",
-                                          PivotConstants.PIVOT_RIGHT_ROOT_X,
-                                          PivotConstants.PIVOT_ROOT_Y)
-        self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
-                                                          PivotConstants.PIVOT_BASE_LENGTH,
-                                                          angle,
-                                                          color=Color8Bit(Color.kBlue))
-        mech_root.append(self._right_mech_base)
-
-        SmartDashboard.putData("Left-Pivot", left_mech_2d)
-        SmartDashboard.putData("Right-Pivot", right_mech_2d)
+        # left_mech_2d = Mechanism2d(inchesToMeters(20), inchesToMeters(50))
+        # mech_root = left_mech_2d.getRoot("Left Pivot Root",
+        #                                  PivotConstants.PIVOT_LEFT_ROOT_X,
+        #                                  PivotConstants.PIVOT_ROOT_Y)
+        #
+        # angle = self._get_rel_angle(self._adjust_intake_angle(PivotConstants.RETRACTED_ANGLE), 90)
+        #
+        # self._left_mech_base = mech_root.appendLigament("Left Pivot Arm",
+        #                                                 PivotConstants.PIVOT_BASE_LENGTH,
+        #                                                 angle,
+        #                                                 color=Color8Bit(Color.kBlue))
+        #
+        # right_mech_2d = LoggedMechanism2d(inchesToMeters(20), inchesToMeters(50))
+        # mech_root = right_mech_2d.getRoot("Right Pivot Root",
+        #                                   PivotConstants.PIVOT_RIGHT_ROOT_X,
+        #                                   PivotConstants.PIVOT_ROOT_Y)
+        # self._right_mech_base = LoggedMechanismLigament2d("Right Pivot Base",
+        #                                                   PivotConstants.PIVOT_BASE_LENGTH,
+        #                                                   angle,
+        #                                                   color=Color8Bit(Color.kBlue))
+        # mech_root.append(self._right_mech_base)
+        #
+        # SmartDashboard.putData("Left-Pivot", left_mech_2d)
+        # SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
         # TODO: Remove following once all works
-        # self._enable_chooser = LoggedDashboardChooser("Intake Enabled")
-        self._enable_chooser = SendableChooser()
+        self._enable_chooser = LoggedDashboardChooser("Intake Enabled")
         self._enable_chooser.addOption("True", True)
         self._enable_chooser.setDefaultOption("False", False)
 
-        if isinstance(self._enable_chooser, SendableChooser):
-            SmartDashboard.putData("Intake Enabled", self._enable_chooser)
-
-        elif isinstance(self._enable_chooser, LoggedDashboardChooser):
-            pass
-
         self._initialized = True
 
-    def _get_rel_angle(self, target_abs: degrees, parent_abs: degrees) -> degrees:
+    @staticmethod
+    def _get_rel_angle(target_abs: degrees, parent_abs: degrees) -> degrees:
         """
         Calculates the relative angle needed for a ligament given the
         desired absolute angle and the parent's absolute angle.
@@ -493,8 +485,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         LogTracer.record("UpdateInputs")
 
         # Update visualization
-        self._left_mech_base.setAngle(self._adjust_intake_angle(self._inputs.mechanism_1_position))
-        self._right_mech_base.setAngle(self._adjust_intake_angle(self._inputs.mechanism_2_position))
+        # self._left_mech_base.setAngle(self._adjust_intake_angle(self._inputs.mechanism_1_position))
+        # self._right_mech_base.setAngle(self._adjust_intake_angle(self._inputs.mechanism_2_position))
 
         LogTracer.record("Closed Loop Control")
         Logger.recordOutput("Intake/Pivot/goal", self._position_goal)

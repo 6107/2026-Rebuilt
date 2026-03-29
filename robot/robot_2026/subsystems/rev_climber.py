@@ -16,8 +16,6 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-import math
-from typing import Optional
 
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
@@ -28,7 +26,7 @@ from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, \
     SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
-    SendableChooser, SmartDashboard
+    SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
@@ -150,16 +148,10 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
         # TODO: Remove following once all works
-        # self._enable_chooser = LoggedDashboardChooser("Climber Enabled")
-        self._enable_chooser = SendableChooser()
-
+        self._enable_chooser = LoggedDashboardChooser("Climber Enabled")
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
 
-        if isinstance(self._enable_chooser, SendableChooser):
-            SmartDashboard.putData("Climber Enabled", self._enable_chooser)
-        elif isinstance(self._enable_chooser, LoggedDashboardChooser):
-            pass
         self._initialized = True
 
     @property

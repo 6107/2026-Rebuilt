@@ -30,7 +30,7 @@ from phoenix6.swerve.swerve_module import SwerveModule
 from pykit.alertlogger import AlertLogger
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SendableChooser, SmartDashboard, \
+from wpilib import Alert, DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
@@ -217,15 +217,12 @@ class RobotContainer:
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
             self._auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
-            # self._auto_chooser: SendableChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
 
         except FileNotFoundError:
             logger.warning("PathPlanner 'autos' directory does not exist")
             self._auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
-            # self._auto_chooser: SendableChooser = SendableChooser()
 
         self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
-        # self._auto_end_chooser: SendableChooser = SendableChooser()
 
         if self.shooter is not None:
             self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
@@ -784,7 +781,6 @@ class RobotContainer:
         """
         Overall speed limitation scaling factor
         """
-        # self._limit_chooser = SendableChooser()
         self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
         # you can also set the default option, if needed
@@ -794,12 +790,6 @@ class RobotContainer:
         self._limit_chooser.addOption("60%", 0.6)
         self._limit_chooser.addOption("80%", 0.8)
         self._limit_chooser.addOption("100%", 1.0)
-
-        if isinstance(self._limit_chooser, SendableChooser):
-            SmartDashboard.putData("Drive Rate Limiter", self._limit_chooser)
-
-        elif isinstance(self._limit_chooser, LoggedDashboardChooser):
-            pass
 
     def configure_additional_autos(self):
         """

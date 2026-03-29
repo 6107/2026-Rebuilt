@@ -21,7 +21,6 @@ from typing import Optional
 from commands2.button import Trigger
 from pykit.autolog import autologgable_output
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import SendableChooser, SmartDashboard
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
@@ -69,11 +68,6 @@ class RevShooter(RpmSubsystem):
 
         self._enable_chooser.setDefaultOption("False", False)
         self._enable_chooser.addOption("True", True)
-
-        if isinstance(self._enable_chooser, SendableChooser):
-            SmartDashboard.putData("Shooter Enabled", self._enable_chooser)
-        elif isinstance(self._enable_chooser, LoggedDashboardChooser):
-            pass
 
         self._initialized = False
 
