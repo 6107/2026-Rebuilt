@@ -22,7 +22,7 @@ from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, \
     SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
@@ -33,6 +33,7 @@ from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.util.competition import event_active
 from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
@@ -147,10 +148,8 @@ class RevClimber(Subsystem, RotationMechanismIO):
                                                                          color=Color8Bit(Color.kYellow))
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
-        self._enable_chooser = LoggedDashboardChooser("Climber Enabled")
-        self._enable_chooser.setDefaultOption("False", True)
-        self._enable_chooser.addOption("True", False)
-
+        self._enable_chooser = LoggedNetworkBoolean("Climber/Enabled",
+                                                    defaultValue=event_active())
         self._initialized = True
 
     @property
@@ -189,7 +188,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._enable_chooser.getSelected() is True and self.is_initialized
+        return self.is_initialized and self._enable_chooser.value
 
     @property
     def subsystem_trigger(self) -> Trigger:
@@ -197,18 +196,18 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
     @staticmethod
     def _motor_config(inverted: bool) -> SparkMaxConfig:
-        config = SparkMaxConfig()
-        config.inverted(inverted)
-        config.setIdleMode(SparkMaxConfig.IdleMode.kBrake)      # Set idle mode as brake
-        config.limitSwitch.forwardLimitSwitchEnabled(False)
-        config.limitSwitch.reverseLimitSwitchEnabled(False)
-        config.smartCurrentLimit(ClimberConstants.LIMIT_CURRENT)
+
+        config = (
+            SparkMaxConfig()
+            .inverted(inverted)
+            .setIdleMode(SparkMaxConfig.IdleMode.kBrake)  # Set idle mode as brake
+            .smartCurrentLimit(ClimberConstants.LIMIT_CURRENT)
+        )
+        config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
 
         # Following is set from experimentation since we have a cloth cord that
         # stretches and the diameter increases as more cord is spooled in
-
         config.encoder.positionConversionFactor(ClimberConstants.CLIMBER_POS_FACTOR)
-        config.encoder.inverted(True)
 
         # Set the velocity conversion factor (e.g., to convert RPM to inches/second)
         # The native unit is RPM. So to go to inches / second use:
@@ -225,7 +224,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
                  i=ClimberConstants.INTEGRAL_COEFFICIENT,
                  d=ClimberConstants.DERIVATIVE_COEFFICIENT,
                  slot=slot0)
-            .outputRange(ClimberConstants.DRIVE_INPUT_MIN, ClimberConstants.DRIVE_INPUT_MAX)
+            .outputRange(ClimberConstants.DRIVE_INPUT_MIN,
+                         ClimberConstants.DRIVE_INPUT_MAX,
+                         slot=slot0)
         )
         return config
 

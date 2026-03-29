@@ -50,10 +50,10 @@ from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractC
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
+from robot_2026.subsystems.rev_flywheel import RevFlywheel as Shooter
 from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
-from robot_2026.subsystems.rev_shooter import RevShooter as Shooter
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
 from robot_2026.util.preflight import PreflightChecklist
 
@@ -138,7 +138,7 @@ class RobotContainer:
         self.intake_pivot: IntakePivot | None = None
         self.intake_roller: IntakeRoller | None = None
         self.indexer: IntakeIndexer | None = None
-        self.shooter: Shooter | None = None
+        self.flywheel: Shooter | None = None
         self.climber: Climber | None = None
 
         ##########################################
@@ -172,7 +172,7 @@ class RobotContainer:
             #   SHOOTER
             #
             try:
-                self.shooter: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+                self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
             except Exception as _e:
                 logger.exception(f"Exception during Shooter initialization: {_e}")
 
@@ -180,13 +180,13 @@ class RobotContainer:
             #   CLIMBER
             #
             try:
-                self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, False)
+                self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
             except Exception as _e:
                 logger.exception(f"Exception during Intake Initialization: {_e}")
 
         # Add subsystems that got initialized
         for sub in (self.intake_pivot, self.intake_roller, self.indexer,
-                    self.shooter, self.climber):
+                    self.flywheel, self.climber):
 
             if sub is not None and sub.is_connected:
                 self.subsystems.append(sub)
@@ -224,7 +224,7 @@ class RobotContainer:
 
         self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
 
-        if self.shooter is not None:
+        if self.flywheel is not None:
             self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
                                                        initial_value=100,
                                                        minimum_value=100,
@@ -391,6 +391,12 @@ class RobotContainer:
                                            Alert.AlertType.kWarning)
         self.dead_in_the_water_alert = Alert("No auto selected!!!",
                                              Alert.AlertType.kWarning)
+        self.flywheel_disabled_alert = Alert("Flywheel is disabled!!!",
+                                             Alert.AlertType.kWarning)
+        self.climber_disabled_alert = Alert("Climber is disabled!!!",
+                                            Alert.AlertType.kWarning)
+        self.intake_disabled_alert = Alert("Intake is disabled!!!",
+                                           Alert.AlertType.kWarning)
 
         self.shift_active_alert = Alert("SHIFT ACTIVE!", Alert.AlertType.kInfo)  # TODO: also maybe a vibrate?
         self.shift_active_alert.set(True)
@@ -602,14 +608,14 @@ class RobotContainer:
         # Right trigger - Start the shooter
         # TODO: Figure out our tolerances
         # TODO: Adjust RPM higher. Start out slow so we cantest it
-        if self.shooter is not None and self.shooter.is_connected:
+        if self.flywheel is not None and self.flywheel.is_connected:
             rpm = 120                   # TODO : tie into chooser
             tolerance = 40
 
             controller.button(XboxController.Axis.kLeftTrigger).onTrue(
-                InstantCommand(lambda: self.shooter.set_velocity_goal(rpm, tolerance))
+                InstantCommand(lambda: self.flywheel.set_velocity_goal(rpm, tolerance))
             ).onFalse(
-                InstantCommand(lambda: self.shooter.stop())
+                InstantCommand(lambda: self.flywheel.stop())
             )
         # # Left trigger - create a command for keeping the robot nose pointed towards the hub
         # keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
@@ -868,5 +874,8 @@ class RobotContainer:
         self.operator_disconnected.set(not DriverStation.isJoystickConnected(1))
 
         self.dead_in_the_water_alert.set(self._auto_chooser.getSelected() == self.get_do_nothing)
+        self.flywheel_disabled_alert.set(not self.flywheel.enabled)
+        self.climber_disabled_alert.set(not self.climber.enabled)
+        self.intake_disabled_alert.set(not self.intake_pivot.enabled)  # Controls entire system
 
         self._preflight_alert.set(not self._preflight.is_complete())

@@ -15,10 +15,10 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from generated.tuner_constants import TunerConstants
 from pyfrc.test_support.controller import TestController
 
-from robot import MyRobot, constants
-from generated.tuner_constants import TunerConstants
+from robot import constants, MyRobot
 
 
 def test_module_offsets(control: TestController, robot: MyRobot):
@@ -83,7 +83,7 @@ def test_robot_init_successful(control: TestController, robot: MyRobot):
 
         assert container.robot_drive is not None, "Drive is not initialized"
 
-        assert container.shooter is not None, "Shooter is not initialized"
+        assert container.flywheel is not None, "Flywheel is not initialized"
 
 
 def test_operator_control(control: TestController, robot: MyRobot):

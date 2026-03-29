@@ -353,7 +353,7 @@ class RobotMech(Subsystem):
             if self._container.indexer is not None:
                 self._update_indexer()
 
-            if self._container.shooter is not None:
+            if self._container.flywheel is not None:
                 self._update_shooter()
 
             if self._container.climber is not None:
@@ -409,7 +409,7 @@ class RobotMech(Subsystem):
             if self._container.indexer is not None:
                 self._update_indexer()
 
-            if self._container.shooter is not None:
+            if self._container.flywheel is not None:
                 self._update_shooter()
 
             if self._container.climber is not None:

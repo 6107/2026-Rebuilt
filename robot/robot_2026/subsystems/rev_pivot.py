@@ -24,7 +24,7 @@ from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
 from wpilib import RobotBase, RobotController, SmartDashboard
@@ -35,6 +35,7 @@ from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians
     meters, radians, revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
+from lib_6107.util.competition import event_active
 from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
@@ -217,10 +218,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         # SmartDashboard.putData("Left-Pivot", left_mech_2d)
         # SmartDashboard.putData("Right-Pivot", right_mech_2d)
 
-        self._enable_chooser = LoggedDashboardChooser("Intake Enabled")
-        self._enable_chooser.addOption("True", True)
-        self._enable_chooser.setDefaultOption("False", False)
-
+        self._enable_chooser = LoggedNetworkBoolean("Intake/Enabled",
+                                                    defaultValue=event_active())
         self._initialized = True
 
     @staticmethod
@@ -243,7 +242,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._enable_chooser.getSelected() is True and self.is_initialized
+        return self.is_initialized and self._enable_chooser.value
 
     @property
     def subsystem_trigger(self) -> Trigger:

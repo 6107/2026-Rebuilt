@@ -20,11 +20,12 @@ from typing import Optional
 
 from commands2.button import Trigger
 from pykit.autolog import autologgable_output
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
 from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
+from lib_6107.util.competition import event_active
 
 logger = logging.getLogger(__name__)
 
@@ -50,18 +51,15 @@ class RevFlywheel(RpmSubsystem):
     """
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
-        super().__init__(container, can_device_id, inverted, "roller",
+        super().__init__(container, can_device_id, inverted, "Flywheel",
                          DCMotor.NEO(1), ControllerType.SparkMax, FlywheelConstants(),
-                         long_name="Intake/Roller",
+                         long_name="Intake/Flywheel",
                          coast=True,
                          persist_config=persist_config)
 
-        self._enable_chooser = LoggedDashboardChooser("Shooter Enabled")
-
-        self._enable_chooser.setDefaultOption("False", False)
-        self._enable_chooser.addOption("True", True)
-
-        self._initialized = False
+        self._enable_chooser = LoggedNetworkBoolean("Flywheel/Enabled",
+                                                    defaultValue=event_active())
+        self._initialized = True
 
     @property
     def enabled(self) -> bool:
@@ -71,7 +69,7 @@ class RevFlywheel(RpmSubsystem):
         Note: Enabled is different from active. It is primarily used to indicate that it
         can perform its operations.
         """
-        return self._enable_chooser.getSelected() is True and self.is_initialized
+        return self.is_initialized and self._enable_chooser.value
 
     @property
     def subsystem_trigger(self) -> Trigger:

@@ -49,7 +49,7 @@ class RevIntakeRoller(RpmSubsystem):
 
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
-        super().__init__(container, can_device_id, inverted, "roller",
+        super().__init__(container, can_device_id, inverted, "Roller",
                          DCMotor.NEO(1), ControllerType.SparkMax, IntakeConstants(),
                          long_name="Intake/Roller",
                          coast=True,

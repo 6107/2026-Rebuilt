@@ -1,6 +1,6 @@
 {
   "version": 1.0,
-  "grid_size": 128,
+  "grid_size": 64,
   "tabs": [
     {
       "name": "Autonomous (Development)",
@@ -9,7 +9,7 @@
           {
             "title": "Drivetrain",
             "x": 0.0,
-            "y": 384.0,
+            "y": 128.0,
             "width": 256.0,
             "height": 256.0,
             "type": "List Layout",
@@ -64,74 +64,9 @@
         ],
         "containers": [
           {
-            "title": "Autonomous",
-            "x": 0.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Autonomous",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "Autonomous-End",
-            "x": 0.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Autonomous-EndGame",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "Climber Enabled",
-            "x": 896.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Climber Enabled",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "Intake Enabled",
-            "x": 640.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Intake Enabled",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "Shooter Enabled",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Shooter Enabled",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
             "title": "Autonomous Budget Used (%)",
-            "x": 896.0,
-            "y": 256.0,
+            "x": 256.0,
+            "y": 128.0,
             "width": 256.0,
             "height": 256.0,
             "type": "Radial Gauge",
@@ -150,23 +85,9 @@
             }
           },
           {
-            "title": "EmergencyStop",
-            "x": 1024.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/AdvantageKit/DriverStation/EmergencyStop",
-              "period": 0.06,
-              "data_type": "boolean",
-              "show_submit_button": false
-            }
-          },
-          {
             "title": "StationNumber",
-            "x": 896.0,
-            "y": 128.0,
+            "x": 384.0,
+            "y": 0.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
@@ -179,10 +100,10 @@
           },
           {
             "title": "Field",
-            "x": 256.0,
-            "y": 128.0,
-            "width": 512.0,
-            "height": 256.0,
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 576.0,
             "type": "Field",
             "properties": {
               "topic": "/SmartDashboard/Field",
@@ -192,28 +113,15 @@
               "robot_length": 0.85,
               "show_other_objects": true,
               "show_trajectories": true,
-              "field_rotation": 0.0,
+              "field_rotation": -90.0,
               "robot_color": 4294198070,
               "trajectory_color": 4294967295,
               "show_robot_outside_widget": true
             }
           },
           {
-            "title": "Field Selector",
-            "x": 0.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Field Selector",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
             "title": "Drive Rate Limiter",
-            "x": 384.0,
+            "x": 0.0,
             "y": 0.0,
             "width": 256.0,
             "height": 128.0,
@@ -225,24 +133,27 @@
             }
           },
           {
-            "title": "IsRedAlliance",
-            "x": 768.0,
-            "y": 128.0,
+            "title": "Alliance",
+            "x": 256.0,
+            "y": 0.0,
             "width": 128.0,
             "height": 128.0,
-            "type": "Text Display",
+            "type": "Boolean Box",
             "properties": {
               "topic": "/FMSInfo/IsRedAlliance",
               "period": 0.06,
               "data_type": "boolean",
-              "show_submit_button": false
+              "true_color": 4294901760,
+              "false_color": 4280484095,
+              "true_icon": "None",
+              "false_icon": "None"
             }
           },
           {
             "title": "Shooter RPM",
-            "x": 256.0,
+            "x": 0.0,
             "y": 384.0,
-            "width": 640.0,
+            "width": 512.0,
             "height": 128.0,
             "type": "Number Slider",
             "properties": {
@@ -257,10 +168,10 @@
           },
           {
             "title": "Alerts",
-            "x": 384.0,
-            "y": 512.0,
+            "x": 768.0,
+            "y": 0.0,
             "width": 256.0,
-            "height": 512.0,
+            "height": 576.0,
             "type": "Alerts",
             "properties": {
               "topic": "/SmartDashboard/Alerts",
@@ -376,8 +287,8 @@
           },
           {
             "title": "Drivetrain",
-            "x": 384.0,
-            "y": 256.0,
+            "x": 256.0,
+            "y": 128.0,
             "width": 256.0,
             "height": 256.0,
             "type": "List Layout",
@@ -432,21 +343,8 @@
         ],
         "containers": [
           {
-            "title": "Drive rate limiter",
-            "x": 384.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Drive rate limiter",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
             "title": "Alerts",
-            "x": 1152.0,
+            "x": 768.0,
             "y": 0.0,
             "width": 256.0,
             "height": 384.0,
@@ -460,8 +358,8 @@
             "title": "Field",
             "x": 0.0,
             "y": 0.0,
-            "width": 384.0,
-            "height": 768.0,
+            "width": 256.0,
+            "height": 512.0,
             "type": "Field",
             "properties": {
               "topic": "/SmartDashboard/Field",
@@ -478,37 +376,9 @@
             }
           },
           {
-            "title": "IsRedAlliance",
-            "x": 384.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/FMSInfo/IsRedAlliance",
-              "period": 0.06,
-              "data_type": "boolean",
-              "show_submit_button": false
-            }
-          },
-          {
-            "title": "StationNumber",
-            "x": 512.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/FMSInfo/StationNumber",
-              "period": 0.06,
-              "data_type": "int",
-              "show_submit_button": false
-            }
-          },
-          {
             "title": "Shooter RPM",
-            "x": 384.0,
-            "y": 512.0,
+            "x": 256.0,
+            "y": 384.0,
             "width": 768.0,
             "height": 128.0,
             "type": "Number Slider",
@@ -523,89 +393,8 @@
             }
           },
           {
-            "title": "Climber Enabled",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Climber Enabled",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "Intake Enabled",
-            "x": 896.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Intake Enabled",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "Shooter Enabled",
-            "x": 1024.0,
-            "y": 0.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Shooter Enabled",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "teleop-avg-ms",
-            "x": 896.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/SmartDashboard/Periodic/Robot/teleop-avg-ms",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": false
-            }
-          },
-          {
-            "title": "teleop-max-ms",
-            "x": 896.0,
-            "y": 128.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/SmartDashboard/Periodic/Robot/teleop-max-ms",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": false
-            }
-          },
-          {
-            "title": "teleop-min-ms",
-            "x": 896.0,
-            "y": 256.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/SmartDashboard/Periodic/Robot/teleop-min-ms",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": false
-            }
-          },
-          {
             "title": "Teleop Budget Used (%)",
-            "x": 640.0,
+            "x": 512.0,
             "y": 128.0,
             "width": 256.0,
             "height": 256.0,
@@ -625,16 +414,46 @@
             }
           },
           {
-            "title": "EmergencyStop",
-            "x": 640.0,
+            "title": "Drive Rate Limiter",
+            "x": 256.0,
+            "y": 0.0,
+            "width": 192.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Drive Rate Limiter",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Alliance",
+            "x": 448.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/FMSInfo/IsRedAlliance",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4294901760,
+              "false_color": 4280484095,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "StationNumber",
+            "x": 576.0,
             "y": 0.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
-              "topic": "/AdvantageKit/DriverStation/EmergencyStop",
+              "topic": "/FMSInfo/StationNumber",
               "period": 0.06,
-              "data_type": "boolean",
+              "data_type": "int",
               "show_submit_button": false
             }
           }
@@ -650,7 +469,7 @@
             "x": 0.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 192.0,
+            "height": 256.0,
             "type": "List Layout",
             "properties": {
               "label_position": "TOP"
@@ -690,7 +509,7 @@
             "x": 256.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 192.0,
+            "height": 256.0,
             "type": "List Layout",
             "properties": {
               "label_position": "TOP"
@@ -726,7 +545,59 @@
             ]
           }
         ],
-        "containers": []
+        "containers": [
+          {
+            "title": "Climber Enabled",
+            "x": 0.0,
+            "y": 256.0,
+            "width": 192.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "Climber/Enabled",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "Intake Enabled",
+            "x": 192.0,
+            "y": 256.0,
+            "width": 192.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "Intake/Enabled",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "Alerts",
+            "x": 576.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 512.0,
+            "type": "Alerts",
+            "properties": {
+              "topic": "/SmartDashboard/Alerts",
+              "period": 0.06
+            }
+          },
+          {
+            "title": "Flywheel Enabled",
+            "x": 384.0,
+            "y": 256.0,
+            "width": 192.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "Flywheel/Enabled",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          }
+        ]
       }
     },
     {
