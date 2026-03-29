@@ -506,8 +506,8 @@
           },
           {
             "title": "Climber Override",
-            "x": 256.0,
-            "y": 0.0,
+            "x": 0.0,
+            "y": 256.0,
             "width": 256.0,
             "height": 256.0,
             "type": "List Layout",
@@ -548,8 +548,8 @@
         "containers": [
           {
             "title": "Climber Enabled",
-            "x": 0.0,
-            "y": 256.0,
+            "x": 256.0,
+            "y": 128.0,
             "width": 192.0,
             "height": 128.0,
             "type": "Toggle Switch",
@@ -561,7 +561,7 @@
           },
           {
             "title": "Intake Enabled",
-            "x": 192.0,
+            "x": 256.0,
             "y": 256.0,
             "width": 192.0,
             "height": 128.0,
@@ -574,9 +574,9 @@
           },
           {
             "title": "Alerts",
-            "x": 576.0,
+            "x": 448.0,
             "y": 0.0,
-            "width": 256.0,
+            "width": 320.0,
             "height": 512.0,
             "type": "Alerts",
             "properties": {
@@ -586,8 +586,8 @@
           },
           {
             "title": "Flywheel Enabled",
-            "x": 384.0,
-            "y": 256.0,
+            "x": 256.0,
+            "y": 0.0,
             "width": 192.0,
             "height": 128.0,
             "type": "Toggle Switch",
@@ -769,10 +769,10 @@
           },
           {
             "title": "Field",
-            "x": 1024.0,
+            "x": 960.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 512.0,
+            "height": 640.0,
             "type": "Field",
             "properties": {
               "topic": "/SmartDashboard/Field",
@@ -800,8 +800,8 @@
             "title": "MatchTime",
             "x": 0.0,
             "y": 0.0,
-            "width": 768.0,
-            "height": 384.0,
+            "width": 640.0,
+            "height": 320.0,
             "type": "Match Time",
             "properties": {
               "topic": "/AdvantageKit/DriverStation/MatchTime",
@@ -814,10 +814,10 @@
           },
           {
             "title": "Alerts",
-            "x": 768.0,
+            "x": 640.0,
             "y": 0.0,
-            "width": 256.0,
-            "height": 384.0,
+            "width": 320.0,
+            "height": 448.0,
             "type": "Alerts",
             "properties": {
               "topic": "/SmartDashboard/Alerts",
@@ -826,9 +826,9 @@
           },
           {
             "title": "Autonomous",
-            "x": 384.0,
-            "y": 384.0,
-            "width": 384.0,
+            "x": 0.0,
+            "y": 448.0,
+            "width": 512.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -839,9 +839,9 @@
           },
           {
             "title": "Autonomous-End",
-            "x": 768.0,
-            "y": 384.0,
-            "width": 256.0,
+            "x": 512.0,
+            "y": 448.0,
+            "width": 448.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -853,8 +853,8 @@
           {
             "title": "Voltage",
             "x": 0.0,
-            "y": 512.0,
-            "width": 1024.0,
+            "y": 576.0,
+            "width": 960.0,
             "height": 128.0,
             "type": "Voltage View",
             "properties": {
@@ -871,13 +871,44 @@
           {
             "title": "FMSInfo",
             "x": 0.0,
-            "y": 384.0,
+            "y": 320.0,
             "width": 384.0,
             "height": 128.0,
             "type": "FMSInfo",
             "properties": {
               "topic": "/FMSInfo",
               "period": 0.06
+            }
+          },
+          {
+            "title": "Alliance",
+            "x": 384.0,
+            "y": 320.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/FMSInfo/IsRedAlliance",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4294901760,
+              "false_color": 4280484095,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "  # ",
+            "x": 512.0,
+            "y": 320.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/FMSInfo/StationNumber",
+              "period": 0.06,
+              "data_type": "int",
+              "show_submit_button": false
             }
           }
         ]
