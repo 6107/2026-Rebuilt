@@ -23,11 +23,10 @@
 #  may need in your project.
 #
 
-from commands2 import Command
 from pathplannerlib.auto import NamedCommands
 
 from lib_6107.commands.command import BaseCommand
-from robot_2026.subsystems.rev_climber import RevClimber as Climber
+from robot_2026.subsystems.rev_climber import ClimberConstants, RevClimber
 
 RETRACT_LEVEL_ONE_REVOLUTIONS = 5
 EXTEND_LEVEL_ONE_REVOLUTIONS = -(RETRACT_LEVEL_ONE_REVOLUTIONS + 1)
@@ -43,12 +42,11 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
     trip.
     """
 
-    def __init__(self, container: 'RobotContainer', **kwargs):
+    def __init__(self, container: 'RobotContainer', position: float):
         super().__init__(container)
 
-        self._climber: Climber = container.climber
-        self._position_goal: float = kwargs.get("position_goal", 0.0)
-        self._manual_command: bool = kwargs.get("manual", False)
+        self._climber: RevClimber = container.climber
+        self._position_goal: float = position
         self._running = False
 
         # This command needs to reserve the climbing subsystem
@@ -62,10 +60,7 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
         super().initialize()
 
         # Reset the climbing subsystem.
-        self._climber.reset()
         self._running = False
-
-        # TODO: Anything to turn of an existing brake request
 
     def execute(self) -> None:
         """
@@ -84,7 +79,7 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
 
         :param interrupted: whether the command was interrupted/canceled
         """
-        self._climber.stop(True)
+        self._climber.stop()
         self._running = False
 
         super().end(interrupted)
@@ -98,20 +93,21 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
     The 'RevClimber' subsystem used by this command should have a stall current
     set so if we fully retract the climbing arm, the stall current limit should
     trip.
+
+    Retraction should go quickly, so a short (1.5 second?) timeout may be wise
     """
+
+    def __init__(self, container: 'RobotContainer'):
+        super().__init__(container, ClimberConstants.CLIMBER_RETRACTED_SETPOINT)
+
     @staticmethod
     def pathplanner_register(container: 'RobotContainer') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
-
-        def command(**kwargs) -> Command:
-            return RetractClimber(container, **kwargs)
-
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.get_class_name(),
-                                      command(position_goal=RETRACT_LEVEL_ONE_REVOLUTIONS))
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), RetractClimber(container))
 
     def isFinished(self) -> bool:
         """
@@ -120,27 +116,29 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        return self._climber.position >= self._position_goal and not self._manual_command
+        return self._climber.position >= self._position_goal - ClimberConstants.CLIMBER_TOLERANCE
 
 
 class ExtendClimber(ClimberBaseCommand):  # change the name for your command
     """
     This command, while it runs, will extend the climber (robot goes down). It
     can be attached to controller button or used by an automated routine.
+
+    Extension is slower than retraction, so make sure you give 4-5 seconds before you
+    need to use the Extended Climber.
     """
+
+    def __init__(self, container: 'RobotContainer'):
+        super().__init__(container, ClimberConstants.CLIMBER_EXTENDED_SETPOINT)
+
     @staticmethod
     def pathplanner_register(container: 'RobotContainer') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
-
-        def command(**kwargs) -> Command:
-            return RetractClimber(container, **kwargs)
-
         # Register the function itself
-        NamedCommands.registerCommand(BaseCommand.get_class_name(),
-                                      command(position_goal=EXTEND_LEVEL_ONE_REVOLUTIONS))
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), ExtendClimber(container))
 
     def isFinished(self) -> bool:
         """
@@ -149,4 +147,4 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        return self._climber.position <= self._position_goal and not self._manual_command
+        return self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE

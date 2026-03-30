@@ -35,6 +35,7 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
+from robot_2026.commands.autonomous.auto_climber_command import AutoClimberSequence
 from robot_2026.commands.climber.climber_commands import ExtendClimber
 from robot_2026.commands.climber.climber_commands import RetractClimber
 from robot_2026.commands.intake.intake_commands import IntakeCollectFuel
@@ -158,6 +159,7 @@ def register_commands_and_triggers(drivetrain: DriveSubsystem, container: 'Robot
         # Climber
         (RetractClimber, container),
         (ExtendClimber, container),
+        (AutoClimberSequence, container),
 
         # Entertainment
     ]

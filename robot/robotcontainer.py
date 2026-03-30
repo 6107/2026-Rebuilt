@@ -607,12 +607,12 @@ class RobotContainer:
         if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
             climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
-            retract_command = RetractClimber(self, manual=True, position_goal=5)
+            retract_command = RetractClimber(self)
             climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
 
             # POV-DOWN: Extend the climbing arm (robot goes down)
             climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
-            extend_command = ExtendClimber(self, manual=True, position_goal=-5)
+            extend_command = ExtendClimber(self)
             climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
         if self.intake_pivot is not None and self.intake_pivot.is_connected:

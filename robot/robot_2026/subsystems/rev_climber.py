@@ -67,7 +67,7 @@ class ClimberConstants:
 
     CLIMBER_RETRACTED_SETPOINT = 0.0    # Fully retracted to the 8" mark
     CLIMBER_EXTENDED_SETPOINT = -12.833 # Fully extended with a slightly snug line
-    CLIMBER_TOLERANCE = 0.5
+    CLIMBER_TOLERANCE = 0.75
 
     CLIMBER_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
     CLIMBER_ROOT_Y: meters = inchesToMeters(12.5)
