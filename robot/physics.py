@@ -31,7 +31,6 @@ import logging
 from typing import List
 
 from pyfrc.physics.core import PhysicsInterface
-from wpilib import SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
 
@@ -83,13 +82,6 @@ class PhysicsEngine:
         self._alliance_change(self._robot.container.is_red_alliance,
                               self._robot.container.alliance_location)
 
-        # stats
-        self._times_called: int = 0
-        self._total_time: float = 0.0
-
-        SmartDashboard.putNumber("Periodic/Simulation/called", self._times_called)
-        SmartDashboard.putNumber("Periodic/Simulation/avg-period-mS", 0.0)
-
         logger.info("PhysicsEngine.__init__: exit")
 
     def update_sim(self, now: float, tm_diff: float) -> None:
@@ -112,17 +104,6 @@ class PhysicsEngine:
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
-        if self._robot.isEnabled():
-            # stats
-            self._times_called += 1
-            self._total_time += tm_diff
-
-        if self._robot.counter % 100 == 0 and self._times_called > 0:
-            avg_time = round(self._total_time / self._times_called * 1000, 3)
-
-            SmartDashboard.putNumber("Periodic/Simulation/called", self._times_called)
-            SmartDashboard.putNumber("Periodic/Simulation/avg-period-mS", avg_time)
-
         current_used: List[amperes] = []
         for subsystem in self._robot.container.subsystems:
             try:

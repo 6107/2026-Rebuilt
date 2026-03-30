@@ -27,8 +27,6 @@ from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from phoenix6.swerve.swerve_module import SwerveModule
-
-`
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \

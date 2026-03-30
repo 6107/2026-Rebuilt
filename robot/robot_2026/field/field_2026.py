@@ -101,7 +101,6 @@ class RebuiltField(Field):
         super().__init__()
         self._won_autonomous: Optional[bool] = None
 
-
     def in_blue_alliance_zone(self, x: float) -> bool:
         return x < inchesToMeters(182.11)
 
