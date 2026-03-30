@@ -36,7 +36,7 @@ from wpimath.units import amperes, radians, radians_per_second, radiansPerSecond
     revolutions_per_minute, seconds, volts
 
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.util.rev_utils import try_until_ok
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -441,3 +441,16 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         Autonomous function to run and then move the robot to Autonomous mode.
         """
         return self._sysid_routine.dynamic(direction)
+
+    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
+        """
+        This routine is responsible for reading any existing faults and based
+        input parameters, report them for display, and possibly clear them
+
+        All faults detected always results in a warning log message, so please be
+        aware of this if you do not clear them
+
+        TODO: Good thing for a base class, don't you think
+        """
+        # For Rev Robotics, the faults are a bitmask
+        handle_faults(self.getName(), state, self._motor, clear=clear, notify=notify)

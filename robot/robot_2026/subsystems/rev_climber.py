@@ -16,6 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+from typing import Optional
 
 from commands2 import cmd, Command, Subsystem
 from commands2.button import Trigger
@@ -34,7 +35,7 @@ from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, re
 
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
 from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import try_until_ok
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -435,3 +436,16 @@ class RevClimber(Subsystem, RotationMechanismIO):
             characterization_routine.dynamic(SysIdRoutine.Direction.kReverse).until(self.at_min),
             cmd.runOnce(lambda: self.set_closed_loop(True), self),
         )
+
+    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
+        """
+        This routine is responsible for reading any existing faults and based
+        input parameters, report them for display, and possibly clear them
+
+        All faults detected always results in a warning log message, so please be
+        aware of this if you do not clear them
+
+        TODO: Good thing for a base class, don't you think
+        """
+        # For Rev Robotics, the faults are a bitmask
+        handle_faults("Climber", state, self._motor, clear=clear, notify=notify)

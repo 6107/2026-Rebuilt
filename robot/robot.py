@@ -230,7 +230,11 @@ class MyRobot(LoggedRobot):
                 logging.getLogger("wpilib").setLevel(logging.ERROR)
                 logging.getLogger("commands2").setLevel(logging.ERROR)
 
-    def endCompetition(self):  # real signature unknown; restored from __doc__
+    def endCompetition(self):
+        for subsystem in self.container.subsystems:
+            if hasattr(subsystem, "fault_detection"):
+                subsystem.fault_detection("End-Competition", clear=True, notify=True)
+
         send_notification(Notification(title="Game Over",
                                        description="The competition has ended",
                                        display_time=5000))
@@ -288,6 +292,11 @@ class MyRobot(LoggedRobot):
         self.disabledTimer.reset()
         self.disabledTimer.start()
 
+        # Scan all subsystems for any faults that occurred. Log and clear them
+        for subsystem in self.container.subsystems:
+            if hasattr(subsystem, "fault_detection"):
+                subsystem.fault_detection("Disabled-Init", clear=True, notify=True)
+
     def disabledPeriodic(self) -> None:
         """
         Periodic code for disabled mode should go here.
@@ -321,6 +330,10 @@ class MyRobot(LoggedRobot):
         logger.info("*** disabledExit: entry")
         self.disabledTimer.stop()
         self.disabledTimer.reset()
+
+        for subsystem in self.container.subsystems:
+            if hasattr(subsystem, "fault_detection"):
+                subsystem.fault_detection("Disabled-Exit", clear=True, notify=True)
 
     def autonomousInit(self) -> None:
         """
@@ -400,6 +413,11 @@ class MyRobot(LoggedRobot):
         if self._autonomous_command:
             self._autonomous_command.cancel()
 
+        # Scan all subsystems for any faults that occurred. Log and clear them
+        for subsystem in self.container.subsystems:
+            if hasattr(subsystem, "fault_detection"):
+                subsystem.fault_detection("Autonomous-Exit", clear=True, notify=True)
+
     def teleopInit(self) -> None:
         """
         Initialization code for teleop mode should go here.
@@ -461,6 +479,11 @@ class MyRobot(LoggedRobot):
                 subsystem.stop()
 
             self.container.robot_drive.set_straight()
+
+        # Scan all subsystems for any faults that occurred. Log and clear them
+        for subsystem in self.container.subsystems:
+            if hasattr(subsystem, "fault_detection"):
+                subsystem.fault_detection("Teleop-Exit", clear=True, notify=True)
 
     def testInit(self) -> None:
         """

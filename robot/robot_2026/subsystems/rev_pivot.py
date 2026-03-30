@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Tuple
+from typing import Optional, Tuple
 
 from commands2 import cmd, Subsystem
 from commands2.button import Trigger
@@ -36,7 +36,7 @@ from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians
 
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
 from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import try_until_ok
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -688,3 +688,17 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
                 lambda: self.at_deployed_angle(None)),
             cmd.runOnce(lambda: self.set_closed_loop(True), self),
         )
+
+    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
+        """
+        This routine is responsible for reading any existing faults and based
+        input parameters, report them for display, and possibly clear them
+
+        All faults detected always results in a warning log message, so please be
+        aware of this if you do not clear them
+
+        TODO: Good thing for a base class, don't you think
+        """
+        # For Rev Robotics, the faults are a bitmask
+        handle_faults("Pivot-Left Motor", state, self._left_motor, clear=clear, notify=notify)
+        handle_faults("Pivot-Right Motor", state, self._right_motor, clear=clear, notify=notify)
