@@ -24,7 +24,7 @@ from typing import Optional
 from commands2.button import Trigger
 from robotpy_apriltag import AprilTagField
 from wpilib import DriverStation
-from wpimath.geometry import Pose2d, Rotation2d, Translation2d
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Rotation3d, Transform3d, Translation2d, Translation3d
 from wpimath.units import inchesToMeters, meters, seconds
 
 from lib_6107.util.field import Field, FieldInfo
@@ -41,13 +41,16 @@ TRANSITION_DURATION: seconds = 10  # Both hubs active
 SHIFT_DURATION: seconds = 25  # Total of 4 shifts
 END_GAME_DURATION: seconds = 30  # Both hubs active
 
+SHIFT_CHANGE_DELTA_BEFORE: int = 3
+SHIFT_CHANGE_DELTA_AFTER: int = 5
+
 # Now this year's field
 
-FIELD_X_SIZE = 16.54  # Field Length
-FIELD_Y_SIZE = 8.07  # Field Width
+FIELD_X_SIZE: meters = 16.54  # Field Length
+FIELD_Y_SIZE: meters = 8.07  # Field Width
 
-CENTER_LINE = FIELD_X_SIZE / 2           # Divides the neutral zone
-MID_FIELD = FIELD_Y_SIZE / 2
+CENTER_LINE: meters = FIELD_X_SIZE / 2  # Divides the neutral zone
+MID_FIELD: meters = FIELD_Y_SIZE / 2  # Divides left/right (lengthwise) zone
 
 BLUE_START_LINE = inchesToMeters(182.11 - (47 / 2) - 2)
 RED_START_LINE = FIELD_X_SIZE - inchesToMeters(182.11 - (47 / 2) - 2)
@@ -66,8 +69,8 @@ RED_TEST_POSE = {
     3: Pose2d(RED_START_LINE, 7.3, 0)
 }
 
-BLUE_HUB_X_OFFSET = inchesToMeters(182.11)
-RED_HUB_X_OFFSET = FIELD_X_SIZE - BLUE_HUB_X_OFFSET
+BLUE_HUB_X_OFFSET: meters = inchesToMeters(182.11)
+RED_HUB_X_OFFSET: meters = FIELD_X_SIZE - BLUE_HUB_X_OFFSET
 
 # In simulation, the software will not enforce a maximum field
 # size, so this needs to be accounted for so the robot stays on
@@ -75,8 +78,21 @@ RED_HUB_X_OFFSET = FIELD_X_SIZE - BLUE_HUB_X_OFFSET
 #
 # The values below do not account the size of the robot
 
-SIM_X_OFFSET_METERS = 0.140
-SIM_Y_OFFSET_METERS = 0.95
+SIM_X_OFFSET_METERS: meters = 0.140
+SIM_Y_OFFSET_METERS: meters = 0.95
+
+# TODO: Maybe best to have item below in a different constants file closer to subsystem that supplies it
+SHOOTER_LOCATION = Transform3d(  # TODO: Need to confim
+    Translation3d(-0.102, 0.178, 0.368),
+    Rotation3d(),  # In cad this is the center of the top most plate on the flywheel output (if we had CAD)
+)
+
+BLUE_HUB_LOCATION = Translation2d(BLUE_HUB_X_OFFSET, CENTER_LINE)
+RED_HUB_LOCATION = Translation2d(RED_HUB_X_OFFSET, CENTER_LINE)
+
+
+def pose3d_from2d(pose: Pose2d) -> Pose3d:
+    return Pose3d(pose.X(), pose.Y(), 0, Rotation3d(0, 0, pose.rotation().radians()))
 
 
 class RebuiltField(Field):
@@ -100,15 +116,15 @@ class RebuiltField(Field):
     def __init__(self):
         super().__init__()
         self._won_autonomous: Optional[bool] = None
+        self._hub_location: Translation2d | None = None
+        self._alliance: DriverStation.Alliance | None = DriverStation.getAlliance()
 
-    def in_blue_alliance_zone(self, x: float) -> bool:
-        return x < inchesToMeters(182.11)
+        from lib_6107.util.fliputil import FlipUtil
+        self._flip_util: FlipUtil = FlipUtil(self)
 
-    def in_red_alliance_zone(self, x: float) -> bool:
-        return x > self.field_length - inchesToMeters(182.11)
-
-    def in_neutral_zone(self, x: float) -> bool:
-        return inchesToMeters(182.11) < x < self.field_length - inchesToMeters(182.11)
+        # TODO: Need to implement...
+        self._field_estimator = None
+        self._hub_estimator = None
 
     @property
     def field_length(self) -> meters:
@@ -124,14 +140,49 @@ class RebuiltField(Field):
         """
         return self._layout.getFieldWidth() or FIELD_Y_SIZE
 
-    def hub_location(self, is_red_alliance: bool) -> Translation2d:
-        if is_red_alliance:
-            return Translation2d(x=self.field_length - BLUE_HUB_X_OFFSET, y=MID_FIELD)
-
-        return Translation2d(x=BLUE_HUB_X_OFFSET, y=MID_FIELD)
+    @property
+    def field_pose(self) -> Pose2d:
+        return self._field_estimator.estimatedPose
 
     @property
-    def autonomous_winner(self) -> DriverStation.Alliance | None:
+    def hub_pose(self) -> Pose2d:
+        return self._hub_estimator.estimatedPose
+
+    @property
+    def hub_location(self) -> Translation2d | None:  # TODO: Validate callers handle 'None' case
+        # if is_red_alliance:
+        #     return Translation2d(x=self.field_length - BLUE_HUB_X_OFFSET, y=MID_FIELD)
+        #
+        # return Translation2d(x=BLUE_HUB_X_OFFSET, y=MID_FIELD)
+        """
+        Returns the global field-space location of the hub as a Translation2d from the origin, based on the alliance color
+        """
+        if self._hub_location is None:
+            match self._alliance or DriverStation.getAlliance():
+                case DriverStation.Alliance.kRed:
+                    self._hub_location = RED_HUB_LOCATION
+
+                case DriverStation.Alliance.kBlue:
+                    self._hub_location = BLUE_HUB_LOCATION
+
+        return self._hub_location
+
+    @property
+    def distance_to_hub(self) -> meters | None:  # TODO: Validate callers handle 'None' case
+        """
+        Returns the distance from the robot to the hub in meters, based on the hub estimator
+        """
+        location = self.hub_location
+        if location is not None:
+            location.distance((pose3d_from2d(self.hub_pose) + SHOOTER_LOCATION)
+                              .toPose2d().translation())
+        return None
+
+    #############################################################
+    #  Status and Triggers important to the match
+
+    @property
+    def autonomous_winner(self) -> DriverStation.Alliance | None:  # TODO: Validate callers handle 'None' case
         """
         Returns the alliance that won autonomous, or None if unknown
         This is determined by the game specific message sent by the field
@@ -152,12 +203,12 @@ class RebuiltField(Field):
                 return None
 
     @property
-    def won_autonomous(self) -> Optional[bool]:
+    def won_autonomous(self) -> bool | None:  # TODO: Validate callers handle 'None' case
         """
         Returns true if our alliance won autonomous, false otherwise. None if unknown.
         """
         if self._won_autonomous is None:
-            alliance = DriverStation.getAlliance()
+            alliance = self._alliance or DriverStation.getAlliance()
             winner = self.autonomous_winner
 
             if alliance is None or winner is None:
@@ -167,8 +218,41 @@ class RebuiltField(Field):
 
         return self._won_autonomous
 
+    @property
+    def hub_about_to_change(self) -> bool:
+        """
+        Returns true during 3 seconds before a hub change, which happens at
+        2:10, 1:45, 1:20, 55, and 30 seconds remaining
+        """
+        time = DriverStation.getMatchTime()
+        if time <= 0:
+            return False  # safety net for negative time, assume it's not about to change (testing)
+
+        return any(END_GAME_DURATION + SHIFT_DURATION * i + SHIFT_CHANGE_DELTA_BEFORE >=
+                   time >=
+                   END_GAME_DURATION + SHIFT_DURATION * i for i in range(SHIFT_CHANGE_DELTA_AFTER))
+
     # TODO: Maybe have the controllers 'rumble' when we transition
     #       phases of the game.  Maybe small rumble 5 seconds to go
+    @property
+    def should_go_to_hub(self) -> bool:
+        return self.hub_about_to_change is True and self.hub_active is False
+
+    @property
+    def should_go_to_feed(self) -> bool:
+        time = DriverStation.getMatchTime()
+        if time <= 0:
+            return False  # safety net for negative time, assume it's not about to change (testing)
+
+        return (
+                any(
+                    END_GAME_DURATION + SHIFT_DURATION * i - SHIFT_CHANGE_DELTA_BEFORE
+                    >= time
+                    >= END_GAME_DURATION + SHIFT_DURATION * i - SHIFT_CHANGE_DELTA_AFTER
+                    for i in range(0, SHIFT_CHANGE_DELTA_AFTER)
+                )
+                and not self.hub_active
+        )
 
     @property
     def hub_active(self) -> bool:
@@ -227,6 +311,18 @@ class RebuiltField(Field):
         return not self._won_autonomous
 
     @property
+    def hub_about_to_change_trigger(self) -> Trigger:
+        return Trigger(lambda: self.hub_about_to_change)
+
+    @property
+    def should_go_to_hub_trigger(self) -> Trigger:
+        return Trigger(lambda: self.should_go_to_hub)
+
+    @property
+    def should_go_to_feed_trigger(self) -> Trigger:
+        return Trigger(lambda: self.should_go_to_feed)
+
+    @property
     def shift_trigger(self) -> Trigger:
         """
         Returns a trigger that is active when the hub we are scoring on is active
@@ -234,3 +330,48 @@ class RebuiltField(Field):
         See https://docs.wpilib.org/en/stable/docs/software/commandbased/binding-commands-to-triggers.html
         """
         return Trigger(self.hub_active is True)
+
+    #############################################################
+    #  What area (sub-area) of the field are we in
+
+    def in_blue_alliance_zone(self, x: meters) -> bool:
+        return x < inchesToMeters(182.11)
+
+    def in_red_alliance_zone(self, x: meters) -> bool:
+        return x > self.field_length - inchesToMeters(182.11)
+
+    def in_neutral_zone(self, x: meters) -> bool:
+        return inchesToMeters(182.11) < x < self.field_length - inchesToMeters(182.11)
+
+    def in_my_alliance_zone(self, x: meters) -> bool | None:  # TODO: Validate callers handle 'None' case
+        match self._alliance or DriverStation.getAlliance():
+            case DriverStation.Alliance.kRed:
+                return self.in_red_alliance_zone(x)
+
+            case DriverStation.Alliance.kBlue:
+                return self.in_blue_alliance_zone(x)
+        return None
+
+    def in_my_opponents_zone(self, x: meters) -> bool | None:  # TODO: Validate callers handle 'None' case
+        match self._alliance or DriverStation.getAlliance():
+            case DriverStation.Alliance.kRed:
+                return self.in_blue_alliance_zone(x)
+
+            case DriverStation.Alliance.kBlue:
+                return self.in_red_alliance_zone(x)
+        return None
+
+    def in_left_zone_area(self, y: meters) -> bool | None:  # TODO: Validate callers handle 'None' case
+        match self._alliance or DriverStation.getAlliance():
+            case DriverStation.Alliance.kBlue:
+                return MID_FIELD < y <= FIELD_Y_SIZE
+
+            case DriverStation.Alliance.kRed:
+                return 0 <= y <= MID_FIELD
+
+        return None
+
+    def in_right_zone_area(self, y: meters) -> bool | None:  # TODO: Validate callers handle 'None' case
+        left_zone = self.in_left_zone_area(y)
+
+        return None if left_zone is None else not left_zone

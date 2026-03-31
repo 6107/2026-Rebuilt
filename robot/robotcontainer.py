@@ -19,6 +19,8 @@ import json
 import logging
 import os
 import time
+from typing import Any, Callable, Dict, List, Optional
+
 from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
@@ -26,7 +28,6 @@ from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from typing import Any, Callable, Dict, List, Optional
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
@@ -314,8 +315,12 @@ class RobotContainer:
         return self._robot_y_width
 
     @property
-    def field(self) -> Field2d:
+    def field2d(self) -> Field2d:  # The field with a diagram
         return self.robot.field
+
+    @property
+    def field(self) -> Field:  # The field with all the coordinates and helper properits
+        return self._field
 
     def camera(self, label: str) -> Optional[VisionSubsystem]:
         return self._cameras.get(label)
@@ -576,8 +581,7 @@ class RobotContainer:
             )
         # # Left trigger - create a command for keeping the robot nose pointed towards the hub
         # keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
-        #                                                  self._field.hub_location(False),
-        #                                                  self._field.hub_location(True))
+        #                                                  self._field.hub_location)
         #
         # # set up a condition for when to do this: do it when the joystick right trigger is pressed by more than 50%
         # when_left_trigger_pressed = controller.axisGreaterThan(XboxController.Axis.kLeftTrigger,
@@ -815,10 +819,16 @@ class RobotContainer:
                             drive.get_field_relative_speeds(),
                             drive.get_module_positions())
 
+        # Update dashboard/pykit data related to match state
         we_won = self._field.won_autonomous
         if we_won is not None:
             Logger.recordOutput("Game/WonAuto", we_won)
             Logger.recordOutput("Game/HubActive", self._field.hub_active)
+            Logger.recordOutput("Game/HubAboutToChange", self._field.hub_about_to_change)
+            Logger.recordOutput("Game/ShouldGoToHub", self._field.should_go_to_hub)
+            Logger.recordOutput("Game/ShouldGoToFeed", self._field.should_go_to_feed)
+            Logger.recordOutput("Game/HubDistance", self._field.distance_to_hub)
+            # NOTE: The 'flywheel' related values we show are updated in the Flywheel periodic routine
 
         self._alerts.update()
         #

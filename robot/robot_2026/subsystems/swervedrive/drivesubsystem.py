@@ -19,21 +19,15 @@
 import logging
 import math
 from collections import OrderedDict
+from typing import Callable
+from typing import Optional, Sequence, Tuple
+
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
-from lib_6107.subsystems.gyro.gyro import Gyro
-from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
-from lib_6107.subsystems.pykit.robot_state import RobotState
 from phoenix6 import SignalLogger, swerve, units, utils
 from phoenix6.swerve.requests import RobotCentric
 from pykit.autolog import autolog_output, autologgable_output
 from pykit.logger import Logger
-from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
-from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
-from robot_2026.subsystems.swervedrive.constants import DriveConstants
-from robot_2026.util.logtracer import LogTracer
-from typing import Callable
-from typing import Optional, Sequence, Tuple
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -45,6 +39,13 @@ from wpimath.units import degrees, meters, meters_per_second, radians_per_second
 
 from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
     WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
+from lib_6107.subsystems.pykit.robot_state import RobotState
+from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
+from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
+from robot_2026.subsystems.swervedrive.constants import DriveConstants
+from robot_2026.util.logtracer import LogTracer
 
 try:
     import navx
@@ -453,7 +454,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         return self._robot.counter
 
     @property
-    def field(self) -> Field2d:
+    def field2d(self) -> Field2d:
         return self._robot.field
 
     @property
@@ -512,7 +513,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         """
         Configure the SmartDashboard for this subsystem
         """
-        SmartDashboard.putData("Field", self.field)
+        SmartDashboard.putData("Field", self.field2d)
 
         self.gyro.dashboard_initialize()
 
@@ -570,7 +571,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self._last_pose = self.pose
 
         if self._last_pose is not None:
-            self.field.setRobotPose(self._last_pose)
+            self.field2d.setRobotPose(self._last_pose)
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
         counter = self._robot.counter
