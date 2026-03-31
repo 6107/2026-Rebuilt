@@ -19,8 +19,6 @@ import json
 import logging
 import os
 import time
-from typing import Any, Callable, Dict, List, Optional
-
 from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
@@ -28,6 +26,7 @@ from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from typing import Any, Callable, Dict, List, Optional
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
@@ -43,7 +42,7 @@ from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox
 from lib_6107.util.phoenix6_telemetry import Telemetry
 from robot_2026.commands.autonomous import pathplanner
-from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber
+from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber, TweekDownClimber, TweekUpClimber
 from robot_2026.field.alerts import RobotAlerts
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
@@ -511,30 +510,22 @@ class RobotContainer:
         # controller.leftBumper().onTrue(
         #     self.robot_drive.runOnce(self.robot_drive.seed_field_centric)
         # )
-
         if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
-            climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
+            climb_up = controller.povUp()
             climb_up.onTrue(ExtendClimber(self))
-            up_disabled = (PrintCommand("Climber Subsystem is DISABLED"))
 
             # POV-DOWN: Extend the climbing arm (robot goes down)
-            climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
-            down_disabled = (controller.povDown() and self.climber.subsystem_trigger.negate())
+            climb_down = controller.povDown()
             climb_down.onTrue(RetractClimber(self))
-            down_disabled = (PrintCommand("Climber Subsystem is DISABLED"))
 
             # POV-RIGHT  (Climber Down in small increments
-            tweak_down = controller.povRight().and_(self.climber.subsystem_trigger)
-            # retract_command = RetractClimber(self, manual=True, position_goal=5)
-            # tweak_down.onTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
-            tweak_down.onTrue(PrintCommand("POV-RIGHT PRESS = TODO"))
+            tweak_down = controller.povRight()
+            tweak_down.onTrue(TweekDownClimber(self))
 
-            # POV-RIGHT  (Climber Up in small increments)
-            tweak_up = controller.povRight().and_(self.climber.subsystem_trigger)
-            # extend_command = ExtendClimber(self, manual=True, position_goal=-5)
-            # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
-            tweak_up.onTrue(PrintCommand("POV-LEFT PRESS = TODO"))
+            # POV-LEFT  (Climber Up in small increments)
+            tweak_up = controller.povLeft()
+            tweak_up.onTrue(TweekUpClimber(self))
 
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
@@ -605,22 +596,22 @@ class RobotContainer:
 
         if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
-            climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
+            climb_up = controller.povUp()
             retract_command = RetractClimber(self)
             climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
 
             # POV-DOWN: Extend the climbing arm (robot goes down)
-            climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
+            climb_down = controller.povDown()
             extend_command = ExtendClimber(self)
             climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
 
         if self.intake_pivot is not None and self.intake_pivot.is_connected:
             logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
-            rotate_down = controller.povLeft().and_(self.intake_pivot.subsystem_trigger)
+            rotate_down = controller.povLeft()
             up_command = InstantCommand(lambda: self.intake_pivot.pivot_up())
             rotate_down.onTrue(up_command)
 
-            rotate_up = controller.povRight().and_(self.intake_pivot.subsystem_trigger)
+            rotate_up = controller.povRight()
             down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
             rotate_up.onTrue(down_command)
 
@@ -628,7 +619,6 @@ class RobotContainer:
             pov_left_trigger = controller.povLeft()
             pov_right_trigger = controller.povRight()
             x_button_trigger = controller.x()
-            # .and_(self.intake_pivot.subsystem_trigger)
 
             #down_trigger = pov_right_trigger.and_(x_button_trigger.negate())
             down_trigger = pov_right_trigger

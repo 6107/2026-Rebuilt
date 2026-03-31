@@ -24,10 +24,9 @@
 #
 
 import logging
-
-from pathplannerlib.auto import NamedCommands
-
 from lib_6107.commands.command import BaseCommand
+from lib_6107.util.elastic_utils import Notification, NotificationLevel, send_notification
+from pathplannerlib.auto import NamedCommands
 from robot_2026.subsystems.rev_climber import ClimberConstants, RevClimber
 
 logger = logging.getLogger(__name__)
@@ -60,7 +59,6 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
         Called just before this Command runs the first time. This assumes we are flat on the floor
         and in position to retract.
         """
-        logger.info(f"{self.__class__.__name__}: initialized")
         super().initialize()
 
         # Reset the climbing subsystem.
@@ -72,7 +70,24 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
         """
         if not self._running:
             self._running = True
-            self._climber.position = self._position_goal
+
+            if self._climber.enabled:
+                logger.info(f"{self.__class__.__name__}: execute")
+                self._climber.position = self._position_goal
+            else:
+                send_notification(Notification(NotificationLevel.WARNING,
+                                               title="Not Available",
+                                               description="Climber Subsystem is DISABLED",
+                                               display_time=1500))
+
+    def isFinished(self) -> bool:
+        """
+        Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
+        method and un-schedule it.
+
+        :returns: whether the command has finished.
+        """
+        return not self._climber.enabled
 
     def end(self, interrupted: bool) -> None:
         """
@@ -120,7 +135,8 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        return self._climber.position >= self._position_goal - ClimberConstants.CLIMBER_TOLERANCE
+        return super().isFinished() or \
+            self._climber.position >= self._position_goal - ClimberConstants.CLIMBER_TOLERANCE
 
 
 class ExtendClimber(ClimberBaseCommand):  # change the name for your command
@@ -131,7 +147,6 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
     Extension is slower than retraction, so make sure you give 4-5 seconds before you
     need to use the Extended Climber.
     """
-
     def __init__(self, container: 'RobotContainer'):
         super().__init__(container, ClimberConstants.CLIMBER_EXTENDED_SETPOINT)
 
@@ -151,4 +166,73 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        return self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+        return super().isFinished() or \
+            self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+
+
+class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
+    """
+    This command, while it runs, will extend the climber an extra 1/4 inch (which)
+    may be less depending on the current location.
+    """
+
+    def __init__(self, container: 'RobotContainer'):
+        self._start_point = container.climber.position
+        self._increment = -0.25
+
+        super().__init__(container, self._start_point - self._increment)
+
+    def initialize(self) -> None:
+        """
+        Called just before this Command runs the first time. This assumes we are flat on the floor
+        and in position to retract.
+        """
+        logger.debug(f"{self.__class__.__name__}: initialized")
+        super().initialize()
+
+        # Reset the climbing subsystem.
+        self._running = False
+
+    def isFinished(self) -> bool:
+        """
+        Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
+        method and un-schedule it.
+
+        :returns: whether the command has finished.
+        """
+        return super().isFinished() or \
+            self._climber.position <= self._position_goal
+
+
+class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
+    """
+    This command, while it runs, will retract the climber an extra 1/4 inch (which)
+    may be less depending on the current location.
+    """
+
+    def __init__(self, container: 'RobotContainer'):
+        self._start_point = container.climber.position
+        self._increment = 0.25
+
+        super().__init__(container, self._start_point + self._increment)
+
+    def initialize(self) -> None:
+        """
+        Called just before this Command runs the first time. This assumes we are flat on the floor
+        and in position to retract.
+        """
+        logger.info(f"{self.__class__.__name__}: initialized")
+        super().initialize()
+
+        # Reset the climbing subsystem.
+        self._running = False
+
+    def isFinished(self) -> bool:
+        """
+        Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
+        method and un-schedule it.
+
+        :returns: whether the command has finished.
+        """
+        return super().isFinished() or \
+            self._climber.position <= self._position_goal

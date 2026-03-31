@@ -28,14 +28,14 @@
 #
 # Examples can be found at https://github.com/robotpy/examples
 import logging
-from typing import List
-
 from pyfrc.physics.core import PhysicsInterface
+from typing import List
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
 
 from robot import MyRobot
 from robot_2026.field.field_2026 import BLUE_TEST_POSE, RED_TEST_POSE
+from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +104,8 @@ class PhysicsEngine:
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """
+        LogTracer.resetOuter("UpdateSim")
+
         current_used: List[amperes] = []
         for subsystem in self._robot.container.subsystems:
             try:
@@ -112,6 +114,8 @@ class PhysicsEngine:
                     if amps is not None:
                         current_used.append(amps)
 
+                    LogTracer.record(f"{subsystem.getName()}-UpdateSim")
+
             except Exception as e:
                 logger.exception(f"Subsystem {subsystem.getName()} threw an exception during update_sim: {e}")
                 raise
@@ -119,6 +123,8 @@ class PhysicsEngine:
         if current_used:
             RoboRioSim.setVInVoltage(BatterySim.calculate(current_used))
             # TODO: Do we want a SmartDashboard item for the simulated battery or RoboRio
+
+        LogTracer.recordTotal()
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """

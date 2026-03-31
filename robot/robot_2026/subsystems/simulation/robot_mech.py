@@ -15,16 +15,15 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+import constants
 import math
-
 from commands2 import Subsystem
+from robot_2026.subsystems.rev_pivot import PivotConstants
+from robot_2026.util.logtracer import LogTracer
 from wpilib import Color, Color8Bit, DriverStation, Mechanism2d, RobotBase, SmartDashboard
 from wpimath.kinematics import ChassisSpeeds
 from wpimath.units import degrees, degrees_per_second, inchesToMeters, meters, meters_per_second, \
     revolutions_per_minute
-
-import constants
-from robot_2026.subsystems.rev_pivot import PivotConstants
 
 
 class RobotMech(Subsystem):
@@ -399,6 +398,8 @@ class RobotMech(Subsystem):
         of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
         if self._robot.isEnabled():
+            LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+
             self._update_drivetrain()
 
             if self._container.intake_pivot is not None:
@@ -416,6 +417,7 @@ class RobotMech(Subsystem):
                 self._update_climber()
 
             self._update_fuel()
+            LogTracer.recordTotal()
 
     def _update_drivetrain(self) -> None:
         # Speed (m/s) -> angular velocity.

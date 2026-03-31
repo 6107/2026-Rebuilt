@@ -16,14 +16,12 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Optional
-
 from commands2.button import Trigger
+from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
 from pykit.autolog import autologgable_output
+from typing import Optional
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
-
-from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +63,6 @@ class RevIntakeRoller(RpmSubsystem):
         can perform its operations.
         """
         return self._container.intake_pivot.enabled and self.is_initialized # Use a single enable for all the intake frontend
-
-    @property
-    def subsystem_trigger(self) -> Trigger:
-        return Trigger(lambda: self.enabled)
 
     def intake_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Consume fuel from the playing area

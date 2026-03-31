@@ -16,28 +16,26 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Optional, Tuple
-
 from commands2 import cmd, Subsystem
 from commands2.button import Trigger
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
+from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
+from lib_6107.util.competition import event_active
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
+from robot_2026.util.logtracer import LogTracer
+from typing import Optional, Tuple
 from wpilib import RobotBase, RobotController, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
     meters, radians, revolutions_per_minute, seconds, volts
-
-from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
-from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
-from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -243,10 +241,6 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         can perform its operations.
         """
         return self.is_initialized and self._enable_chooser.value
-
-    @property
-    def subsystem_trigger(self) -> Trigger:
-        return Trigger(lambda: self.enabled)
 
     @staticmethod
     def _motor_config(inverted: bool) -> SparkFlexConfig:
@@ -535,6 +529,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
         if self._robot.isEnabled() and self._left_sim_pivot is not None and self._left_sim_pivot is not None:
+            LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+
             left_output = self._left_sim_motor.getAppliedOutput()
             right_output = self._right_sim_motor.getAppliedOutput()
 
@@ -576,6 +572,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
             # And simulate current drain
             RoboRioSim.setVInVoltage(BatterySim.calculate([self._left_sim_pivot.getCurrentDraw(),
                                                            self._right_sim_pivot.getCurrentDraw()]))
+            LogTracer.recordTotal()
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
         if not self.is_initialized:

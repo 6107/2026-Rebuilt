@@ -30,6 +30,7 @@ try:
     from lib_6107.util.field import Field
     from lib_6107.subsystems.pykit.vision_io import VisionIO, TargetObservation, \
         PoseObservation, PoseObservationType
+    from robot_2026.util.logtracer import LogTracer
 
     from photonlibpy import PhotonCamera, PhotonPoseEstimator
     from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
@@ -151,6 +152,8 @@ try:
             'important' difference is 'update_sim' is called at a period >= 10 ms instead
             of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
             """
+            LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+
             super().simulationPeriodic()
 
             # Update simulation based on physics engine (e.g., swerve drive sim)
@@ -167,6 +170,7 @@ try:
 
             # Clear latest_results so we will get new results on the next pass
             self._latest_results = None
+            LogTracer.recordTotal()
 
         def update_sim(self, now: float, tm_diff: float) -> None:
             """

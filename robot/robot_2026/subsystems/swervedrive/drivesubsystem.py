@@ -19,15 +19,21 @@
 import logging
 import math
 from collections import OrderedDict
-from typing import Callable
-from typing import Optional, Sequence, Tuple
-
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
+from lib_6107.subsystems.pykit.robot_state import RobotState
 from phoenix6 import SignalLogger, swerve, units, utils
 from phoenix6.swerve.requests import RobotCentric
 from pykit.autolog import autolog_output, autologgable_output
 from pykit.logger import Logger
+from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
+from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
+from robot_2026.subsystems.swervedrive.constants import DriveConstants
+from robot_2026.util.logtracer import LogTracer
+from typing import Callable
+from typing import Optional, Sequence, Tuple
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -39,13 +45,6 @@ from wpimath.units import degrees, meters, meters_per_second, radians_per_second
 
 from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
     WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
-from lib_6107.subsystems.gyro.gyro import Gyro
-from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
-from lib_6107.subsystems.pykit.robot_state import RobotState
-from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
-from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
-from robot_2026.subsystems.swervedrive.constants import DriveConstants
-from robot_2026.util.logtracer import LogTracer
 
 try:
     import navx
@@ -606,6 +605,8 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         if not self.is_initialized:
             return
 
+        LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+
         # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
         amperes_used = 0.0  # TODO: Support in future
 
@@ -626,6 +627,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
             if x != pose.x or y != pose.y:
                 self.pose = Pose2d(x, y, pose.rotation())
+        LogTracer.recordTotal()
 
     # def update_sim(self, now: float, tm_diff: float) -> None:
     #     """

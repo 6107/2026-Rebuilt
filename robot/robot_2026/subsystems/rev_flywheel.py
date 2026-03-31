@@ -16,16 +16,14 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Optional
-
 from commands2.button import Trigger
-from pykit.autolog import autologgable_output
-from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
-from wpimath.system.plant import DCMotor
-from wpimath.units import amperes, revolutions_per_minute
-
 from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
 from lib_6107.util.competition import event_active
+from pykit.autolog import autologgable_output
+from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+from typing import Optional
+from wpimath.system.plant import DCMotor
+from wpimath.units import amperes, revolutions_per_minute
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +68,6 @@ class RevFlywheel(RpmSubsystem):
         can perform its operations.
         """
         return self.is_initialized and self._enable_chooser.value
-
-    @property
-    def subsystem_trigger(self) -> Trigger:
-        return Trigger(lambda: self.enabled)
 
     def shoot_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Shoot fuel toward whatever we are aimed at.
