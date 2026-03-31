@@ -26,7 +26,6 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
-from phoenix6.swerve.swerve_module import SwerveModule
 from pykit.logger import Logger
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
@@ -38,7 +37,6 @@ import constants
 from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
     ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
 from lib_6107.commands.camera.track_tag_command import TrackTagCommand
-from lib_6107.commands.drivetrain.reset_xy import ResetXY
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
@@ -415,28 +413,28 @@ class RobotContainer:
         LS == Left Stick    - Robot direction on field. Fwd, Back, Left, Right (from operators perspective)
         RS == Right Stick   - Robot rotation  <- Counter-Clockwise  -> Clockwise
 
-        LSB == Left Stick Button
-        RSB == Right Stick Button
+        LSB == Left Stick Button  - Nothing
+        RSB == Right Stick Button - Nothing
 
         D-Pad == Directional Pad
-                - Up        Drive forward in X-Direction at 1/2 speed
-                - Right
-                - Down      Drive backward in X-Direction at 1/2 speed
-                - Left
+                - Up        Extend Climber
+                - Right     Tweak Climber Down (small increments)       # TODO: Low Priority
+                - Down      Retract Climber
+                - Left      Tweak Climber Up (small increments)         # TODO: Low Priority
 
-        LB == Left Bumper   Reset the default drive to field-centric
-        RB == Right Bumper  Reset the default drive to robot-centric
+        LB == Left Bumper   Set the default drive to field-centric
+        RB == Right Bumper  Set the default drive to robot-centric
 
-        LT == Left Trigger  - Rotate (in-place) toward best AprilTag. Stop when trigger released.
-        RT == Right Trigger - Follow the best AprilTag around the room. Stop when trigger released.
+        LT == Left Trigger  - Drive Over Left Bump
+        RT == Right Trigger - Drive Over Right Bump
 
         A == A Button (Bottom) - Brake
-        B == B Button (Right)  - Align all wheels in direction of the left-stick Y value
-        Y == Y Button (Top)    - Reset Telemetry. Facing North
+        B == B Button (Right)  -
+        Y == Y Button (Top)    -                # Reset Telemetry. Facing North,  Or Flush Telemetry
         X == X Button (Left)   -
 
-        Start Button (three lines)  - Reset Gyro
-        Back Button
+        Start Button (3 lines) -
+        Back Button            - Not used by itself
         """
         x_limiter = self.robot_drive.x_drive_limiter
         y_limiter = self.robot_drive.y_drive_limiter
@@ -458,6 +456,7 @@ class RobotContainer:
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
         idle = swerve.requests.Idle()
+
         Trigger(DriverStation.isDisabled).whileTrue(
             self.robot_drive.apply_request(lambda: idle).ignoringDisable(True)
         )
@@ -479,30 +478,22 @@ class RobotContainer:
         # controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
         # controller.leftBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric_drive(True)))
         # controller.leftBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(True)))
-        # controller.leftBumper().onTrue(PrintCommand("L BUMPER PRESS"))
+        controller.leftBumper().onTrue(PrintCommand("L BUMPER PRESS = TODO"))
 
         # Left Bumper - Reset the default drive to robot-centric
         # controller.rightBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric_drive(False)))
         # controller.rightBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(False)))
-        # controller.rightBumper().onTrue(PrintCommand("R BUMPER PRESS"))
+        controller.rightBumper().onTrue(PrintCommand("R BUMPER PRESS = TODO"))
 
         # A Button - Brake
         controller.a().whileTrue(
             self.robot_drive.apply_request(lambda: self.robot_drive.brake_request)
         )
-        # B Button - Align all wheels in the direction of the left stick Y value
-        controller.b().whileTrue(
-            self.robot_drive.apply_request(
-                lambda: self.robot_drive.point_at_request.with_module_direction(
-                    Rotation2d(-controller.getLeftY(),
-                               -controller.getLeftX())
-                ).with_drive_request(
-                    SwerveModule.DriveRequestType.VELOCITY)
-                # ).with_steer_request(SwerveModule.DriveRequestType.VELOCITY)
-            )
-        )
-        # Y Button - Reset x/y to defaults and heading to 'North' (0 degrees)
-        controller.y().whileTrue(ResetXY(self.robot_drive, x=1.0, y=4.0, heading=0))
+        # B Button -
+
+        # Y Button - Reset Telemetry
+        # controller.y().onTrue(TODO COMMAND(self.robot_drive, x=1.0, y=4.0, heading=0))
+        controller.y().onTrue(PrintCommand("Y BUMPER PRESS = TODO"))
 
         # # POV-UP: Drive forward at 1/2 speed
         # controller.povUp().whileTrue(
@@ -523,19 +514,27 @@ class RobotContainer:
 
         if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
-            climb_up = controller.povUp()  # .and_(self.climber.subsystem_trigger)
-            extend = InstantCommand(lambda: self.climber.extend())
-            climb_up.onTrue(extend)
-            # retract_command = RetractClimber(self, manual=True, position_goal=5)
-            # climb_up.onTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+            climb_up = controller.povUp().and_(self.climber.subsystem_trigger)
+            climb_up.onTrue(ExtendClimber(self))
+            up_disabled = (PrintCommand("Climber Subsystem is DISABLED"))
 
             # POV-DOWN: Extend the climbing arm (robot goes down)
-            climb_down = controller.povDown()  # .and_(self.climber.subsystem_trigger)
-            retract = InstantCommand(lambda: self.climber.retract())
-            climb_down.onTrue(retract)
+            climb_down = controller.povDown().and_(self.climber.subsystem_trigger)
+            down_disabled = (controller.povDown() and self.climber.subsystem_trigger.negate())
+            climb_down.onTrue(RetractClimber(self))
+            down_disabled = (PrintCommand("Climber Subsystem is DISABLED"))
 
+            # POV-RIGHT  (Climber Down in small increments
+            tweak_down = controller.povRight().and_(self.climber.subsystem_trigger)
+            # retract_command = RetractClimber(self, manual=True, position_goal=5)
+            # tweak_down.onTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+            tweak_down.onTrue(PrintCommand("POV-RIGHT PRESS = TODO"))
+
+            # POV-RIGHT  (Climber Up in small increments)
+            tweak_up = controller.povRight().and_(self.climber.subsystem_trigger)
             # extend_command = ExtendClimber(self, manual=True, position_goal=-5)
             # climb_down.onTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+            tweak_up.onTrue(PrintCommand("POV-LEFT PRESS = TODO"))
 
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
@@ -737,7 +736,7 @@ class RobotContainer:
         """
         self.robot_drive.set_motor_brake(True)
 
-    def get_autonomous_command(self) -> Command:
+    def get_autonomous_command(self) -> Command | None:
         """
         :returns: the command to run in autonomous
         """

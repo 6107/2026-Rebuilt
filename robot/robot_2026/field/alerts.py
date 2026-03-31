@@ -61,10 +61,13 @@ class RobotAlerts:
         self.driver_disconnected.set(not DriverStation.isJoystickConnected(0))
         self.operator_disconnected.set(not DriverStation.isJoystickConnected(1))
 
+        def missing_or_disabled(device) -> bool:
+            return device is None or not device.enabled
+
         self.dead_in_the_water_alert.set(self._container.auto_chooser.getSelected() == self._container.get_do_nothing)
-        self.flywheel_disabled_alert.set(not self._container.flywheel.enabled)
-        self.climber_disabled_alert.set(not self._container.climber.enabled)
-        self.intake_disabled_alert.set(not self._container.intake_pivot.enabled)  # Controls entire system
+        self.flywheel_disabled_alert.set(missing_or_disabled(self._container.flywheel))
+        self.climber_disabled_alert.set(missing_or_disabled(self._container.climber))
+        self.intake_disabled_alert.set(missing_or_disabled(self._container.intake_pivot))  # Controls entire system
 
         self._preflight_alert.set(not self._preflight.is_complete())
 

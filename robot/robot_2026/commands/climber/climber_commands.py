@@ -23,10 +23,14 @@
 #  may need in your project.
 #
 
+import logging
+
 from pathplannerlib.auto import NamedCommands
 
 from lib_6107.commands.command import BaseCommand
 from robot_2026.subsystems.rev_climber import ClimberConstants, RevClimber
+
+logger = logging.getLogger(__name__)
 
 RETRACT_LEVEL_ONE_REVOLUTIONS = 5
 EXTEND_LEVEL_ONE_REVOLUTIONS = -(RETRACT_LEVEL_ONE_REVOLUTIONS + 1)
@@ -41,7 +45,6 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
     set so if we fully retract the climbing arm, the stall current limit should
     trip.
     """
-
     def __init__(self, container: 'RobotContainer', position: float):
         super().__init__(container)
 
@@ -57,6 +60,7 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
         Called just before this Command runs the first time. This assumes we are flat on the floor
         and in position to retract.
         """
+        logger.info(f"{self.__class__.__name__}: initialized")
         super().initialize()
 
         # Reset the climbing subsystem.

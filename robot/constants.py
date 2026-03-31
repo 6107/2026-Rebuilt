@@ -182,7 +182,7 @@ ROBORIO_USB_STATIC = "172.22.11.2"
 # Camera configurations
 
 FRONT_CAMERA_INFO = {
-    "Type": CAMERA_TYPE_PHOTONVISION,
+    "Type"     : CAMERA_TYPE_NONE, # CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(2.5),
