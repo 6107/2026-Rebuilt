@@ -142,44 +142,47 @@ class RobotContainer:
         #   INTAKE (Pivot & Rollers)
         #
         # Right Pivot Motor should be Inverted
-        if RobotBase.isSimulation():
-            # TODO: These are not fully supported right now
-            try:
-                self.intake_pivot = IntakePivot(self,
-                                                DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
-                                                DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                                False, True)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Pivot initialization: {_e}")
+        try:
+            self.intake_pivot = IntakePivot(self,
+                                            DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
+                                            DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+                                            False, True)
+        except Exception as _e:
+            logger.exception(f"Exception during Intake Pivot initialization: {_e}")
 
-            try:
-                self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, False)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Roller initialization: {_e}")
+        # Disable subsystems that will not be in the next competition
+        # ##########################################
+        # #   Roller / rolly-grabbers
+        # #
+        # try:
+        #     self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, False)
+        # except Exception as _e:
+        #     logger.exception(f"Exception during Intake Roller initialization: {_e}")
 
-            ##########################################
-            #   INDEXER
-            #
-            try:
-                self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Indexer initialization: {_e}")
+        # Disable subsystems that will not be in the next competition
+        # ##########################################
+        # #   INDEXER
+        # #
+        # try:
+        #     self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
+        # except Exception as _e:
+        #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
+        #
+        # ##########################################
+        # #   SHOOTER
+        # #
+        # try:
+        #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        # except Exception as _e:
+        #     logger.exception(f"Exception during Shooter initialization: {_e}")
 
-            ##########################################
-            #   SHOOTER
-            #
-            try:
-                self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-            except Exception as _e:
-                logger.exception(f"Exception during Shooter initialization: {_e}")
-
-            ##########################################
-            #   CLIMBER
-            #
-            try:
-                self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Initialization: {_e}")
+        ##########################################
+        #   CLIMBER
+        #
+        try:
+            self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
+        except Exception as _e:
+            logger.exception(f"Exception during Intake Initialization: {_e}")
 
         # Add subsystems that got initialized
         for sub in (self.intake_pivot, self.intake_roller, self.indexer,
@@ -192,7 +195,7 @@ class RobotContainer:
 
         ##########################################
         # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
-        if not DriverStation.isFMSAttached():
+        if RobotBase.isSimulation():
             self._mechanism_2d = RobotMech(self)
             self.subsystems.append(self._mechanism_2d)
 
@@ -206,15 +209,21 @@ class RobotContainer:
         #
         # Disabled since we are using pykit for now. Kept here in case we need it for some
         # tuning with other tools
-        self._phoenix_telemetry = None
+        self._phoenix_telemetry: Telemetry | None = None
+
+        # Register telemetry support if not running pykit/AdvantageScope
+        # self._phoenix_telemetry = Telemetry(self._max_speed)
+        # if self._phoenix_telemetry is not None:
+        #     self.robot_drive.register_telemetry(lambda state: self._phoenix_telemetry.telemeterize(state))
 
         ##########################################
         #   PathPlanner.  Do this last since it may pull in commands that need the previously
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
-            self.auto_chooser: LoggedDashboardChooser = pathplanner.configure_auto_builder(self.robot_drive, self, "")
-
+            self.auto_chooser: LoggedDashboardChooser | None = pathplanner.configure_auto_builder(self.robot_drive,
+                                                                                                  self,
+                                                                                                  "")
         except FileNotFoundError:
             logger.warning("PathPlanner 'autos' directory does not exist")
             self.auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
@@ -228,19 +237,26 @@ class RobotContainer:
                                                        maximum_value=5000)
             SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
 
+        # Set our robot width and then use pathplanner as the basis if it was provided to vefify
         self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT
         self._robot_y_width: meters = ROBOT_Y_WIDTH_DEFAULT
 
-        try:
-            path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
+        if RobotBase.isSimulation():
+            try:
+                path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
 
-            with open(path, 'r') as f:
-                settings = json.loads(f.read())
-                self._robot_x_width = settings.get("robotWidth", self._robot_x_width)
-                self._robot_y_width = settings.get("robotWidth", self._robot_y_width)
+                with open(path, 'r') as f:
+                    settings = json.loads(f.read())
 
-        except FileNotFoundError:
-            pass
+                    x_width = settings.get("robotWidth", self._robot_x_width)
+                    y_width = settings.get("robotWidth", self._robot_y_width)
+
+                    margin: meters = 0.10
+                    assert x_width - margin <= self._robot_x_width <= x_width + margin, "PathPlanner robot x-width not valid"
+                    assert y_width - margin <= self._robot_y_width <= y_width + margin, "PathPlanner robot y-width not valid"
+
+            except FileNotFoundError:
+                pass
 
         ########################################################
         # Configure the button bindings
@@ -253,10 +269,6 @@ class RobotContainer:
 
         # Configure the additional autos that do not come from pathplanner
         self.configure_additional_autos()
-
-        # Register telemetry support if not running pykit/AdvantageScope
-        if self._phoenix_telemetry is not None:
-            self.robot_drive.register_telemetry(lambda state: self._phoenix_telemetry.telemeterize(state))
 
         # Speed limiter useful during initial development
         self._limit_chooser = None
@@ -579,35 +591,17 @@ class RobotContainer:
             ).onFalse(
                 InstantCommand(lambda: self.flywheel.stop())
             )
-        # # Left trigger - create a command for keeping the robot nose pointed towards the hub
-        # keep_pointing_towards_hub = PointTowardsLocation(self.robot_drive,
-        #                                                  self._field.hub_location)
-        #
-        # # set up a condition for when to do this: do it when the joystick right trigger is pressed by more than 50%
-        # when_left_trigger_pressed = controller.axisGreaterThan(XboxController.Axis.kLeftTrigger,
-        #                                                       threshold=0.5)
-        # # connect the command to its trigger
-        # when_left_trigger_pressed.whileTrue(keep_pointing_towards_hub)
-
-        # Right bumper - track an apriltag around the room
-        front_camera = self._cameras.get("front")
-
-        if front_camera is not None:
-            track_any_tag = TrackTagCommand(self.robot_drive, front_camera, 0)
-            right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
-                                                              threshold=0.5)
-            right_bumper_pressed.whileTrue(track_any_tag)
 
         if self.climber is not None and self.climber.is_connected:
             # POV-UP: Retract the climbing arm (robot goes up) - POV-UP is a zero (0) degree reading
             climb_up = controller.povUp()
             retract_command = RetractClimber(self)
-            climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop(True))))
+            climb_up.whileTrue(retract_command.andThen(InstantCommand(lambda: self.climber.stop())))
 
             # POV-DOWN: Extend the climbing arm (robot goes down)
             climb_down = controller.povDown()
             extend_command = ExtendClimber(self)
-            climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.reset())))
+            climb_down.whileTrue(extend_command.andThen(InstantCommand(lambda: self.climber.stop())))
 
         if self.intake_pivot is not None and self.intake_pivot.is_connected:
             logger.info("Enabling Driver control of intake pivot. PovLeft is UP, PovRight is Down")
@@ -702,13 +696,17 @@ class RobotContainer:
         (controller.start() & controller.x()).whileTrue(
             self.robot_drive.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
         )
-
         # reset the field-centric heading on left bumper press
         controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
 
-        self._phoenix_telemetry = Telemetry(self._max_speed)
+        # Right bumper - track an apriltag around the room
+        front_camera: VisionSubsystem | None = self._cameras.get("front")
 
-        self.robot_drive.register_telemetry(lambda state: self._phoenix_telemetry.telemeterize(state))
+        if front_camera is not None:
+            track_any_tag = TrackTagCommand(self.robot_drive, front_camera, 0)
+            right_bumper_pressed = controller.axisGreaterThan(XboxController.Axis.kRightTrigger,
+                                                              threshold=0.5)
+            right_bumper_pressed.whileTrue(track_any_tag)
 
     def _init_vision_subsystems(self) -> List[Subsystem]:
         camera_subsystems = []

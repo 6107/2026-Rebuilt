@@ -524,19 +524,6 @@
                 }
               },
               {
-                "title": "Lens cap(s) removed?",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Toggle Switch",
-                "properties": {
-                  "topic": "Preflight/LensCap",
-                  "period": 0.06,
-                  "data_type": "boolean"
-                }
-              },
-              {
                 "title": "Driver Controller plugged in?",
                 "x": 0.0,
                 "y": 0.0,
@@ -610,19 +597,6 @@
                 "type": "Toggle Switch",
                 "properties": {
                   "topic": "Preflight/Vision",
-                  "period": 0.06,
-                  "data_type": "boolean"
-                }
-              },
-              {
-                "title": "No E-Stop?",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Toggle Switch",
-                "properties": {
-                  "topic": "Preflight/E-Stop",
                   "period": 0.06,
                   "data_type": "boolean"
                 }

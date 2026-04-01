@@ -36,8 +36,9 @@ class RobotAlerts:
                                            Alert.AlertType.kWarning)
         self.dead_in_the_water_alert = Alert("No auto selected!!!",
                                              Alert.AlertType.kWarning)
-        self.flywheel_disabled_alert = Alert("Flywheel is disabled!!!",
-                                             Alert.AlertType.kWarning)
+        if container.flywheel is not None:
+            self.flywheel_disabled_alert = Alert("Flywheel is disabled!!!",
+                                                 Alert.AlertType.kWarning)
         self.climber_disabled_alert = Alert("Climber is disabled!!!",
                                             Alert.AlertType.kWarning)
         self.intake_disabled_alert = Alert("Intake is disabled!!!",
@@ -65,7 +66,9 @@ class RobotAlerts:
             return device is None or not device.enabled
 
         self.dead_in_the_water_alert.set(self._container.auto_chooser.getSelected() == self._container.get_do_nothing)
-        self.flywheel_disabled_alert.set(missing_or_disabled(self._container.flywheel))
+
+        if self._container.flywheel is not None:
+            self.flywheel_disabled_alert.set(missing_or_disabled(self._container.flywheel))
         self.climber_disabled_alert.set(missing_or_disabled(self._container.climber))
         self.intake_disabled_alert.set(missing_or_disabled(self._container.intake_pivot))  # Controls entire system
 

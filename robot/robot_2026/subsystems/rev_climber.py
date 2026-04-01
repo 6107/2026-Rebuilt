@@ -16,25 +16,26 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+from typing import Optional
+
 from commands2 import cmd, Command, Subsystem
-from commands2.button import Trigger
 from commands2.sysid import SysIdRoutine
-from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
-from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, \
     SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from robot_2026.util.logtracer import LogTracer
-from typing import Optional
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
     SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
+
+from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.util.competition import event_active
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
+from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -233,8 +234,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
         raise NotImplementedError("Reset command was called but is not supported at this time")
 
     def stop(self) -> None:
-        self._pid_controller.setSetpoint(self.position, SparkLowLevel.ControlType.kPosition,
-                                         ClosedLoopSlot(ClosedLoopSlot.kSlot0))
         self._motor.stopMotor()
 
     @property

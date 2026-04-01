@@ -68,12 +68,6 @@ class PreflightChecklist:
                 "Robot was powered on in starting config", "Preflight/RobotStart", True
             ),
             PreflightChecklist.PreflightCheck(
-                "Lens cap is removed?", "Preflight/LensCap", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "E-Stop is Disengaged", "Preflight/E-Stop", True
-            ),
-            PreflightChecklist.PreflightCheck(
                 "Driver Xbox is Connected", "Preflight/Driver", True
             ),
             PreflightChecklist.PreflightCheck(
