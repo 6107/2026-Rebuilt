@@ -19,7 +19,8 @@
 from typing import Optional
 
 from commands2.button import Trigger
-from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+
+from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 
 
 class NetworkTableButton(Trigger):

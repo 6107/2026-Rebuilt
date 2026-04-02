@@ -17,9 +17,9 @@
 
 import os
 
-from pykit.alertlogger import AlertLogger
 from wpilib import Alert, DriverStation, RobotBase
 
+from lib_6107.pykit.alertlogger import AlertLogger
 from robot_2026.util.preflight import PreflightChecklist
 
 

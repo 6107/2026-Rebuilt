@@ -19,9 +19,10 @@ from dataclasses import dataclass
 from enum import IntEnum, unique
 from typing import List
 
-from pykit.autolog import autolog
 from wpimath.geometry import Pose3d, Rotation2d
 from wpimath.units import meters, seconds
+
+from lib_6107.pykit.autolog import autolog
 
 
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData

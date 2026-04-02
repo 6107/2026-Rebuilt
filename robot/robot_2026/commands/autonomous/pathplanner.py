@@ -25,8 +25,6 @@ from pathplannerlib.auto import RobotConfig
 from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
 from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
-from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import DriverStation, getDeployDirectory
 from wpimath.kinematics import ChassisSpeeds
 
@@ -35,6 +33,8 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.autonomous.auto_climber_command import AutoClimberSequence
 from robot_2026.commands.climber.climber_commands import ExtendClimber
 from robot_2026.commands.climber.climber_commands import RetractClimber

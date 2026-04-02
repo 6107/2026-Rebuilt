@@ -19,11 +19,11 @@ import math
 from typing import Any, Optional
 
 from pyfrc.physics.core import PhysicsInterface
-from pykit.logger import Logger
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
 
+from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from robot_2026.util.logtracer import LogTracer
 

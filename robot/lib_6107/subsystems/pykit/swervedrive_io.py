@@ -17,9 +17,10 @@
 
 from dataclasses import dataclass
 
-from pykit.autolog import autolog
 from wpimath.geometry import Rotation2d
 from wpimath.units import amperes, radians, radians_per_second, volts
+
+from lib_6107.pykit.autolog import autolog
 
 
 class SwerveModuleIO:

@@ -17,8 +17,9 @@
 
 from dataclasses import dataclass
 
-from pykit.autolog import autolog
 from wpimath.units import radians, radians_per_second, seconds
+
+from lib_6107.pykit.autolog import autolog
 
 
 class GyroIO:

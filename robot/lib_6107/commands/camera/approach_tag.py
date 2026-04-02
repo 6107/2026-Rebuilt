@@ -9,7 +9,6 @@ from typing import Callable, Optional
 
 from commands2 import Command
 from pathplannerlib.auto import NamedCommands
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import SmartDashboard, Timer
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import meters, percent, seconds
@@ -17,6 +16,7 @@ from wpimath.units import meters, percent, seconds
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 

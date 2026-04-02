@@ -23,8 +23,6 @@ from typing import Optional, Tuple
 from commands2 import Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
-from pykit.autolog import autologgable_output
-from pykit.logger import Logger
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, \
     SparkClosedLoopController, SparkFlex, SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, \
     SparkRelativeEncoder
@@ -35,6 +33,8 @@ from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
     revolutions_per_minute, seconds, volts
 
+from lib_6107.pykit.autolog import autologgable_output
+from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from robot_2026.util.logtracer import LogTracer

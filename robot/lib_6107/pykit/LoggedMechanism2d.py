@@ -23,7 +23,7 @@ from wpimath.geometry import Pose3d
 from wpimath.units import meters
 
 from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d
-from pykit.logtable import LogTable
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanism2d(NTSendable):

@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 # From 1757-Westwood Robotics: https://github.com/1757WestwoodRobotics/2026-Rebuilt
 
-from pykit.logger import Logger, RobotController
+from lib_6107.pykit.logger import Logger, RobotController
 
 
 class LogTracer:

@@ -17,8 +17,9 @@
 
 from dataclasses import dataclass
 
-from pykit.autolog import autolog
 from wpimath.units import amperes, degrees, inches, volts
+
+from lib_6107.pykit.autolog import autolog
 
 
 class DualMechanismIO:

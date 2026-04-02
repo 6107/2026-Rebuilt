@@ -26,8 +26,6 @@ from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
-from pykit.logger import Logger
-from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
 from wpimath.geometry import Rotation2d, Rotation3d
@@ -38,6 +36,8 @@ from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA
     ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
 from lib_6107.commands.camera.track_tag_command import TrackTagCommand
 from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.pykit.robot_state import RobotState
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox

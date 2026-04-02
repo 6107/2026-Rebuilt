@@ -16,8 +16,9 @@
 # ------------------------------------------------------------------------ #
 # Code originally from Westwood-2026-Rebuilt
 
-from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from wpilib import Alert
+
+from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 
 
 class PreflightChecklist:

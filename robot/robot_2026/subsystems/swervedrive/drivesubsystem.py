@@ -26,8 +26,6 @@ from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
 from phoenix6.swerve.requests import RobotCentric
-from pykit.autolog import autolog_output, autologgable_output
-from pykit.logger import Logger
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -39,6 +37,8 @@ from wpimath.units import degrees, meters, meters_per_second, radians_per_second
 
 from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
     WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
+from lib_6107.pykit.autolog import autolog_output, autologgable_output
+from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
 from lib_6107.subsystems.pykit.robot_state import RobotState

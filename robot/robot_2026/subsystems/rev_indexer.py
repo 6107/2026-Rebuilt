@@ -16,12 +16,13 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from commands2.button import Trigger
-from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
-from pykit.autolog import autologgable_output
 from typing import Optional
+
 from wpimath.system.plant import DCMotor
 from wpimath.units import revolutions_per_minute
+
+from lib_6107.pykit.autolog import autologgable_output
+from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem
 
 logger = logging.getLogger(__name__)
 

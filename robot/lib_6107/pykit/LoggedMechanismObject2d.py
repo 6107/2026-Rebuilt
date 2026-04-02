@@ -21,7 +21,7 @@ from ntcore import NetworkTable
 from wpimath.geometry import Pose3d, Rotation3d, Transform3d
 from wpimath.units import degrees, degreesToRadians
 
-from pykit.logtable import LogTable
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanismObject2d:

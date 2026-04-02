@@ -22,14 +22,14 @@ from typing import Any, Callable, Dict, List, Optional
 from commands2 import Subsystem
 # noinspection PyPackageRequirements
 from ntcore import NetworkTable, NetworkTableInstance
-# noinspection PyPackageRequirements
-from pykit.logger import Logger
 from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
 from wpilib import Alert, RobotBase, SmartDashboard
 from wpimath.geometry import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
 
 import constants
+# noinspection PyPackageRequirements
+from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.util.field import Field
 

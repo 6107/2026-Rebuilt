@@ -19,14 +19,14 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from pykit.autolog import autolog, autologgable_output
-from pykit.logger import Logger
-from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from wpilib import SmartDashboard
 from wpimath.geometry import Pose2d
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, meters, revolutions_per_minute
 
+from lib_6107.pykit.autolog import autolog, autologgable_output
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmMechanismIO, RpmSubsystem
 from lib_6107.util.competition import event_active
 from robot_2026.field.field_2026 import RebuiltField as Field

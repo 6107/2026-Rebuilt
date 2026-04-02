@@ -28,16 +28,16 @@ from commands2.command import Command
 from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
 from phoenix6 import SignalLogger
-from pykit.loggedrobot import LoggedRobot
-from pykit.logger import Logger
-from pykit.networktables.nt4Publisher import NT4Publisher
-from pykit.wpilog.wpilogreader import WPILOGReader
-from pykit.wpilog.wpilogwriter import WPILOGWriter
 from rev import StatusLogger
 from wpilib import DataLogManager, DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
+from lib_6107.pykit.loggedrobot import LoggedRobot
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.nt4Publisher import NT4Publisher
+from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader
+from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics

@@ -22,7 +22,7 @@ from wpimath.geometry import Pose3d, Rotation3d, Transform3d
 from wpimath.units import degreesToRadians, meters
 
 from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
-from pykit.logtable import LogTable
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanismRoot2d:

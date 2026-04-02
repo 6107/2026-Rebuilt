@@ -16,26 +16,27 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+from typing import Optional, Tuple
+
 from commands2 import cmd, Subsystem
-from commands2.button import Trigger
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
-from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
-from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
-from pykit.autolog import autologgable_output
-from pykit.logger import Logger
-from pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from robot_2026.util.logtracer import LogTracer
-from typing import Optional, Tuple
 from wpilib import RobotBase, RobotController, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
     meters, radians, revolutions_per_minute, seconds, volts
+
+from lib_6107.pykit.autolog import autologgable_output
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
+from lib_6107.util.competition import event_active
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
+from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 

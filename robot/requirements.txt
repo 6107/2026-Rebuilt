@@ -32,7 +32,7 @@ limelightlib-python     == 0.9.6
 chardet                 == 7.3.0
 
 # AdvantageKit support
-robotpy-pykit           == 1.0.5
+# robotpy-pykit           == 1.0.5
 robotpy-pykit-watch     == 1.0.0
 
 # ###############################################################################
