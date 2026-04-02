@@ -25,7 +25,7 @@ from typing import Optional, Sequence, Tuple
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
-from phoenix6.swerve.requests import RobotCentric
+from phoenix6.swerve.requests import RobotCentric, FieldCentric
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -170,13 +170,18 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         # Setting up bindings for necessary control of the Phoenix6 swerve drive platform.
         # This sets a deadband for both the speed and rotation control
         #  Use open-loop control for drive motors
-        self._field_centric_drive = (swerve.requests.FieldCentric().with_deadband(max_speed * JOYSTICK_DEADBAND)
-                                     .with_rotational_deadband(max_angular_rate * JOYSTICK_DEADBAND)
-                                     .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
+        self._field_centric_drive: FieldCentric = (
+            FieldCentric()
+            .with_deadband(max_speed * JOYSTICK_DEADBAND)
+            .with_rotational_deadband(max_angular_rate * JOYSTICK_DEADBAND)
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
 
-        self._robot_centric_drive = (swerve.requests.RobotCentric().with_deadband(max_speed * JOYSTICK_DEADBAND)
-                                     .with_rotational_deadband(max_angular_rate * JOYSTICK_DEADBAND)
-                                     .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
+        self._robot_centric_drive: RobotCentric = (
+            RobotCentric()
+            .with_deadband(max_speed * JOYSTICK_DEADBAND)
+            .with_rotational_deadband(max_angular_rate * JOYSTICK_DEADBAND)
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
+
         self._is_field_centric = True
 
         self._brake = swerve.requests.SwerveDriveBrake()
@@ -341,12 +346,12 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         return self._initialized
 
     @property
-    def drive_request(self) -> swerve.requests.FieldCentric:
+    def drive_request(self) -> FieldCentric | RobotCentric:
         return self._field_centric_drive if self._is_field_centric else self._robot_centric_drive
 
     def set_field_centric_drive(self, field_centric: bool) -> None:
         logger.info(f"Setting field centric drive to {field_centric}")
-        self._field_centric_drive = field_centric
+        self._is_field_centric = field_centric
 
     @property
     def point_at_request(self) -> swerve.requests.PointWheelsAt:

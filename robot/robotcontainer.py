@@ -491,15 +491,10 @@ class RobotContainer:
         # Right Trigger - Follow the best AprilTag around the room
 
         # Left Bumper - Reset the default drive to field-centric
-        # controller.leftBumper().onTrue(self.robot_drive.runOnce(self.robot_drive.seed_field_centric))
-        # controller.leftBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric_drive(True)))
-        # controller.leftBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(True)))
-        controller.leftBumper().onTrue(PrintCommand("L BUMPER PRESS = TODO"))
+        controller.leftBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(True)))
 
         # Left Bumper - Reset the default drive to robot-centric
-        # controller.rightBumper().onTrue(self.robot_drive.runOnce(lambda: self.robot_drive.set_field_centric_drive(False)))
-        # controller.rightBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(False)))
-        controller.rightBumper().onTrue(PrintCommand("R BUMPER PRESS = TODO"))
+        controller.rightBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(False)))
 
         # A Button - Brake
         controller.a().whileTrue(
