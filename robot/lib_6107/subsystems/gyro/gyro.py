@@ -187,10 +187,10 @@ class Gyro(GyroIO):
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        SmartDashboard.putNumber('Gyro/angle', self.angle)
+        # SmartDashboard.putNumber('Gyro/angle', self.angle)
         SmartDashboard.putNumber('Gyro/yaw', self.yaw)
-        SmartDashboard.putNumber('Gyro/pitch', self.pitch)
-        SmartDashboard.putNumber('Gyro/roll', self.roll)
+        # SmartDashboard.putNumber('Gyro/pitch', self.pitch)
+        # SmartDashboard.putNumber('Gyro/roll', self.roll)
 
     ######################
     # Simulation support

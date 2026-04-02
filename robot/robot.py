@@ -157,7 +157,7 @@ class MyRobot(LoggedRobot):
         super().robotInit()
 
         # TODO: Eventually set to false to rely only upon pykit
-        if not RobotBase.isSimulation():
+        if not RobotBase.isSimulation() and False:
             # Enable all logging
             DataLogManager.start()
             SignalLogger.enable_auto_logging(True)

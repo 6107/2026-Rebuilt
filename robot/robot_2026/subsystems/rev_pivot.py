@@ -503,10 +503,10 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         Called from periodic function to update dashboard elements for this subsystem
         """
         SmartDashboard.putNumber("Intake/Pivot/goal", self._position_goal)
-        SmartDashboard.putBoolean("Intake/Pivot/closed-loop", self._closed_loop)
-        SmartDashboard.putNumber("Intake/Pivot/left-position", self.left_position)
+        # SmartDashboard.putBoolean("Intake/Pivot/closed-loop", self._closed_loop)
+        # SmartDashboard.putNumber("Intake/Pivot/left-position", self.left_position)
         SmartDashboard.putNumber("Intake/Pivot/left-speed", self._inputs.mechanism_1_speed)
-        SmartDashboard.putNumber("Intake/Pivot/right-position", self.right_position)
+        # SmartDashboard.putNumber("Intake/Pivot/right-position", self.right_position)
         SmartDashboard.putNumber("Intake/Pivot/right-speed", self._inputs.mechanism_2_speed)
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:

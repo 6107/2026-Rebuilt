@@ -217,7 +217,7 @@ class Pigeon2(Gyro):
         super().dashboard_periodic()
 
         # Pigeon has an all-good static to test if all is okay with the world
-        SmartDashboard.putBoolean('Gyro/all-good', StatusSignal.is_all_good())
+        # SmartDashboard.putBoolean('Gyro/all-good', StatusSignal.is_all_good())
 
     ########################################################################################
     # Simulation support

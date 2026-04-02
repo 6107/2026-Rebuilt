@@ -1,5 +1,7 @@
 import sys
 import threading
+import traceback
+
 from typing import Any, Optional
 
 from wpilib import RobotController
@@ -203,8 +205,14 @@ class Logger:
     @classmethod
     def startReciever(cls):
         """Starts all registered data receivers."""
-        for reciever in cls.dataRecievers:
-            reciever.start()
+        for receiver in cls.dataRecievers:
+            try:
+                receiver.start()
+
+            except (AttributeError, RuntimeError) as e:
+                print(f"pykit.logger.startReciever: Failed to start receiver '{receiver}' {e}")
+                error_msg = traceback.format_exc()
+                print(f"pykit.logger.startReciever: {error_msg}")
 
     @classmethod
     def end(cls):
