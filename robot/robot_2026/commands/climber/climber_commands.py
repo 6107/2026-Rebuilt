@@ -24,9 +24,11 @@
 #
 
 import logging
+
+from pathplannerlib.auto import NamedCommands
+
 from lib_6107.commands.command import BaseCommand
 from lib_6107.util.elastic_utils import Notification, NotificationLevel, send_notification
-from pathplannerlib.auto import NamedCommands
 from robot_2026.subsystems.rev_climber import ClimberConstants, RevClimber
 
 logger = logging.getLogger(__name__)
@@ -187,7 +189,6 @@ class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
         Called just before this Command runs the first time. This assumes we are flat on the floor
         and in position to retract.
         """
-        logger.debug(f"{self.__class__.__name__}: initialized")
         super().initialize()
 
         # Reset the climbing subsystem.
