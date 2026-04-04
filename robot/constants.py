@@ -133,14 +133,15 @@ class DeviceID(IntEnum):
 
     GYRO_DEVICE_ID = TunerConstants._pigeon_id
 
-    # Shooter
-    SHOOTER_DEVICE_ID = 30
 
     # Intake Subsystem
+    INTAKE_INDEXER_DEVICE_ID = 30
     INTAKE_LEFT_PIVOT_DEVICE_ID = 31
     INTAKE_RIGHT_PIVOT_DEVICE_ID = 32
     INTAKE_ROLLER_DEVICE_ID = 33
-    INTAKE_INDEXER_DEVICE_ID = 34
+
+    # Shooter
+    SHOOTER_DEVICE_ID = 34
 
     # Climber Subsystem
     CLIMBER_DEVICE_ID = 35

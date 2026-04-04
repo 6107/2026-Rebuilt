@@ -73,10 +73,10 @@ class RpmConfig:
     limit_current: amperes = 40
 
     # Following are optional and do not need to be provided by the
-    # derived class unless they need to be overriddem
+    # derived class unless they need to be overridden
     gear_reduction = 1.0
     measurement_std_dev = [0.0, 0.0]
-    max_rpm: revolutions_per_minute = 6784.0
+    max_rpm: revolutions_per_minute = 6784.0        # Rev Vortex. Rev Neo is 5676
 
     # Following are required
     __required_attributes = ("max_rpm", "limit_current", "proportional_coefficient",
@@ -224,6 +224,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                  i=self._constants.integral_coefficient,
                  d=self._constants.derivative_coefficient,
                  slot=slot0)
+            .positionWrappingEnabled(True)
             .outputRange(-1, 1)
         )
         # Apply any optional config
@@ -239,6 +240,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
         # Set the encoder to return its position in radians
         config.encoder.positionConversionFactor(2 * math.pi)
+        config
         return config
 
     @property

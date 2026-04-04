@@ -151,13 +151,13 @@ class RobotContainer:
         #     logger.exception(f"Exception during Intake Pivot initialization: {_e}")
 
         # Disable subsystems that will not be in the next competition
-        # ##########################################
-        # #   Roller / rolly-grabbers
-        # #
-        # try:
-        #     self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, False)
-        # except Exception as _e:
-        #     logger.exception(f"Exception during Intake Roller initialization: {_e}")
+        ##########################################
+        #   Roller / rolly-grabbers
+        #
+        try:
+            self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
+        except Exception as _e:
+            logger.exception(f"Exception during Intake Roller initialization: {_e}")
 
         # Disable subsystems that will not be in the next competition
         # ##########################################
@@ -169,12 +169,12 @@ class RobotContainer:
         #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
         #
         # ##########################################
-        # #   SHOOTER
-        # #
-        # try:
-        #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        # except Exception as _e:
-        #     logger.exception(f"Exception during Shooter initialization: {_e}")
+        #   SHOOTER
+        #
+        try:
+            self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+        except Exception as _e:
+            logger.exception(f"Exception during Shooter initialization: {_e}")
 
         ##########################################
         #   CLIMBER

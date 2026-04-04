@@ -88,7 +88,7 @@
             "title": "MatchTime",
             "x": 512.0,
             "y": 0.0,
-            "width": 448.0,
+            "width": 512.0,
             "height": 256.0,
             "type": "Match Time",
             "properties": {
@@ -138,7 +138,7 @@
             "title": "WonAuto",
             "x": 832.0,
             "y": 256.0,
-            "width": 128.0,
+            "width": 192.0,
             "height": 256.0,
             "type": "Boolean Box",
             "properties": {
@@ -155,7 +155,7 @@
             "title": "Voltage",
             "x": 0.0,
             "y": 512.0,
-            "width": 960.0,
+            "width": 1024.0,
             "height": 128.0,
             "type": "Voltage View",
             "properties": {
@@ -171,7 +171,7 @@
           },
           {
             "title": "Field",
-            "x": 960.0,
+            "x": 1024.0,
             "y": 0.0,
             "width": 256.0,
             "height": 640.0,
