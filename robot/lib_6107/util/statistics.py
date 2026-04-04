@@ -58,9 +58,9 @@ class RobotStatistics:
     def __init__(self, robot: RobotBase):
         # Most stats are milliseconds (scale=1000) with resolution to a microsecond (precision=3)
         self._statistics: Dict[str, MovingAverage] = {
-            "periodic-duration": MovingAverage("Periodic", units="S", max_samples=50),
-            "teleop-duration"  : MovingAverage("Teleop", units="S", max_samples=50),
-            "auto-duration"    : MovingAverage("Autonomous", units="S", max_samples=50),
+            "periodic-duration": MovingAverage("Periodic", units="S", max_samples=5),
+            "teleop-duration"  : MovingAverage("Teleop", units="S", max_samples=5),
+            "auto-duration"    : MovingAverage("Autonomous", units="S", max_samples=5),
         }
         self._robot: RobotBase = robot
 
