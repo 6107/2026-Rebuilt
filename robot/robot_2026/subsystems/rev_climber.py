@@ -231,7 +231,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._position_goal = 0.0
 
         self._mech_upper.setLength(ClimberConstants.CLIMBER_MIN_HEIGHT)
-        raise NotImplementedError("Reset command was called but is not supported at this time")
+        raise NotImplementedError("climber reset: Reset command was called but is not supported at this time")
 
     def stop(self) -> None:
         self._motor.stopMotor()
@@ -358,7 +358,9 @@ class RevClimber(Subsystem, RotationMechanismIO):
         """
         Configure the SmartDashboard for this subsystem
         """
-        pass
+        SmartDashboard.putNumber("Climber/position", 0.0)
+        SmartDashboard.putNumber("Climber/goal", 0.0)
+        SmartDashboard.putNumber("Climber/speed", 0.0)
 
     def dashboard_periodic(self) -> None:
         """

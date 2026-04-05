@@ -25,7 +25,7 @@ from typing import Optional, Sequence, Tuple
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
-from phoenix6.swerve.requests import RobotCentric, FieldCentric
+from phoenix6.swerve.requests import FieldCentric, RobotCentric
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -733,7 +733,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         :param square:         Whether to square the inputs (useful for manual control)
         """
         if square:
-            raise NotImplementedError("TODO: Look at 2025 code if you need this")
+            raise NotImplementedError("drive: Look at 2025 code if you need this")
 
         # Scale is used during development      # TODO: Condition to skip/ignore in competition
         scale_factor = self.drive_scale_factor

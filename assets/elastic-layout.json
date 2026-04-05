@@ -280,19 +280,6 @@
         ],
         "containers": [
           {
-            "title": "Climber Enabled",
-            "x": 256.0,
-            "y": 128.0,
-            "width": 192.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "Climber/Enabled",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
             "title": "Intake Enabled",
             "x": 256.0,
             "y": 256.0,
@@ -326,6 +313,19 @@
             "type": "Toggle Switch",
             "properties": {
               "topic": "Flywheel/Enabled",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "Climber Enabled",
+            "x": 256.0,
+            "y": 128.0,
+            "width": 192.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "Climber/Enabled",
               "period": 0.06,
               "data_type": "boolean"
             }
@@ -948,7 +948,7 @@
             "title": "Shooter RPM",
             "x": 256.0,
             "y": 384.0,
-            "width": 768.0,
+            "width": 512.0,
             "height": 128.0,
             "type": "Number Slider",
             "properties": {
@@ -958,7 +958,7 @@
               "min_value": 0.0,
               "max_value": 5676.0,
               "divisions": 5,
-              "update_continuously": false
+              "update_continuously": true
             }
           },
           {
@@ -1126,6 +1126,40 @@
               "false_color": 4294198070,
               "true_icon": "None",
               "false_icon": "None"
+            }
+          },
+          {
+            "title": "Intake RPM",
+            "x": 768.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Number Slider",
+            "properties": {
+              "topic": "/SmartDashboard/Intake RPM/Intake RPM",
+              "period": 0.06,
+              "data_type": "int",
+              "min_value": 0.0,
+              "max_value": 5676.0,
+              "divisions": 3,
+              "update_continuously": true
+            }
+          },
+          {
+            "title": "Indexer RPM",
+            "x": 1024.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Number Slider",
+            "properties": {
+              "topic": "/SmartDashboard/Indexer RPM/Indexer RPM",
+              "period": 0.06,
+              "data_type": "int",
+              "min_value": 0.0,
+              "max_value": 5676.0,
+              "divisions": 3,
+              "update_continuously": true
             }
           }
         ]

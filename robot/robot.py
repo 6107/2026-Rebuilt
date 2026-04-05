@@ -156,20 +156,12 @@ class MyRobot(LoggedRobot):
         logger.info("robotInit: entry")
         super().robotInit()
 
-        # TODO: Eventually set to false to rely only upon pykit
-        if not RobotBase.isSimulation() and False:
-            # Enable all logging
-            DataLogManager.start()
-            SignalLogger.enable_auto_logging(True)
-            StatusLogger.start()  # .disableAutoLogging()
-            LiveWindow.enableAllTelemetry()  # .disableAllTelem
+        # Disable most logging. Rely upon pykit
+        DataLogManager.start()
 
-        else:
-            # Disable most logging
-            DataLogManager.start()
-            SignalLogger.enable_auto_logging(False)
-            StatusLogger.disableAutoLogging()
-            LiveWindow.disableAllTelemetry()
+        SignalLogger.enable_auto_logging(False)
+        StatusLogger.disableAutoLogging()
+        LiveWindow.disableAllTelemetry()
 
         command_count: dict[str, int] = {}
 

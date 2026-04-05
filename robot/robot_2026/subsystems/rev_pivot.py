@@ -376,7 +376,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         logger.info(f"Intake: Reset command was called  *** *** *** ***   NOT YET SUPPORTED")
 
         self._position_goal = 0
-        raise NotImplementedError("Reset command was called but is not supported at this time")
+        raise NotImplementedError("pivot reset: Reset command was called but is not supported at this time")
         #self._left_encoder.setPosition(0.0)
         #self._right_encoder.setPosition(0.0)
         self._left_mech_base.setAngle(PivotConstants.RETRACTED_ANGLE)
@@ -496,7 +496,9 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         """
         Configure the SmartDashboard for this subsystem
         """
-        pass
+        SmartDashboard.putNumber("Intake/Pivot/goal",0.0)
+        SmartDashboard.putNumber("Intake/Pivot/left-speed", 0.0)
+        SmartDashboard.putNumber("Intake/Pivot/right-speed", 0.0)
 
     def dashboard_periodic(self) -> None:
         """

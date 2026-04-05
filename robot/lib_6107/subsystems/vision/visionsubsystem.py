@@ -173,11 +173,11 @@ class VisionSubsystem(Subsystem, VisionIO):
 
     @property
     def pipeline(self) -> int:
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("pipeline-get: Implement in subclass")
 
     @pipeline.setter
     def pipeline(self, index: int) -> None:
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("pipeline-set: Implement in subclass")
 
     @property
     def latency(self) -> Optional[milliseconds]:
@@ -188,7 +188,7 @@ class VisionSubsystem(Subsystem, VisionIO):
         """
         Returns the estimated time the frame was taken, in the Received system's time base
         """
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("timestamp: Implement in subclass")
 
     @property
     def best_target(self) -> Optional[VisionTargetData]:
@@ -196,39 +196,39 @@ class VisionSubsystem(Subsystem, VisionIO):
         Returns the best target in this pipeline result. If there are no targets, this method will
         return null. The best target is determined by the target sort mode in the PhotonVision UI.
         """
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("best_target: Implement in subclass")
 
     @property
     def valid(self) -> bool:
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("valid: Implement in subclass")
 
     @property
     def area(self) -> percent:
         """
         Target Area (0..100] percent of image
         """
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("area: Implement in subclass")
 
     @property
     def x_offset(self) -> degrees:
         """
         Horizontal Offset from Crosshair to Target
         """
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("x_offset: Implement in subclass")
 
     @property
     def y_offset(self) -> degrees:
         """
         Vertical Offset from Crosshair to Target
         """
-        raise NotImplementedError("TODO: Implement in subclass")
+        raise NotImplementedError("y_offset: Implement in subclass")
 
     def get_latest_results(self) -> Optional[Any]:
         #
         # TODO: When we implement the Limelight, see if we can get a generic
         #       structure along the lines of PhotonPipelineResults or better.
         #
-        raise NotImplementedError("Implement in subclass")
+        raise NotImplementedError("get_latest_results: Implement in subclass")
 
     def periodic(self):
         # Update inputs

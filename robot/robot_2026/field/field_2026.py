@@ -146,7 +146,7 @@ class RebuiltField(Field):
 
     @property
     def hub_pose(self) -> Pose2d:
-        return self._hub_estimator.estimatedPose
+        return self._hub_estimator.estimatedPose if self._hub_estimator is not None else Pose2d()
 
     @property
     def hub_location(self) -> Translation2d | None:  # TODO: Validate callers handle 'None' case

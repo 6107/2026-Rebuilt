@@ -19,14 +19,14 @@ import logging
 import math
 from typing import Any, Callable, Optional
 
-from rev import ClosedLoopSlot, REVLibError, SparkBase, SparkBaseConfig, \
-    SparkFlex, SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim
-from wpilib import RobotBase
+from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, SparkFlex, \
+    SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
 
 from lib_6107.pykit.autolog import autologgable_output
-from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmConfig, RpmMechanismIO, RpmSubsystem
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmConfig, RpmMechanismIO, RpmSubsystem, \
+    SupportedClosedLoopControllers, SupportedEncoders
 from lib_6107.util.rev_utils import handle_faults, try_until_ok
 
 logger = logging.getLogger(__name__)
@@ -75,27 +75,52 @@ class RevRpmSubsystem(RpmSubsystem):
         # Now Rev Robotics specific
         # Sanity / defaults check
         self._constants: RevRpmConfig = self._validate_constants()
+        self._encoder: SupportedEncoders | None = None
 
         # Set up the motor controller
         match controller_type:
             case ControllerType.SparkMax:
-                self._motor: SparkMax = SparkMax(self._device_id, SparkFlex.MotorType.kBrushless)
-
-                if RobotBase.isSimulation():
+                self._motor: SparkMax = SparkMax(self._device_id, SparkMax.MotorType.kBrushless)
+                if self._is_simulation:
                     self._sim_motor = SparkMaxSim(self._motor, motor)
 
             case ControllerType.SparkFlex:
                 self._motor: SparkFlex = SparkFlex(self._device_id, SparkFlex.MotorType.kBrushless)
-
-                if RobotBase.isSimulation():
+                if self._is_simulation:
                     self._sim_motor = SparkFlexSim(self._motor, motor)
 
             case _:
                 raise NotImplementedError(f"Unsupported controller type: {controller_type}")
 
+        self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
+
         ###########################################
         # Finally have base class handle any remaining post_init attributes
         super().post_init(bool(coast), bool(persist_config))
+
+    def post_init(self, coast: bool, persist_config: bool) -> None:
+        # Bass class will validate the config
+        super().post_init(coast, persist_config)
+
+        # Now apply it
+        persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
+
+        config_status = try_until_ok(self.getName(), 5,
+                                     lambda: self._motor.configure(self._motor_config(coast),
+                                                                   ResetMode.kResetSafeParameters,
+                                                                   persist))
+
+        # Check if the device was successfully configured and can be reached over the
+        # CAN bus.
+        self._is_connected = self._check_is_connected(config_status)
+
+        # Set up the encoders
+        self._encoder: SupportedEncoders = self._motor.getEncoder()
+
+        # PID Controller for use while in autonomous mode. During teleop end-game, the
+        # operator or shooter's controller will have manual up/down control.
+        self._pid_controller: SupportedClosedLoopControllers = self._motor.getClosedLoopController()
+        self._pid_controller.setSetpoint(0.0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
 
     def _validate_constants(self) -> RevRpmConfig:
         """
@@ -121,7 +146,7 @@ class RevRpmSubsystem(RpmSubsystem):
                 config = SparkFlexConfig()
 
             case _:
-                raise NotImplementedError("Unsupported controller type")
+                raise NotImplementedError("RevRpmSubsystem._motor_config: Unsupported controller type")
 
         config = (config
                   .inverted(self._inverted)
@@ -157,14 +182,13 @@ class RevRpmSubsystem(RpmSubsystem):
         )
         # Apply any optional config
         if self._constants.velocity_feedforward is not None:
-            config = config.closedLoop.velocityFF(self._constants.velocity_feedforward,
-                                                  slot=slot0)
+             config.closedLoop.velocityFF(self._constants.velocity_feedforward, slot=slot0)
 
         if self._constants.imax_accum is not None:
-            config = config.IMaxAccum(self._constants.imax_accum, slot=slot0)
+            config.closedLoop.IMaxAccum(self._constants.imax_accum, slot=slot0)
 
         if self._constants.izone is not None:
-            config = config.IZone(self._constants.izone, slot=slot0)
+            config.closedLoop.IZone(self._constants.izone, slot=slot0)
 
         # Set the encoder to return its position in radians
         config.encoder.positionConversionFactor(2 * math.pi)
@@ -182,7 +206,7 @@ class RevRpmSubsystem(RpmSubsystem):
 
                 ok = (version != 0 and (config_status is None or
                                         config_status == REVLibError.kOk)) or \
-                     RobotBase.isSimulation()
+                     self._is_simulation
 
                 if not ok:
                     logger.warning(f"{self.getName()} firmware version: {version}, status: {config_status}")
@@ -195,13 +219,9 @@ class RevRpmSubsystem(RpmSubsystem):
     def is_connected(self) -> bool:
         """
         Detect if this device is connected to the CAN Bus.  For Rev Robotics,
-        the default way is based on config results. When we support CTRE, they
-        have a 'isStatusOK' call that is useful.
+        the default way is based on config results
         """
-        match self._controller_type:
-            case ControllerType.SparkFlex | ControllerType.SparkMax:
-                return self._is_connected
-        return False
+        return self._is_connected or self._is_simulation
 
     @property
     def velocity_in_rps(self) -> radians_per_second:

@@ -64,6 +64,9 @@ class Pigeon2(Gyro):
 
         try_until_ok("Pigeon2", 5, lambda: self._gyro.configurator.apply(config, timeout_seconds=0.2))
         self._update_hz: hertz = update_frequency
+        # Simulation and tests may need a high ragte
+        if RobotBase.isSimulation():
+            self._update_hz = 1000.0
 
         # Next two are for use by pykit for AdvantageScope support
         self._yaw: StatusSignal = self._gyro.get_yaw()

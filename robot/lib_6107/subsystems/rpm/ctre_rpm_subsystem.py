@@ -32,7 +32,7 @@ from constants import DEFAULT_FREQUENCY
 from lib_6107.pykit.autolog import autologgable_output
 from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmMechanismIO, RpmSubsystem
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import handle_faults
+from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         # Set up the motor controller
         match controller_type:
             case ControllerType.KrakenX60:
-                self._motor: TalonFX = TalonFX(self._device_id, "canivore")
+                self._motor: TalonFX = TalonFX(self._device_id, "")
 
             case _:
                 raise NotImplementedError(f"Unsupported controller type: {controller_type}")
@@ -116,6 +116,23 @@ class CtreRpmSubsystem(RpmSubsystem):
         # Finally have base class handle any remaining post_init attributes
         super().post_init(bool(coast), bool(persist_config))
 
+    def post_init(self, coast: bool, persist_config: bool) -> None:
+        # Bass class will validate the config
+        super().post_init(coast, persist_config)
+
+        # Now apply it
+        config = self._motor_config(coast)
+
+        # persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
+        config_status = try_until_ok(self.getName(), 5, lambda: self._motor.configurator.apply(config))
+
+        # Check if the device was successfully configured and can be reached over the
+        # CAN bus.
+        self._is_connected = self._check_is_connected(config_status)
+
+        # Note: No encoders at this tim
+        #self._encoder: SupportedEncoders = self._motor.getEncoder()
+
     def _validate_constants(self) -> CtreRpmConfig:
         """
         Validate that the constants passed in have values/properties this class needs. They
@@ -134,7 +151,7 @@ class CtreRpmSubsystem(RpmSubsystem):
                 config = TalonFXConfiguration()
 
             case _:
-                raise NotImplementedError("Unsupported controller type")
+                raise NotImplementedError("CtreRpmSubsystem._motor_config: Unsupported controller type")
 
         config.current_limits.supply_current_limit = self._constants.limit_current
         config.motor_output.neutral_mode = NeutralModeValue.COAST if coast else NeutralModeValue.BRAKE
@@ -163,12 +180,12 @@ class CtreRpmSubsystem(RpmSubsystem):
         #     .positionWrappingEnabled(True)
         #     .outputRange(-1, 1)
         # )
-        config.slot0.kP = self._constants.proportional_coefficient
-        config.slot0.kI = self._constants.integral_coefficient
-        config. slot0.kD = self._constants.derivative_coefficient
+        config.slot0.k_p = self._constants.proportional_coefficient
+        config.slot0.k_i = self._constants.integral_coefficient
+        config.slot0.k_d = self._constants.derivative_coefficient
 
         if self._constants.velocity_feedforward is not None:
-            config.slot0.kv = self._constants.velocity_feedforward
+            config.slot0.k_v = self._constants.velocity_feedforward
 
         return config
 
@@ -176,8 +193,11 @@ class CtreRpmSubsystem(RpmSubsystem):
         """
         For Rev Robotics, the only way to check if all is well i
         """
-        return True  #  StatusSignal.is_all_good(VelocityVoltage)
-
+        return config_status == StatusCode.OK or (config_status is None and
+                                                  StatusSignal.is_all_good(self._applied_output,
+                                                                           self._velocity,
+                                                                           self._supply_current,
+                                                                           self._position))
 
     @property
     def is_connected(self) -> bool:

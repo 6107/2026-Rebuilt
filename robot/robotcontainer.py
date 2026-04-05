@@ -230,10 +230,24 @@ class RobotContainer:
 
         if self.flywheel is not None:
             self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
-                                                       initial_value=100,
-                                                       minimum_value=100,
-                                                       maximum_value=5000)
+                                                       initial_value=0,
+                                                       minimum_value=0,
+                                                       maximum_value=5676)
             SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
+
+        if self.intake_roller is not None:
+            self._intake_rpm_chooser = IntegerEditBox("Intake RPM",
+                                                       initial_value=0,
+                                                       minimum_value=0,
+                                                       maximum_value=5676)
+            SmartDashboard.putData(self._intake_rpm_chooser.name, self._intake_rpm_chooser)
+
+        if self.indexer is not None:
+            self._indexer_rpm_chooser = IntegerEditBox("Indexer RPM",
+                                                       initial_value=0,
+                                                       minimum_value=0,
+                                                       maximum_value=5676)
+            SmartDashboard.putData(self._indexer_rpm_chooser.name, self._indexer_rpm_chooser)
 
         # Set our robot width and then use pathplanner as the basis if it was provided to vefify
         self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT

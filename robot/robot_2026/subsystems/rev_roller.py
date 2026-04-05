@@ -22,7 +22,8 @@ from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, revolutions_per_minute
 
 from lib_6107.pykit.autolog import autologgable_output
-from subsystems.rpm.rev_rpm_subsystem import ControllerType, RevRpmConfig, RevRpmSubsystem
+from lib_6107.subsystems.rpm.rev_rpm_subsystem import RevRpmConfig, RevRpmSubsystem
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +56,12 @@ class RevIntakeRoller(RevRpmSubsystem):
 
     This is the rolly-grabber at the front of the intake.
     """
-
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "Roller",
-                         DCMotor.NEO(1), ControllerType.KrakenX60, IntakeConstants(),
-                         long_name="Intake/Roller")
+                         DCMotor.NEO(1), ControllerType.SparkMax, IntakeConstants(),
+                         long_name="Intake/Roller",
+                         persist_config=persist_config)
         self._initialized = True
 
     @property
@@ -75,7 +76,7 @@ class RevIntakeRoller(RevRpmSubsystem):
 
     def intake_fuel(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None):
         # Consume fuel from the playing area
-        logger.info(f"Indexer: Intake Fuel, currently (RPM): {self.velocity_in_rpm}, Goal: {self.goal}")
+        logger.info(f"Roller: Intake Fuel, currently (RPM): {self.velocity_in_rpm}, Goal: {self.goal}")
 
         self._set_velocity_goal(rpm, rpm_tolerance)
 

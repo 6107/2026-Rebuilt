@@ -24,10 +24,10 @@ from commands2 import Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from phoenix6.hardware import TalonFX
-from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, \
+from rev import REVLibError, SparkBaseConfig, \
     SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
     SparkRelativeEncoder
-from wpilib import SmartDashboard
+from wpilib import RobotBase, SmartDashboard
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
@@ -37,7 +37,6 @@ from wpimath.units import amperes, radians, radians_per_second, radiansPerSecond
 from lib_6107.pykit.autolog import autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
@@ -125,6 +124,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         self._device_id = can_device_id
         self._inverted = inverted
         self._inputs = RpmMechanismIO.RpmMechanismIOInputs()
+        self._is_simulation = RobotBase.isSimulation()
 
         # Simulation only (set in derived class __init__ after this call or in sim_init)
         self._physics_controller = None
@@ -136,7 +136,6 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
         # Following are defined in the post_init call from the derived class
         self._is_connected: bool = False
-        self._encoder: SupportedEncoders | None = None
         self._pid_controller: SupportedClosedLoopControllers | None = None
 
         # The critical attributes/properties for operation
@@ -151,28 +150,8 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                                                                   name))
 
     def post_init(self, coast: bool, persist_config: bool) -> None:
-
         # Sanity / defaults check
         self._constants = self._validate_constants()
-
-        persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
-
-        config_status = try_until_ok(self.getName(), 5,
-                                     lambda: self._motor.configure(self._motor_config(coast),
-                                                                   ResetMode.kResetSafeParameters,
-                                                                   persist))
-
-        # Check if the device was successfully configured and can be reached over the
-        # CAN bus.
-        self._is_connected = self._check_is_connected(config_status)
-
-        # Set up the encoders
-        self._encoder: SupportedEncoders = self._motor.getEncoder()
-
-        # PID Controller for use while in autonomous mode. During teleop end-game, the
-        # operator or shooter's controller will have manual up/down control.
-        self._pid_controller: SupportedClosedLoopControllers = self._motor.getClosedLoopController()
-        self._pid_controller.setSetpoint(0.0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
 
     def _validate_constants(self) -> Any:
         """
@@ -197,14 +176,14 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         Repeats a command to the underlying motor/controller until success or attempts
         exhausted.
         """
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("try_until_ok: Implement in a derived class")
 
     def _motor_config(self, coast: bool) -> SparkBaseConfig:
         """
         Motor config for the intake Indexer. Using the default Primary Encoder
         as the Feedback Sensor.
         """
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("_motor_config: Implement in a derived class")
 
     @property
     def is_initialized(self) -> bool:
@@ -214,7 +193,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         For Rev Robotics, the only way to check if all is well i
         """
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("_check_is_connected: Implement in a derived class")
 
     @property
     def is_connected(self) -> bool:
@@ -223,7 +202,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         the default way is based on config results. When we support CTRE, they
         have a 'isStatusOK' call that is useful.
         """
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("is_connected: Implement in a derived class")
 
     @property
     def goal(self) -> revolutions_per_minute:
@@ -239,11 +218,11 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
     @property
     def velocity_in_rps(self) -> radians_per_second:
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("velocity_in_rps: Implement in a derived class")
 
     @property
     def position(self) -> radians:
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("position: Implement in a derived class")
 
     @property
     def active(self) -> bool:
@@ -264,7 +243,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         return ""  # indexer is ready (within tolerated limits
 
     def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("_set_velocity_goal: Implement in a derived class")
 
     def stop(self) -> None:
         logger.info(f"{self.getName()}: Stop command was called")
@@ -300,20 +279,24 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         Configure the SmartDashboard for this subsystem
         """
-        self.dashboard_periodic()
+        SmartDashboard.putNumber(f"{self._long_name}/Goal",0.0)
+        SmartDashboard.putNumber(f"{self._long_name}/Tolerance", 0.0)
+        SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
+        SmartDashboard.putNumber(f"{self._long_name}/Voltage", 0.0)
+        SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
 
     def dashboard_periodic(self) -> None:
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
         SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
-        SmartDashboard.putNumber(f"{self._long_name}/Current", self.velocity_in_rpm)
         SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
-        SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._motor.getAppliedOutput())
-        SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getOutputCurrent())
+        SmartDashboard.putNumber(f"{self._long_name}/Current",  self._inputs.mechanism_velocity)
+        SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._inputs.mechanism_applied_voltage)
+        SmartDashboard.putNumber(f"{self._long_name}/Current", self._inputs.mechanism_supply_current)
 
     def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("updateInputs: Implement in a derived class")
 
     def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
         """
@@ -323,7 +306,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         All faults detected always results in a warning log message, so please be
         aware of this if you do not clear them
         """
-        raise NotImplementedError("Implement in a derived class")
+        raise NotImplementedError("fault_detection: Implement in a derived class")
 
     ###########################################################
     # Simulation Support

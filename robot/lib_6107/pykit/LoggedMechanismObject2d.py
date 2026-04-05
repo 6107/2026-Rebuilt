@@ -68,7 +68,7 @@ class LoggedMechanismObject2d:
             obj.update(self._table.getSubTable(obj.getName()))
 
     def updateEntries(self, table: NetworkTable) -> None:
-        raise NotImplementedError("Implement in a subclass")
+        raise NotImplementedError("updateEntries: Implement in a subclass")
 
     def getName(self) -> str:
         return self._name
@@ -113,7 +113,7 @@ class LoggedMechanismObject2d:
 
         @return distance in meters
         """
-        raise NotImplementedError("Implement in a subclass")
+        raise NotImplementedError("getObject2dRange: Implement in a subclass")
 
     def getAngle(self) -> degrees:
         """
@@ -122,4 +122,4 @@ class LoggedMechanismObject2d:
 
         @return angle in degrees
         """
-        raise NotImplementedError("Implement in a subclass")
+        raise NotImplementedError("getAngle: Implement in a subclass")

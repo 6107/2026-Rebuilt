@@ -108,10 +108,10 @@ class Field:
         return self._layout.getTagPose(id) if self._layout else None
 
     def in_blue_alliance_zone(self, x: float) -> bool:
-        raise NotImplementedError("Implement in subclass")
+        raise NotImplementedError("in_blue_alliance_zone: Implement in subclass")
 
     def in_red_alliance_zone(self, x: float) -> bool:
-        raise NotImplementedError("Implement in subclass")
+        raise NotImplementedError("in_red_alliance_zone: Implement in subclass")
 
     def register_layout_callback(self, func: Callable[
         [Optional[AprilTagField], Optional[AprilTagFieldLayout]], None]) -> None:

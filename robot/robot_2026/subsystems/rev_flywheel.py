@@ -27,11 +27,11 @@ from wpimath.units import amperes, degrees, meters, revolutions_per_minute
 from lib_6107.pykit.autolog import autolog, autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+from lib_6107.subsystems.rpm.rev_rpm_subsystem import RevRpmConfig, RevRpmSubsystem
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmMechanismIO
 from lib_6107.util.competition import event_active
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.util.logtracer import LogTracer
-from subsystems.rpm.rev_rpm_subsystem import RevRpmConfig, RevRpmSubsystem
-from subsystems.rpm.rpm_subsystem import ControllerType, RpmMechanismIO
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +105,8 @@ class RevFlywheel(RevRpmSubsystem):
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "Flywheel",
                          DCMotor.NEO(1), ControllerType.SparkMax, FlywheelConstants(),
-                         long_name="Intake/Flywheel")
+                         long_name="Intake/Flywheel",
+                         persist_config=persist_config)
 
         # NOTE: We take ownership to the pykit IO Inputs from base class here!
         self._inputs = FlywheelIO.FlywheelIOIOInputs()

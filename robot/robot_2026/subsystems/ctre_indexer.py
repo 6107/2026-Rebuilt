@@ -54,7 +54,7 @@ class RevIntakeIndexer(CtreRpmSubsystem):
     def __init__(self, container: 'RobotContainer', can_device_id: int,
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "Indexer",
-                         DCMotor.krakenX60(1), ControllerType.SparkMax, IntakeConstants(),
+                         DCMotor.krakenX60(1), ControllerType.KrakenX60, IntakeConstants(),
                          long_name="Intake/Indexer",
                          coast=True,
                          persist_config=persist_config)

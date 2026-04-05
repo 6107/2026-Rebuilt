@@ -232,3 +232,4 @@ robot/*.json
 /robot/vendordeps/WPILibNewCommands.json
 /logs/
 /robot/pyLogs/
+/Robot Logs/
