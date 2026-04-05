@@ -16,17 +16,18 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-import math
+from copy import deepcopy
 from enum import Enum, unique
-from typing import Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 from commands2 import Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
+from phoenix6.hardware import TalonFX
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, \
-    SparkClosedLoopController, SparkFlex, SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, \
+    SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
     SparkRelativeEncoder
-from wpilib import RobotBase, SmartDashboard
+from wpilib import SmartDashboard
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
@@ -36,10 +37,15 @@ from wpimath.units import amperes, radians, radians_per_second, radiansPerSecond
 from lib_6107.pykit.autolog import autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
+from lib_6107.util.rev_utils import try_until_ok
 from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
+
+SupportedMotors = SparkMax | SparkFlex | TalonFX
+SupportedSimMotors = SparkMaxSim | SparkFlexSim
+SupportedEncoders = SparkRelativeEncoder
+SupportedClosedLoopControllers = SparkClosedLoopController
 
 
 @unique
@@ -47,9 +53,9 @@ class ControllerType(Enum):
     """
     Currently the following motor/controller types are supported
     """
-    SparkMax = "SparkMax"
-    SparkFlex = "SparkFlex"
-
+    SparkMax = "SparkMax"       # Rev Robotics
+    SparkFlex = "SparkFlex"     # Rev Robotics
+    KrakenX60 = "KrakenX60"     # CTRE  - TalonFX
 
 def _default_max_rpm(controller_type: ControllerType, motor: DCMotor) -> revolutions_per_minute:
     # TODO: Future, for when None passed in for MAX_RPM
@@ -61,12 +67,12 @@ class RpmConfig:
     The subclass should provide a set of constants. If any of the 'REQUIRED' constants are
     set to 'None', then these defaults will be inherited
     """
-    proportional_coefficient = 10  # kP - If you’re not where you want to be, get there.
-    integral_coefficient = 0  # kI - If you haven’t been where you want to be for a while, apply more effort
-    #      to get there”, since it really isn’t about speed.
-    derivative_coefficient = 0  # kD - If you’re getting close to where you want to be, slow down.
-    izone = None  # If you are really far from where you want to be, don’t start applying
-    #      more effort to get there until you are within this margin
+    proportional_coefficient = 0.0001  # kP - If you’re not where you want to be, get there.
+    integral_coefficient = 0           # kI - If you haven’t been where you want to be for a while, apply more effort
+                                       #      to get there”, since it really isn’t about speed.
+    derivative_coefficient = 0         # kD - If you’re getting close to where you want to be, slow down.
+    izone = None                       #      If you are really far from where you want to be, don’t start applying
+                                       #      more effort to get there until you are within this margin
     velocity_feedforward = None
     imax_accum = None
 
@@ -76,15 +82,15 @@ class RpmConfig:
     # derived class unless they need to be overridden
     gear_reduction = 1.0
     measurement_std_dev = [0.0, 0.0]
-    max_rpm: revolutions_per_minute = 6784.0        # Rev Vortex. Rev Neo is 5676
+    max_rpm: Optional[revolutions_per_minute] = None  # Must be set by subclass
 
-    # Following are required
-    __required_attributes = ("max_rpm", "limit_current", "proportional_coefficient",
-                             "integral_coefficient", "derivative_coefficient")
+    # Following are required in the base class. Derived classes may have more
+    __rpm_required_attributes = ("max_rpm", "limit_current", "proportional_coefficient",
+                                 "integral_coefficient", "derivative_coefficient")
 
     @property
     def required_attributes(self) -> Tuple[str, ...]:
-        return self.__required_attributes
+        return self.__rpm_required_attributes
 
 
 @autologgable_output
@@ -95,19 +101,23 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
     and maintain.
     """
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
-                 motor: DCMotor, controller_type: ControllerType, constants: RpmConfig,
-                 long_name: Optional[str] = None,
-                 coast: Optional[bool] = True,
-                 persist_config: Optional[bool] = False) -> None:
+                 controller_type: ControllerType, constants: RpmConfig,
+                 long_name: str | None) -> None:
+        #
+        # Set the following to True at the very end of your actual SubSystem init. This is to
+        # avoid a race condition in 'pykit' where the 'periodic' and other functions may be
+        # called for a subsystem 'before' full initialization. This is due to how some vendor
+        # firmware routines work.
+        #
         self._initialized = False
+        #
         Subsystem.__init__(self)
         RpmMechanismIO.__init__(self, name)
 
-        # Sanity / defaults check
-        constants = self._validate_constants(constants, name)
-
         # General attributes
         self.setName(name)
+
+        self._controller_type = controller_type
         self._long_name = long_name or name  # Typically for logging/smartdashboard such as "intake/indexer"
         self._container = container
         self._robot = container.robot
@@ -116,44 +126,18 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         self._inverted = inverted
         self._inputs = RpmMechanismIO.RpmMechanismIOInputs()
 
-        self._constants: RpmConfig = constants
-        self._controller_type = controller_type
-
+        # Simulation only (set in derived class __init__ after this call or in sim_init)
         self._physics_controller = None
+        self._sim_motor: SupportedSimMotors | None = None
 
-        # Set up the motor controller
-        match controller_type:
-            case ControllerType.SparkMax:
-                self._motor = SparkMax(self._device_id, SparkFlex.MotorType.kBrushless)
-                if RobotBase.isSimulation():
-                    self._sim_motor = SparkMaxSim(self._motor, motor)
+        # Derived class sets or are reinitialized these 'after' calling this base class init
+        self._motor: SupportedMotors | None = None
+        self._constants: RpmConfig = constants
 
-            case ControllerType.SparkFlex:
-                self._motor = SparkFlex(self._device_id, SparkFlex.MotorType.kBrushless)
-
-                if RobotBase.isSimulation():
-                    self._sim_motor = SparkFlexSim(self._motor, motor)
-            case _:
-                raise NotImplementedError(f"Unsupported motor type: {controller_type}")
-
-        persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
-
-        config_status = try_until_ok(name, 5,
-                                     lambda: self._motor.configure(self._motor_config(coast),
-                                                                   ResetMode.kResetSafeParameters,
-                                                                   persist))
-
-        # Check if the device was successfully configured and can be reached over the
-        # CAN bus.
-        self._is_connected = self._check_is_connected(config_status)
-
-        # Set up the encoders
-        self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
-
-        # PID Controller for use while in autonomous mode. During teleop end-game, the
-        # operator or shooter's controller will have manual up/down control.
-        self._pid_controller: SparkClosedLoopController = self._motor.getClosedLoopController()
-        self._pid_controller.setSetpoint(0.0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
+        # Following are defined in the post_init call from the derived class
+        self._is_connected: bool = False
+        self._encoder: SupportedEncoders | None = None
+        self._pid_controller: SupportedClosedLoopControllers | None = None
 
         # The critical attributes/properties for operation
         self._velocity_goal: revolutions_per_minute = 0.0
@@ -166,82 +150,61 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                                                                   self,
                                                                   name))
 
-    @staticmethod
-    def _validate_constants(constants: RpmConfig, obj_name: str) -> RpmConfig:
+    def post_init(self, coast: bool, persist_config: bool) -> None:
+
+        # Sanity / defaults check
+        self._constants = self._validate_constants()
+
+        persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
+
+        config_status = try_until_ok(self.getName(), 5,
+                                     lambda: self._motor.configure(self._motor_config(coast),
+                                                                   ResetMode.kResetSafeParameters,
+                                                                   persist))
+
+        # Check if the device was successfully configured and can be reached over the
+        # CAN bus.
+        self._is_connected = self._check_is_connected(config_status)
+
+        # Set up the encoders
+        self._encoder: SupportedEncoders = self._motor.getEncoder()
+
+        # PID Controller for use while in autonomous mode. During teleop end-game, the
+        # operator or shooter's controller will have manual up/down control.
+        self._pid_controller: SupportedClosedLoopControllers = self._motor.getClosedLoopController()
+        self._pid_controller.setSetpoint(0.0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
+
+    def _validate_constants(self) -> Any:
         """
         Validate that the constants passed in have values/properties this class needs. They
         can be None if you want this class to use a default value (often zero), but they do need
         to exist as an explicit attribute of the object passed in
         """
+        constants = deepcopy(self._constants)
+
         for attribute in RpmConfig().required_attributes:
             # Needs to be there, even if set to None
-            assert hasattr(constants, attribute), f"{attribute} was not found in {obj_name} object config"
+            assert hasattr(constants, attribute), f"{attribute} was not found in {self.getName()} object config"
 
             # If set to None, use our default values (which may be None as well)
             if getattr(constants, attribute, None) is None:
-                setattr(constants, attribute, getattr(RpmConfig(), obj_name))
+                setattr(constants, attribute, getattr(RpmConfig(), attribute))
 
         return constants
+
+    def try_until_ok(self, what: str, attempts: int, command: Callable[[], Any]) -> Any:
+        """
+        Repeats a command to the underlying motor/controller until success or attempts
+        exhausted.
+        """
+        raise NotImplementedError("Implement in a derived class")
 
     def _motor_config(self, coast: bool) -> SparkBaseConfig:
         """
         Motor config for the intake Indexer. Using the default Primary Encoder
         as the Feedback Sensor.
         """
-        match self._controller_type:
-            case ControllerType.SparkMax:
-                config = SparkMaxConfig()
-
-            case ControllerType.SparkFlex:
-                config = SparkFlexConfig()
-
-        config = (config
-                  .inverted(self._inverted)
-                  .smartCurrentLimit(self._constants.limit_current)
-                  .setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
-                  )
-
-        config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
-
-        # Closed loop configuration parameters, slot=0
-        #
-        #   P:  If you’re not where you want to be, get there.
-        #
-        #   I:     If you haven’t been where you want to be for a while, apply more effort
-        #          to get there”, since it really isn’t about speed.
-        #
-        #   D:     If you’re getting close to where you want to be, slow down.
-        #
-        #   IZone: If you are really far from where you want to be, don’t start applying
-        #          more effort to get there until you are within this margin
-        #
-        slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
-        (
-            config.closedLoop
-            # .IMaxAccum(0.03, slot=slot0)
-            # .IZone(3, slot=slot0)
-            .pid(p=self._constants.proportional_coefficient,  # Slot 0 for position control
-                 i=self._constants.integral_coefficient,
-                 d=self._constants.derivative_coefficient,
-                 slot=slot0)
-            .positionWrappingEnabled(True)
-            .outputRange(-1, 1)
-        )
-        # Apply any optional config
-        if self._constants.velocity_feedforward is not None:
-            config = config.closedLoop.velocityFF(self._constants.velocity_feedforward,
-                                                  slot=slot0)
-
-        if self._constants.imax_accum is not None:
-            config = config.IMaxAccum(self._constants.imax_accum, slot=slot0)
-
-        if self._constants.izone is not None:
-            config = config.IZone(self._constants.izone, slot=slot0)
-
-        # Set the encoder to return its position in radians
-        config.encoder.positionConversionFactor(2 * math.pi)
-        config
-        return config
+        raise NotImplementedError("Implement in a derived class")
 
     @property
     def is_initialized(self) -> bool:
@@ -251,18 +214,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         For Rev Robotics, the only way to check if all is well i
         """
-        match self._controller_type:
-            case ControllerType.SparkFlex | ControllerType.SparkMax:
-                version = self._motor.getFirmwareVersion()
-                logger.info(f"{self.getName()} firmware version: {version}")
-
-                ok = (version != 0 and (config_status is None or
-                                        config_status == REVLibError.kOk)) or \
-                     RobotBase.isSimulation()
-
-                if not ok:
-                    logger.warning(f"{self.getName()} firmware version: {version}, status: {config_status}")
-                return ok
+        raise NotImplementedError("Implement in a derived class")
 
     @property
     def is_connected(self) -> bool:
@@ -271,10 +223,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         the default way is based on config results. When we support CTRE, they
         have a 'isStatusOK' call that is useful.
         """
-        match self._controller_type:
-            case ControllerType.SparkFlex | ControllerType.SparkMax:
-                return self._is_connected
-        return False
+        raise NotImplementedError("Implement in a derived class")
 
     @property
     def goal(self) -> revolutions_per_minute:
@@ -290,12 +239,11 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
     @property
     def velocity_in_rps(self) -> radians_per_second:
-        rps = self._encoder.getVelocity()
-        return -rps if self._inverted else rps
+        raise NotImplementedError("Implement in a derived class")
 
     @property
     def position(self) -> radians:
-        return self._encoder.getPosition()
+        raise NotImplementedError("Implement in a derived class")
 
     @property
     def active(self) -> bool:
@@ -316,44 +264,37 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         return ""  # indexer is ready (within tolerated limits
 
     def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
-        self._velocity_tolerance = rpm_tolerance or 0.0
-        self._velocity_goal, previous = max(0.0, min(self._constants.max_rpm, abs(rpm))), self._velocity_goal
-
-        if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info(f"{self.getName()}: Setting goal RPM to {self._velocity_goal}. previous: {previous}")
-            logger.info(
-                f"{self.getName()}: current PID controller setpoint before command: {self._pid_controller.getSetpoint()}")
-
-            self._pid_controller.setSetpoint(self._velocity_goal, SparkBase.ControlType.kVelocity)
+        raise NotImplementedError("Implement in a derived class")
 
     def stop(self) -> None:
         logger.info(f"{self.getName()}: Stop command was called")
         self._set_velocity_goal(0, 0)
         self._motor.disable()
 
-    # TODO: Add support for getting any faults so we can display them back to the user and
-    #       possibly clean them on startup if they are sticky
+    # TODO: Add periodic support for getting any faults so we can display them back to the user and
+    #       possibly clean them on startup if they are sticky. But not every periodic call...
 
     def periodic(self) -> None:
-        LogTracer.resetOuter(f"{self.getName()} periodic")
+        if self.is_initialized:
+            LogTracer.resetOuter(f"{self.getName()} periodic")
 
-        self.updateInputs(self._inputs)
+            self.updateInputs(self._inputs)
 
-        Logger.processInputs(self.getName(), self._inputs)
-        LogTracer.record("UpdateInputs")
+            Logger.processInputs(self.getName(), self._inputs)
+            LogTracer.record("UpdateInputs")
 
-        # TODO: Look what we need to do if we provide replay?
+            # TODO: Look what we minimally need to do if we want to provide replay?
 
-        Logger.recordOutput(f"{self._long_name}/goal", self.goal)
-        Logger.recordOutput(f"{self._long_name}/current", self.velocity_in_rpm)
-        Logger.recordOutput(f"{self._long_name}/tolerance", self.tolerance)
-        LogTracer.recordTotal()
+            Logger.recordOutput(f"{self._long_name}/goal", self.goal)
+            Logger.recordOutput(f"{self._long_name}/current", self.velocity_in_rpm)
+            Logger.recordOutput(f"{self._long_name}/tolerance", self.tolerance)
+            LogTracer.recordTotal()
 
-        # Update SmartDashboard for this subsystem at a rate slower than the period
-        counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
-                                  self._robot.isEnabled()):
-            self.dashboard_periodic()
+            # Update SmartDashboard for this subsystem at a rate slower than the period
+            counter = self._robot.counter
+            if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
+                                      self._robot.isEnabled()):
+                self.dashboard_periodic()
 
     def dashboard_initialize(self) -> None:
         """
@@ -371,19 +312,27 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._motor.getAppliedOutput())
         SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getOutputCurrent())
 
+    def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
+        raise NotImplementedError("Implement in a derived class")
+
+    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
+        """
+        This routine is responsible for reading any existing faults and based
+        input parameters, report them for display, and possibly clear them
+
+        All faults detected always results in a warning log message, so please be
+        aware of this if you do not clear them
+        """
+        raise NotImplementedError("Implement in a derived class")
+
+    ###########################################################
+    # Simulation Support
+
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """
         Initialize any simulation only needed parameters
         """
         self._physics_controller = physics_controller
-
-    def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
-        inputs.mechanism_connected = self.is_connected
-
-        inputs.mechanism_position = self.position
-        inputs.mechanism_velocity = self.velocity_in_rps
-        inputs.mechanism_applied_voltage = self._motor.getAppliedOutput()
-        inputs.mechanism_supply_current = self._motor.getOutputCurrent()
 
     def update_sim(self, now: float, tm_diff: float) -> amperes | None:
         """
@@ -443,16 +392,3 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         Autonomous function to run and then move the robot to Autonomous mode.
         """
         return self._sysid_routine.dynamic(direction)
-
-    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
-        """
-        This routine is responsible for reading any existing faults and based
-        input parameters, report them for display, and possibly clear them
-
-        All faults detected always results in a warning log message, so please be
-        aware of this if you do not clear them
-
-        TODO: Good thing for a base class, don't you think
-        """
-        # For Rev Robotics, the faults are a bitmask
-        handle_faults(self.getName(), state, self._motor, clear=clear, notify=notify)

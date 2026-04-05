@@ -47,9 +47,9 @@ from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractC
 from robot_2026.field.alerts import RobotAlerts
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
+from robot_2026.subsystems.ctre_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
 from robot_2026.subsystems.rev_flywheel import RevFlywheel as Shooter
-from robot_2026.subsystems.rev_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
@@ -138,45 +138,41 @@ class RobotContainer:
         self.flywheel: Shooter | None = None
         self.climber: Climber | None = None
 
-        ##########################################
-        # NOTE: Disable subsystems that will not be in the next competition
-        ##########################################
-        #   INTAKE (Pivot & Rollers)
-        #
-        # Right Pivot Motor should be Inverted
-        # try:
-        #     self.intake_pivot = IntakePivot(self,
-        #                                     DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
-        #                                     DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-        #                                     False, True)
-        # except Exception as _e:
-        #     logger.exception(f"Exception during Intake Pivot initialization: {_e}")
+        if RobotBase.isSimulation():        # Currently in sim only
+            ##########################################
+            # NOTE: Disable subsystems that will not be in the next competition
+            ##########################################
+            #   INTAKE (Pivot & Rollers)
+            #
+            # Right Pivot Motor should be Inverted
+            try:
+                self.intake_pivot = IntakePivot(self,
+                                                DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
+                                                DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+                                                False, True)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Pivot initialization: {_e}")
 
-        # Disable subsystems that will not be in the next competition
-        ##########################################
-        #   Roller / rolly-grabbers
-        #
-        try:
-            self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
-        except Exception as _e:
-            logger.exception(f"Exception during Intake Roller initialization: {_e}")
+            ###########################################
+            #   Roller / rolly-grabbers
+            try:
+                self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Roller initialization: {_e}")
 
-        # Disable subsystems that will not be in the next competition
-        # ##########################################
-        # #   INDEXER
-        # #
-        # try:
-        #     self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
-        # except Exception as _e:
-        #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
-        #
-        # ##########################################
-        #   SHOOTER
-        #
-        try:
-            self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-        except Exception as _e:
-            logger.exception(f"Exception during Shooter initialization: {_e}")
+            ##########################################
+            #   INDEXER
+            try:
+                self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Indexer initialization: {_e}")
+
+            # ##########################################
+            #   SHOOTER
+            try:
+                self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+            except Exception as _e:
+                logger.exception(f"Exception during Shooter initialization: {_e}")
 
         ##########################################
         #   CLIMBER

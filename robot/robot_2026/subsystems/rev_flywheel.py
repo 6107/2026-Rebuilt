@@ -27,10 +27,11 @@ from wpimath.units import amperes, degrees, meters, revolutions_per_minute
 from lib_6107.pykit.autolog import autolog, autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
-from lib_6107.subsystems.rpm_subsystem import ControllerType, RpmConfig, RpmMechanismIO, RpmSubsystem
 from lib_6107.util.competition import event_active
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.util.logtracer import LogTracer
+from subsystems.rpm.rev_rpm_subsystem import RevRpmConfig, RevRpmSubsystem
+from subsystems.rpm.rpm_subsystem import ControllerType, RpmMechanismIO
 
 logger = logging.getLogger(__name__)
 
@@ -38,25 +39,21 @@ logger = logging.getLogger(__name__)
 # TODO: Run the REV Hardware Client and come up with our numbers
 #
 
-class FlywheelConstants(RpmConfig):
+class FlywheelConstants(RevRpmConfig):
     # Configure PID coefficients (values will vary by mechanism)
     # kF is often calculated as 1 / (Max Free Speed)
     # Example for NEO (~5676 RPM): 1 / 5676 = 0.000176
 
     proportional_coefficient = 0.0020645  # kP - If you’re not where you want to be, get there.
-    integral_coefficient = 0  # kI - If you haven’t been where you want to be for a while, apply more effort
-    #      to get there”, since it really isn’t about speed.
-    derivative_coefficient = 0  # kD - If you’re getting close to where you want to be, slow down.
-    izone = None  # If you are really far from where you want to be, don’t start applying
-    #      more effort to get there until you are within this margin
+    integral_coefficient = 0              # kI - If you haven’t been where you want to be for a while, apply more effort
+                                          #      to get there”, since it really isn’t about speed.
+    derivative_coefficient = 0            # kD - If you’re getting close to where you want to be, slow down.
+    izone = None                          #      If you are really far from where you want to be, don’t start applying
+                                          #      more effort to get there until you are within this margin
 
-    max_rpm: revolutions_per_minute = 5676.0  # Rev Vortex. Rev Neo is 5676
+    max_rpm: revolutions_per_minute = 5676.0  # Neo
     limit_current: amperes = 40
 
-    kP = 0.0001
-    kI = 0
-    kD = 0
-    kFF = 0.000176
     velocity_feedforward = 1.0/5676.0
 
 # TODO: Following are estimates. Need to verify
@@ -100,7 +97,7 @@ class FlywheelIO:
 
 
 @autologgable_output
-class RevFlywheel(RpmSubsystem):
+class RevFlywheel(RevRpmSubsystem):
     """
     Rev NEO 21-1650
     """
@@ -108,9 +105,7 @@ class RevFlywheel(RpmSubsystem):
                  inverted: bool, persist_config: Optional[bool] = False) -> None:
         super().__init__(container, can_device_id, inverted, "Flywheel",
                          DCMotor.NEO(1), ControllerType.SparkMax, FlywheelConstants(),
-                         long_name="Intake/Flywheel",
-                         coast=True,
-                         persist_config=persist_config)
+                         long_name="Intake/Flywheel")
 
         # NOTE: We take ownership to the pykit IO Inputs from base class here!
         self._inputs = FlywheelIO.FlywheelIOIOInputs()
@@ -178,31 +173,31 @@ class RevFlywheel(RpmSubsystem):
             inputs.rpm_at_goal = False
 
     def periodic(self) -> None:
-        # super().periodic()                                        # TODO: Break down so we use base class as needed
-        LogTracer.resetOuter(f"{self.getName()} periodic")
+        if self.is_initialized:
+            LogTracer.resetOuter(f"{self.getName()} periodic")
 
-        self.updateInputs(self._inputs)
+            self.updateInputs(self._inputs)
 
-        Logger.processInputs(self.getName(), self._inputs)
-        LogTracer.record("UpdateInputs")
+            Logger.processInputs(self.getName(), self._inputs)
+            LogTracer.record("UpdateInputs")
 
-        # TODO: Look what we need to do if we provide replay?
-        Logger.recordOutput(f"{self._long_name}/goal", self.goal)
-        Logger.recordOutput(f"{self._long_name}/current", self.velocity_in_rpm)
-        Logger.recordOutput(f"{self._long_name}/tolerance", self.tolerance)
+            # TODO: Look what we need to do if we provide replay?
+            Logger.recordOutput(f"{self._long_name}/goal", self.goal)
+            Logger.recordOutput(f"{self._long_name}/current", self.velocity_in_rpm)
+            Logger.recordOutput(f"{self._long_name}/tolerance", self.tolerance)
 
-        # Flywheel specific here
-        Logger.recordOutput("Flywheel/HubInRange", self.hub_in_range)
-        Logger.recordOutput("Flywheel/AimedAtHub", self.aimed_at_hub)
-        Logger.recordOutput("Flywheel/RpmAtGoal", self.rpm_at_goal)
+            # Flywheel specific here
+            Logger.recordOutput("Flywheel/HubInRange", self.hub_in_range)
+            Logger.recordOutput("Flywheel/AimedAtHub", self.aimed_at_hub)
+            Logger.recordOutput("Flywheel/RpmAtGoal", self.rpm_at_goal)
 
-        LogTracer.recordTotal()
+            LogTracer.recordTotal()
 
-        # Update SmartDashboard for this subsystem at a rate slower than the period
-        counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
-                                  self._robot.isEnabled()):
-            self.dashboard_periodic()
+            # Update SmartDashboard for this subsystem at a rate slower than the period
+            counter = self._robot.counter
+            if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
+                                      self._robot.isEnabled()):
+                self.dashboard_periodic()
 
     def dashboard_periodic(self) -> None:
         super().dashboard_periodic()
@@ -220,6 +215,7 @@ class RevFlywheel(RpmSubsystem):
         Logger.recordOutput(f"{self._long_name}/AimedAtHub", self.aimed_at_hub)
         Logger.recordOutput(f"{self._long_name}/RpmAtGoal", self.rpm_at_goal)
 
+        # TODO: move to RobotContainer periodic method
         SmartDashboard.putBoolean(f"{self._long_name}/InAllianceLeftQuadtrant",
                                   self._field.in_my_alliance_zone(pose.x) is True and
                                   self._field.in_left_zone_area(pose.y) is True)
