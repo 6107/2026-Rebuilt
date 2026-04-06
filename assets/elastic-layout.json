@@ -358,7 +358,7 @@
             "title": "Alerts",
             "x": 640.0,
             "y": 0.0,
-            "width": 320.0,
+            "width": 256.0,
             "height": 448.0,
             "type": "Alerts",
             "properties": {
@@ -368,9 +368,9 @@
           },
           {
             "title": "Autonomous",
-            "x": 0.0,
-            "y": 448.0,
-            "width": 512.0,
+            "x": 896.0,
+            "y": 0.0,
+            "width": 320.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -381,9 +381,9 @@
           },
           {
             "title": "Autonomous-End",
-            "x": 512.0,
-            "y": 448.0,
-            "width": 448.0,
+            "x": 896.0,
+            "y": 128.0,
+            "width": 320.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -395,7 +395,7 @@
           {
             "title": "Voltage",
             "x": 0.0,
-            "y": 576.0,
+            "y": 448.0,
             "width": 960.0,
             "height": 128.0,
             "type": "Voltage View",
@@ -609,7 +609,7 @@
             "title": "PREFLIGHT REMAINING",
             "x": 256.0,
             "y": 0.0,
-            "width": 384.0,
+            "width": 320.0,
             "height": 512.0,
             "type": "Alerts",
             "properties": {
@@ -619,8 +619,8 @@
           },
           {
             "title": "Starting Location",
-            "x": 256.0,
-            "y": 512.0,
+            "x": 832.0,
+            "y": 0.0,
             "width": 256.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
@@ -632,8 +632,8 @@
           },
           {
             "title": "Autonomous",
-            "x": 512.0,
-            "y": 512.0,
+            "x": 832.0,
+            "y": 128.0,
             "width": 384.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
@@ -645,10 +645,10 @@
           },
           {
             "title": "Alerts",
-            "x": 640.0,
+            "x": 576.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 384.0,
+            "height": 512.0,
             "type": "Alerts",
             "properties": {
               "topic": "/SmartDashboard/Alerts",
@@ -657,9 +657,9 @@
           },
           {
             "title": "Autonomous-End",
-            "x": 640.0,
-            "y": 384.0,
-            "width": 256.0,
+            "x": 832.0,
+            "y": 256.0,
+            "width": 384.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
