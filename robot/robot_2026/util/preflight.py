@@ -69,12 +69,6 @@ class PreflightChecklist:
                 "Robot was powered on in starting config", "Preflight/RobotStart", True
             ),
             PreflightChecklist.PreflightCheck(
-                "Driver Xbox is Connected", "Preflight/Driver", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "Shooter Xbox is Connected", "Preflight/Shooter", True
-            ),
-            PreflightChecklist.PreflightCheck(
                 "Autonomous is Selected", "Preflight/Autonomous", True
             ),
             PreflightChecklist.PreflightCheck(
