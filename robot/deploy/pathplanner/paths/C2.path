@@ -50,7 +50,7 @@
     "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Starting-Paths",
+  "folder": "End-Paths",
   "idealStartingState": {
     "velocity": 0.1,
     "rotation": 180.0

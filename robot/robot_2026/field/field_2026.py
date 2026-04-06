@@ -144,6 +144,7 @@ class RebuiltField(Field):
     def field_pose(self) -> Pose2d:
         return self._field_estimator.estimatedPose
 
+
     @property
     def hub_pose(self) -> Pose2d:
         return self._hub_estimator.estimatedPose if self._hub_estimator is not None else Pose2d()

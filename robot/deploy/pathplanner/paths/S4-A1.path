@@ -3,41 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.72,
-        "y": 3.74
+        "x": 3.6,
+        "y": 0.7
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.47,
-        "y": 3.74
+        "x": 2.8020393559928443,
+        "y": 0.6693202146690522
       },
       "isLocked": true,
-      "linkedName": "C3"
+      "linkedName": "S4"
     },
     {
       "anchor": {
-        "x": 1.0827162099398544,
-        "y": 3.74
+        "x": 3.4,
+        "y": 5.5
       },
       "prevControl": {
-        "x": 0.8327162099398544,
-        "y": 3.74
+        "x": 2.4,
+        "y": 5.5
       },
       "nextControl": null,
       "isLocked": true,
-      "linkedName": null
+      "linkedName": "A1-A1-N1"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.0013605442176870743,
-      "rotationDegrees": 180.0
-    },
-    {
-      "waypointRelativePos": 1.0,
-      "rotationDegrees": 180.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -50,13 +41,13 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0.0,
-    "rotation": 180.0
+    "velocity": 2.0,
+    "rotation": 0.0
   },
   "reversed": false,
-  "folder": "End-Paths",
+  "folder": "Starting-Paths",
   "idealStartingState": {
-    "velocity": 0.1,
+    "velocity": 0,
     "rotation": 180.0
   },
   "useDefaultConstraints": true
