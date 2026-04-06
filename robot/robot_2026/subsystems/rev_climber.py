@@ -51,7 +51,7 @@ class ClimberConstants:
 
     GEAR_RATIO = 25.0
     DRIVE_INPUT_MIN: float = -0.3  # [-1.0 .. 1.0]
-    DRIVE_INPUT_MAX: float = -0.3  # [-1.0 .. 1.0]
+    DRIVE_INPUT_MAX: float = 1.0  # [-1.0 .. 1.0]
 
     SPOOL_DIAMETER: inches = 1.25
 
