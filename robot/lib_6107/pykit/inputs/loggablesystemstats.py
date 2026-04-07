@@ -23,8 +23,8 @@ class LoggedSystemStats:
     @classmethod
     def saveToTable(cls, table: LogTable):
         # Limit how and when to save off statistics here since this can be expensive
-        # These at about once every 4 seconds
-        if cls.save_pass % 199 == 0:
+        # These are only called the first time
+        if cls.save_pass == 0:
             # for some reason these return tuples of length 2, take the first element
             table.put("FPGAVersion", getFPGAVersion()[0])
             table.put("FPGARevision", getFPGARevision()[0])
@@ -32,6 +32,9 @@ class LoggedSystemStats:
             table.put("Comments", getComments())
             table.put("TeamNumber", getTeamNumber())
             table.put("FPGAButton", getFPGAButton()[0])
+
+        # These at about once every 4 seconds
+        if cls.save_pass % 199 == 0:
             table.put("SystemActive", getSystemActive()[0])
             table.put("BrownedOut", getBrownedOut()[0])
             table.put("CommsDisabledCount", getCommsDisableCount()[0])
