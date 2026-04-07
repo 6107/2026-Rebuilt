@@ -29,7 +29,7 @@ from ntcore import NetworkTableInstance
 from pathplannerlib.pathfinding import LocalADStar, Pathfinding
 from phoenix6 import SignalLogger
 from rev import StatusLogger
-from wpilib import DataLogManager, DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
+from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
 from wpimath.units import seconds
 
 import constants
@@ -253,12 +253,22 @@ class MyRobot(LoggedRobot):
         # _status = Phoenix6Signals.refresh()       # TODO: Investigate
         LogTracer.record("PhoenixUpdate")
 
+        # robotPeriodic covers the RobotState update which is for the
+        # drivetrain and gyro
         self.container.robotPeriodic()
         LogTracer.record("ContainerPeriodic")
 
         if isinstance(self, LoggedRobot):
             # If using pykit, we need to explicitly call the command scheduler
-            # to run our commands
+            # to run our commands.
+            #
+            # This a calls to all subsystem's 'periodic' and the subsystem's
+            # 'simulationPeriodic' if currently in simulation. At the end of
+            # each subsystem, an epoch is saved in the watchdog to track the
+            # time consumed by each subsystem.
+            #
+            # After the 'periodic' servicing, any scheduled Commands are ran.
+
             CommandScheduler.getInstance().run()
             LogTracer.record("CommandsPeriodic")
 

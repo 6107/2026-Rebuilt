@@ -28,7 +28,7 @@ from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
     XboxController
-from wpimath.geometry import Rotation2d, Rotation3d
+from wpimath.geometry import Pose2d, Rotation2d, Rotation3d
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
 import constants
@@ -139,7 +139,7 @@ class RobotContainer:
         self.flywheel: Shooter | None = None
         self.climber: Climber | None = None
 
-        if RobotBase.isSimulation():        # Currently in sim only
+        if self.simulation:        # Currently in sim only
             ##########################################
             # NOTE: Disable subsystems that will not be in the next competition
             ##########################################
@@ -195,7 +195,7 @@ class RobotContainer:
 
         ##########################################
         # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
-        if RobotBase.isSimulation():
+        if self.simulation:
             self._mechanism_2d = RobotMech(self)
             self.subsystems.append(self._mechanism_2d)
 
@@ -255,7 +255,7 @@ class RobotContainer:
         self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT
         self._robot_y_width: meters = ROBOT_Y_WIDTH_DEFAULT
 
-        if RobotBase.isSimulation():
+        if self.simulation:
             try:
                 path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
 
@@ -774,7 +774,7 @@ class RobotContainer:
         self.auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
 
         # Put sys IDs to run as automation (if not in competition)
-        if not DriverStation.isFMSAttached() and not RobotBase.isSimulation():
+        if not DriverStation.isFMSAttached() and not self.simulation:
             if self.climber is not None:
                 self.auto_chooser.addOption("Climber SysID", self.climber.sys_id_routine(self.climber))
 
@@ -836,6 +836,32 @@ class RobotContainer:
             Logger.recordOutput("Game/ShouldGoToFeed", self._field.should_go_to_feed)
             Logger.recordOutput("Game/HubDistance", self._field.distance_to_hub)
             # NOTE: The 'flywheel' related values we show are updated in the Flywheel periodic routine
+
+            if self.simulation:
+                pose: Pose2d = drive.pose
+                SmartDashboard.putBoolean(f"{self._long_name}/InAllianceLeftQuadtrant",
+                                          self._field.in_my_alliance_zone(pose.x) is True and
+                                          self._field.in_left_zone_area(pose.y) is True)
+
+                SmartDashboard.putBoolean(f"{self._long_name}/InAllianceRightQuadtrant",
+                                          self._field.in_my_alliance_zone(pose.x) is True and
+                                          self._field.in_right_zone_area(pose.y) is True)
+
+                SmartDashboard.putBoolean(f"{self._long_name}/InNeutralLeftQuadtrant",
+                                          self._field.in_neutral_zone(pose.x) is True and
+                                          self._field.in_left_zone_area(pose.y) is True)
+
+                SmartDashboard.putBoolean(f"{self._long_name}/InNeutralRightQuadtrant",
+                                          self._field.in_neutral_zone(pose.x) is True and
+                                          self._field.in_right_zone_area(pose.y) is True)
+
+                SmartDashboard.putBoolean(f"{self._long_name}/InOpponentLeftQuadtrant",
+                                          self._field.in_my_opponents_zone(pose.x) is True and
+                                          self._field.in_left_zone_area(pose.y) is True)
+
+                SmartDashboard.putBoolean(f"{self._long_name}/InOpponentRightQuadtrant",
+                                          self._field.in_my_opponents_zone(pose.x) is True and
+                                          self._field.in_right_zone_area(pose.y) is True)
 
         self._alerts.update()
         #

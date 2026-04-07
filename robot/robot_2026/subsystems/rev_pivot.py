@@ -30,7 +30,6 @@ from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
     meters, radians, revolutions_per_minute, seconds, volts
 
-from lib_6107.pykit.autolog import autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from lib_6107.subsystems.pykit.dual_mechanism_io import DualMechanismIO
@@ -488,7 +487,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
         counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
+        if counter % 100 == 0 or (self._robot.counter % 29 == 0 and
                                   self._robot.isEnabled()):
             self.dashboard_periodic()
 

@@ -19,6 +19,7 @@
 
 import logging
 import math
+from enum import auto, IntEnum
 from typing import Optional
 
 from commands2.button import Trigger
@@ -89,6 +90,14 @@ SHOOTER_LOCATION = Transform3d(  # TODO: Need to confim
 
 BLUE_HUB_LOCATION = Translation2d(BLUE_HUB_X_OFFSET, CENTER_LINE)
 RED_HUB_LOCATION = Translation2d(RED_HUB_X_OFFSET, CENTER_LINE)
+
+class FieldLocation(IntEnum):
+    ALLIANCE_LEFT = auto()
+    ALLIANCE_RIGHT = auto()
+    NEUTRAL_LEFT = auto()
+    NEUTRAL_RIGHT = auto()
+    OPPONENT_LEFT = auto()
+    OPPONENT_RIGHT = auto()
 
 
 def pose3d_from2d(pose: Pose2d) -> Pose3d:
@@ -334,6 +343,29 @@ class RebuiltField(Field):
 
     #############################################################
     #  What area (sub-area) of the field are we in
+    def location(self, pose: Pose2d) -> FieldLocation | None:
+
+        if self.in_left_zone_area(pose.y):
+            if self.in_my_alliance_zone(pose.x):
+                return FieldLocation.ALLIANCE_LEFT
+
+            if self.in_neutral_zone(pose.x):
+                return FieldLocation.NEUTRAL_LEFT
+
+            if self.in_my_opponents_zone(pose.x):
+                return FieldLocation.OPPONENT_LEFT
+
+        if self.in_left_zone_area(pose.y) is False:
+            if self.in_my_alliance_zone(pose.x):
+                return FieldLocation.ALLIANCE_RIGHT
+
+            if self.in_neutral_zone(pose.x):
+                return FieldLocation.NEUTRAL_RIGHT
+
+            if self.in_my_opponents_zone(pose.x):
+                return FieldLocation.OPPONENT_RIGHT
+
+        return None
 
     def in_blue_alliance_zone(self, x: meters) -> bool:
         return x < inchesToMeters(182.11)

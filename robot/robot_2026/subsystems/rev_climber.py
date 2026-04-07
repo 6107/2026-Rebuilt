@@ -29,7 +29,6 @@ from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
 
-from lib_6107.pykit.autolog import autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
@@ -350,7 +349,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
         counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
+        if counter % 100 == 0 or (self._robot.counter % 37 == 0 and
                                   self._robot.isEnabled()):
             self.dashboard_periodic()
 

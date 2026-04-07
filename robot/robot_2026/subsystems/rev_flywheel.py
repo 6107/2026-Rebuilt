@@ -19,12 +19,11 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from wpilib import SmartDashboard
 from wpimath.geometry import Pose2d
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, meters, revolutions_per_minute
 
-from lib_6107.pykit.autolog import autolog, autologgable_output
+from lib_6107.pykit.autolog import autolog
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from lib_6107.subsystems.rpm.rev_rpm_subsystem import RevRpmConfig, RevRpmSubsystem
@@ -196,7 +195,7 @@ class RevFlywheel(RevRpmSubsystem):
 
             # Update SmartDashboard for this subsystem at a rate slower than the period
             counter = self._robot.counter
-            if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
+            if counter % 100 == 0 or (self._robot.counter % 13 == 0 and
                                       self._robot.isEnabled()):
                 self.dashboard_periodic()
 
@@ -210,33 +209,3 @@ class RevFlywheel(RevRpmSubsystem):
         # SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._motor.getAppliedOutput())
         # SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getOutputCurrent())
 
-        pose: Pose2d = self._container.field2d.getRobotPose()
-
-        Logger.recordOutput(f"{self._long_name}/HubInRange", self.hub_in_range)
-        Logger.recordOutput(f"{self._long_name}/AimedAtHub", self.aimed_at_hub)
-        Logger.recordOutput(f"{self._long_name}/RpmAtGoal", self.rpm_at_goal)
-
-        # TODO: move to RobotContainer periodic method
-        SmartDashboard.putBoolean(f"{self._long_name}/InAllianceLeftQuadtrant",
-                                  self._field.in_my_alliance_zone(pose.x) is True and
-                                  self._field.in_left_zone_area(pose.y) is True)
-
-        SmartDashboard.putBoolean(f"{self._long_name}/InAllianceRightQuadtrant",
-                                  self._field.in_my_alliance_zone(pose.x) is True and
-                                  self._field.in_right_zone_area(pose.y) is True)
-
-        SmartDashboard.putBoolean(f"{self._long_name}/InNeutralLeftQuadtrant",
-                                  self._field.in_neutral_zone(pose.x) is True and
-                                  self._field.in_left_zone_area(pose.y) is True)
-
-        SmartDashboard.putBoolean(f"{self._long_name}/InNeutralRightQuadtrant",
-                                  self._field.in_neutral_zone(pose.x) is True and
-                                  self._field.in_right_zone_area(pose.y) is True)
-
-        SmartDashboard.putBoolean(f"{self._long_name}/InOpponentLeftQuadtrant",
-                                  self._field.in_my_opponents_zone(pose.x) is True and
-                                  self._field.in_left_zone_area(pose.y) is True)
-
-        SmartDashboard.putBoolean(f"{self._long_name}/InOpponentRightQuadtrant",
-                                  self._field.in_my_opponents_zone(pose.x) is True and
-                                  self._field.in_right_zone_area(pose.y) is True)

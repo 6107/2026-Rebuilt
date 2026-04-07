@@ -37,7 +37,7 @@ from wpimath.units import degrees, meters, meters_per_second, radians_per_second
 
 from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
     WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
-from lib_6107.pykit.autolog import autolog_output, autologgable_output
+from lib_6107.pykit.autolog import autolog_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
@@ -580,7 +580,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
         counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 17 == 0 and
+        if counter % 100 == 0 or (self._robot.counter % 23 == 0 and
                                   self._robot.isEnabled()):
             self.dashboard_periodic()
 

@@ -27,14 +27,13 @@ from phoenix6.hardware import TalonFX
 from rev import REVLibError, SparkBaseConfig, \
     SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
     SparkRelativeEncoder
-from wpilib import RobotBase, SmartDashboard
+from wpilib import RobotBase
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
     revolutions_per_minute, seconds, volts
 
-from lib_6107.pykit.autolog import autologgable_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from robot_2026.util.logtracer import LogTracer
@@ -271,7 +270,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
             # Update SmartDashboard for this subsystem at a rate slower than the period
             counter = self._robot.counter
-            if counter % 100 == 0 or (self._robot.counter % 7 == 0 and
+            if counter % 100 == 0 or (self._robot.counter % 31 == 0 and
                                       self._robot.isEnabled()):
                 self.dashboard_periodic()
 
