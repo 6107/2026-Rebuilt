@@ -134,6 +134,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self._robot = container.robot
         self._period: seconds = container.robot.getPeriod()
         self._physics_controller = None
+        self._is_simulation = RobotBase.isSimulation()
 
         # Camera/localizer defaults
         self.vision_odometry = False
@@ -518,17 +519,16 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         """
         Configure the SmartDashboard for this subsystem
         """
-        SmartDashboard.putData("Field", self.field2d)
-
         self.gyro.dashboard_initialize()
 
     def dashboard_periodic(self) -> None:
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        # SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
-        # SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
-        # SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
+        if self._is_simulation and self._last_pose is not None:
+            SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
+            SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
+            SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
 
         self.gyro.dashboard_periodic()
 

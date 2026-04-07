@@ -192,7 +192,8 @@ class MyRobot(LoggedRobot):
         # Set up our playing field. May get overwritten if simulation is running or if we
         # support vision based odometry
         self.field = Field2d()
-        SmartDashboard.putData("Field", self.field)
+        if self._is_simulation:
+            SmartDashboard.putData("Field", self.field)
 
         # Instantiate our RobotContainer.  This will perform all our button bindings, and put our
         # autonomous chooser on the dashboard.
