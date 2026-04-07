@@ -157,7 +157,7 @@ class MyRobot(LoggedRobot):
         super().robotInit()
 
         # Disable most logging. Rely upon pykit
-        DataLogManager.start()
+        # DataLogManager.start() for .wpilog files
 
         SignalLogger.enable_auto_logging(False)
         StatusLogger.disableAutoLogging()
@@ -250,7 +250,7 @@ class MyRobot(LoggedRobot):
         # This routine is called
         LogTracer.resetOuter("RobotPeriodic")
 
-        _status = Phoenix6Signals.refresh()
+        # _status = Phoenix6Signals.refresh()       # TODO: Investigate
         LogTracer.record("PhoenixUpdate")
 
         self.container.robotPeriodic()

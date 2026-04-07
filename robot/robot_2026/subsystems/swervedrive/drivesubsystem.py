@@ -115,7 +115,7 @@ SwerveModuleStates = Sequence[SwerveModuleState]
 logger = logging.getLogger(__name__)
 
 
-@autologgable_output
+#@autologgable_output
 class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
     _SIM_LOOP_PERIOD: units.second = 0.004  # 4 ms
 
@@ -526,9 +526,9 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
-        SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
-        SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
+        # SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
+        # SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
+        # SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
 
         self.gyro.dashboard_periodic()
 

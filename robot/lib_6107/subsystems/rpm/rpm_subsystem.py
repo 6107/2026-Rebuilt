@@ -92,7 +92,7 @@ class RpmConfig:
         return self.__rpm_required_attributes
 
 
-@autologgable_output
+#@autologgable_output
 class RpmSubsystem(Subsystem, RpmMechanismIO):
     """
     A subsystem with a single motor that typically has an RPM goal.  This will provide a
@@ -279,21 +279,21 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         Configure the SmartDashboard for this subsystem
         """
-        SmartDashboard.putNumber(f"{self._long_name}/Goal",0.0)
-        SmartDashboard.putNumber(f"{self._long_name}/Tolerance", 0.0)
-        SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
-        SmartDashboard.putNumber(f"{self._long_name}/Voltage", 0.0)
-        SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
+        # SmartDashboard.putNumber(f"{self._long_name}/Goal",0.0)
+        # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", 0.0)
+        # SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
+        # SmartDashboard.putNumber(f"{self._long_name}/Voltage", 0.0)
+        # SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
 
     def dashboard_periodic(self) -> None:
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
-        SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
-        SmartDashboard.putNumber(f"{self._long_name}/Current",  self._inputs.mechanism_velocity)
-        SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._inputs.mechanism_applied_voltage)
-        SmartDashboard.putNumber(f"{self._long_name}/Current", self._inputs.mechanism_supply_current)
+        # SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
+        # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
+        # SmartDashboard.putNumber(f"{self._long_name}/Current",  self._inputs.mechanism_velocity)
+        # SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._inputs.mechanism_applied_voltage)
+        # SmartDashboard.putNumber(f"{self._long_name}/Current", self._inputs.mechanism_supply_current)
 
     def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
         raise NotImplementedError("updateInputs: Implement in a derived class")

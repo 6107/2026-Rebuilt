@@ -49,7 +49,7 @@ class IntakeConstants(RevRpmConfig):
 INTAKE_FUEL_RPM: revolutions_per_minute = 5250.0
 
 
-@autologgable_output
+#@autologgable_output
 class RevIntakeRoller(RevRpmSubsystem):
     """
     Intake Roller Motor.

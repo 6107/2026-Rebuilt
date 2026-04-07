@@ -53,7 +53,7 @@ class RevRpmConfig(RpmConfig):
     measurement_std_dev = [0.0, 0.0]
     max_rpm: Optional[revolutions_per_minute] = None  # Must be set by subclass
 
-@autologgable_output
+#@autologgable_output
 class RevRpmSubsystem(RpmSubsystem):
     """
     A subsystem with a single motor that typically has an RPM goal.  This will provide a

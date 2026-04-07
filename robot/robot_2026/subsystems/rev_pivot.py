@@ -63,7 +63,7 @@ class PivotConstants:
     PIVOT_LENGTH: meters = inchesToMeters(8.0)
     PIVOT_MASS: kilograms = 1.0  # TODO: Verify
 
-@autologgable_output
+#@autologgable_output
 class RevIntakePivot(Subsystem, DualMechanismIO):
     """
     Intake Pivot Motor.
@@ -497,8 +497,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         Configure the SmartDashboard for this subsystem
         """
         SmartDashboard.putNumber("Intake/Pivot/goal",0.0)
-        SmartDashboard.putNumber("Intake/Pivot/left-speed", 0.0)
-        SmartDashboard.putNumber("Intake/Pivot/right-speed", 0.0)
+        # SmartDashboard.putNumber("Intake/Pivot/left-speed", 0.0)
+        # SmartDashboard.putNumber("Intake/Pivot/right-speed", 0.0)
 
     def dashboard_periodic(self) -> None:
         """
@@ -507,9 +507,9 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         SmartDashboard.putNumber("Intake/Pivot/goal", self._position_goal)
         # SmartDashboard.putBoolean("Intake/Pivot/closed-loop", self._closed_loop)
         # SmartDashboard.putNumber("Intake/Pivot/left-position", self.left_position)
-        SmartDashboard.putNumber("Intake/Pivot/left-speed", self._inputs.mechanism_1_speed)
+        # SmartDashboard.putNumber("Intake/Pivot/left-speed", self._inputs.mechanism_1_speed)
         # SmartDashboard.putNumber("Intake/Pivot/right-position", self.right_position)
-        SmartDashboard.putNumber("Intake/Pivot/right-speed", self._inputs.mechanism_2_speed)
+        # SmartDashboard.putNumber("Intake/Pivot/right-speed", self._inputs.mechanism_2_speed)
 
     def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
         """

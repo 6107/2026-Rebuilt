@@ -77,7 +77,7 @@ class ClimberConstants:
     # Simulation Support
     CARRIAGE_MASS: kilograms = 1.0  # The part that extends up
 
-@autologgable_output
+#@autologgable_output
 class RevClimber(Subsystem, RotationMechanismIO):
 
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool) -> None:
@@ -358,18 +358,18 @@ class RevClimber(Subsystem, RotationMechanismIO):
         """
         Configure the SmartDashboard for this subsystem
         """
-        SmartDashboard.putNumber("Climber/position", 0.0)
+        # SmartDashboard.putNumber("Climber/position", 0.0)
         SmartDashboard.putNumber("Climber/goal", 0.0)
-        SmartDashboard.putNumber("Climber/speed", 0.0)
+        # SmartDashboard.putNumber("Climber/speed", 0.0)
 
     def dashboard_periodic(self) -> None:
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        SmartDashboard.putNumber("Climber/position", self.position)
+        # SmartDashboard.putNumber("Climber/position", self.position)
         SmartDashboard.putNumber("Climber/goal", self._position_goal)
-        SmartDashboard.putNumber("Climber/speed", self._inputs.mechanism_speed)
-        SmartDashboard.putBoolean("Climber/closed-loop", self._closed_loop)
+        # SmartDashboard.putNumber("Climber/speed", self._inputs.mechanism_speed)
+        # SmartDashboard.putBoolean("Climber/closed-loop", self._closed_loop)
 
     def updateInputs(self, inputs: RotationMechanismIO.RotationMechanismIOInputs) -> None:
         if not self.is_initialized:

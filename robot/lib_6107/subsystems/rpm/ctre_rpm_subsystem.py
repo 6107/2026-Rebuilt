@@ -58,7 +58,7 @@ class CtreRpmConfig:
     max_rpm: Optional[revolutions_per_minute] = None  # Must be set by subclass
 
 
-@autologgable_output
+#@autologgable_output
 class CtreRpmSubsystem(RpmSubsystem):
     """
     A subsystem with a single motor that typically has an RPM goal.  This will provide a

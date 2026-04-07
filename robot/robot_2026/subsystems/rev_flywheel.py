@@ -96,7 +96,7 @@ class FlywheelIO:
         pass
 
 
-@autologgable_output
+#@autologgable_output
 class RevFlywheel(RevRpmSubsystem):
     """
     Rev NEO 21-1650
@@ -204,11 +204,11 @@ class RevFlywheel(RevRpmSubsystem):
         super().dashboard_periodic()
         # TODO: Following are debug visualization. May remove later
 
-        SmartDashboard.putBoolean(f"{self._long_name}/Goal", self.goal)
-        SmartDashboard.putNumber(f"{self._long_name}/Current", self.velocity_in_rpm)
-        SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
-        SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._motor.getAppliedOutput())
-        SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getOutputCurrent())
+        # SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
+        # SmartDashboard.putNumber(f"{self._long_name}/Current", self.velocity_in_rpm)
+        # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
+        # SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._motor.getAppliedOutput())
+        # SmartDashboard.putNumber(f"{self._long_name}/Current", self._motor.getOutputCurrent())
 
         pose: Pose2d = self._container.field2d.getRobotPose()
 
