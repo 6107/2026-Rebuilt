@@ -21,6 +21,7 @@ from typing import Callable, List, Optional, Sequence, Tuple
 
 from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout
 from wpilib import getDeployDirectory
+from wpilib._wpilib import RobotBase
 from wpimath.geometry import Pose3d
 from wpimath.units import meters
 
@@ -49,11 +50,15 @@ class Field:
 
     def __init__(self):
         # First is the default
-        self._april_tag_chooser = LoggedDashboardChooser("Field Selector")
-        self._april_tag_chooser.setDefaultOption(self._field_info[0][0], self._field_info[0][1])
+        self._default_field = self._field_info[0][1]
+        self._simulation = RobotBase.isSimulation()
 
-        for field in self._field_info[1:]:
-            self._april_tag_chooser.addOption(field[0], field[1])
+        if self._simulation:
+            self._april_tag_chooser = LoggedDashboardChooser("Field Selector")
+            self._april_tag_chooser.setDefaultOption(self._field_info[0][0], self._field_info[0][1])
+
+            for field in self._field_info[1:]:
+                self._april_tag_chooser.addOption(field[0], field[1])
 
         # print("TODO: Support NT4 here")
         # self._chooser_entry = NetworkTables.getTable("SmartDashboard").getEntry("Field Selector/active")
@@ -119,13 +124,20 @@ class Field:
 
     def _init_april_tags(self) -> None:
         # Load the current default and register a callback for changes
-        self._field = self._april_tag_chooser.getSelected()
+        if self._simulation:
+            self._field = self._april_tag_chooser.getSelected()
+        else:
+            self._field = self._default_field
+
         self._load_april_tag_field()
 
     def _on_field_changed(self, entry, key, value, param) -> None:
         logger.info(f"Field selector changed: {entry}, {key}, {value}, {param}")
         prev_field = self._field
-        self._field = self._april_tag_chooser.getSelected()
+        if self._simulation:
+            self._field = self._april_tag_chooser.getSelected()
+        else:
+            self._field = self._default_field
         self._load_april_tag_field(prev_field)
 
     def _load_april_tag_field(self, prev_field: Optional[AprilTagField] = None) -> None:
