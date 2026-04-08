@@ -129,6 +129,8 @@ class MyRobot(LoggedRobot):
         self._stats: RobotStatistics = RobotStatistics(self)
         self._is_simulation = RobotBase.isSimulation()
 
+        self._command_scheduler: CommandScheduler | None = None
+
         self._network_tables_instance = NetworkTableInstance.getDefault()
         self._phoenix_signals = Phoenix6Signals()
 
@@ -269,8 +271,10 @@ class MyRobot(LoggedRobot):
             # time consumed by each subsystem.
             #
             # After the 'periodic' servicing, any scheduled Commands are ran.
+            if self._command_scheduler is None:
+                self._command_scheduler = CommandScheduler.getInstance()
 
-            CommandScheduler.getInstance().run()
+            self._command_scheduler.run()
             LogTracer.record("CommandsPeriodic")
 
         LogTracer.recordTotal()
