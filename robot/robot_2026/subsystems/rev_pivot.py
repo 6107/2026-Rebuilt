@@ -42,13 +42,13 @@ logger = logging.getLogger(__name__)
 
 class PivotConstants:
     TARGET_RPM: revolutions_per_minute = 10
-    PROPORTIONAL_COEFFICIENT = 0#  10  # 1e-2  # kP
+    PROPORTIONAL_COEFFICIENT = .001   # kP
     INTEGRAL_COEFFICIENT = 0       # 1e-5  # kI
-    DERIVATIVE_COEFFICIENT = 0 #100   # 1e-2  # kD
+    DERIVATIVE_COEFFICIENT = 1e-2  # kD
     LIMIT_CURRENT: amperes = 30
 
     MAX_RPM: revolutions_per_minute = 6784
-    GEAR_RATIO = 1.0  # TODO: Need more torque. Get working in Rev Client 2.0 first and transfer numbers here
+    GEAR_RATIO = 6.81
     SPOOL_DIAMETER: meters = 1.0    # TODO: Use an algorythm to compensate for cord already spooled in
     DEPLOYED_ANGLE: degrees = 90.0  # This is straight forward since our encoder is set to zero on power up position
     RETRACTED_ANGLE: degrees = 0.0  # This is straight up.
@@ -103,8 +103,8 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         self._container = container
         self._robot = container.robot
         self._period: seconds = container.robot.getPeriod()
-        self._left_device_id = can_left_device_id
-        self._left_inverted = left_inverted
+        #self._left_device_id = can_left_device_id
+        #self._left_inverted = left_inverted
         self._right_device_id = can_right_device_id
         self._right_inverted = right_inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
@@ -113,11 +113,11 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         self._physics_controller = None
 
         # Set up the motor controller
-        self._left_motor = SparkFlex(self._left_device_id, SparkFlex.MotorType.kBrushless)
-        l_status = try_until_ok("Left Intake", 5,
-                                lambda: self._left_motor.configure(self._motor_config(self._left_inverted),
-                                                                   ResetMode.kResetSafeParameters,
-                                                                   PersistMode.kNoPersistParameters))
+        # self._left_motor = SparkFlex(self._left_device_id, SparkFlex.MotorType.kBrushless)
+        # l_status = try_until_ok("Left Intake", 5,
+        #                         lambda: self._left_motor.configure(self._motor_config(self._left_inverted),
+        #                                                            ResetMode.kResetSafeParameters,
+        #                                                            PersistMode.kNoPersistParameters))
 
         self._right_motor = SparkFlex(self._right_device_id, SparkFlex.MotorType.kBrushless)
         r_status = try_until_ok("Right Intake", 5,
@@ -127,40 +127,40 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         # Check if the device was successfully configured and can be reached over the
         # CAN bus.
-        self._l_is_connected, self._r_is_connected = self._check_is_connected(l_status, r_status)
+        self._r_is_connected = self._check_is_connected( r_status)
 
         # Set up the encoders
-        self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
+        # self._left_encoder: SparkRelativeEncoder = self._left_motor.getEncoder()
         self._right_encoder: SparkRelativeEncoder = self._right_motor.getEncoder()
 
         logger.info(
-            f"Intake Pivot. At startup, encoder currently at {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+            f"Intake Pivot. At startup, encoder currently at {self._right_encoder.getPosition()}")
 
         # Support simulation
-        self._left_sim_initial = None
+        # self._left_sim_initial = None
         self._right_sim_initial = None
 
         if RobotBase.isSimulation():
             gearbox = DCMotor.NEO(1)
-            self._left_sim_motor = SparkFlexSim(self._left_motor, gearbox)
+            # self._left_sim_motor = SparkFlexSim(self._left_motor, gearbox)
             self._right_sim_motor = SparkFlexSim(self._right_motor, gearbox)
 
-            self._left_sim_encoder = SparkRelativeEncoderSim(self._left_motor)
+            #  self._left_sim_encoder = SparkRelativeEncoderSim(self._left_motor)
             self._right_sim_encoder = SparkRelativeEncoderSim(self._right_motor)
 
             moi = SingleJointedArmSim.estimateMOI(PivotConstants.PIVOT_LENGTH, PivotConstants.PIVOT_MASS)
-
-            self._left_sim_pivot = SingleJointedArmSim(gearbox,
-                                                       PivotConstants.GEAR_RATIO,
-                                                       moi,
-                                                       PivotConstants.PIVOT_LENGTH,
-                                                       self._adjust_intake_angle_radians(
-                                                           PivotConstants.DEPLOYED_ANGLE),  # Min Angle
-                                                       self._adjust_intake_angle_radians(
-                                                           PivotConstants.RETRACTED_ANGLE),  # Max Angle
-                                                       True,
-                                                       self._adjust_intake_angle_radians(
-                                                           PivotConstants.RETRACTED_ANGLE))  # Starting Angle
+            #
+            # self._left_sim_pivot = SingleJointedArmSim(gearbox,
+            #                                            PivotConstants.GEAR_RATIO,
+            #                                            moi,
+            #                                            PivotConstants.PIVOT_LENGTH,
+            #                                            self._adjust_intake_angle_radians(
+            #                                                PivotConstants.DEPLOYED_ANGLE),  # Min Angle
+            #                                            self._adjust_intake_angle_radians(
+            #                                                PivotConstants.RETRACTED_ANGLE),  # Max Angle
+            #                                            True,
+            #                                            self._adjust_intake_angle_radians(
+            #                                                PivotConstants.RETRACTED_ANGLE))  # Starting Angle
             self._right_sim_pivot = SingleJointedArmSim(gearbox,
                                                         PivotConstants.GEAR_RATIO,
                                                         moi,
@@ -175,13 +175,13 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
         # PID Controller for use while in autonomous mode. During teleop end-game, the
         # operator or shooter's controller will have manual up/down control.
-        self._left_pid_controller: SparkClosedLoopController = self._left_motor.getClosedLoopController()
+        # self._left_pid_controller: SparkClosedLoopController = self._left_motor.getClosedLoopController()
         self._right_pid_controller: SparkClosedLoopController = self._right_motor.getClosedLoopController()
 
         logger.info(
             f"Intake Pivot. At startup, pid setpoints are {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
 
-        self._left_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+        # self._left_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
         self._right_pid_controller.setSetpoint(0, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
         # TODO: What about velocity goal?
 
@@ -332,29 +332,29 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         """
         For Rev Robotics, the only way to check if all is well i
         """
-        l_version = self._left_motor.getFirmwareVersion()
+        # l_version = self._left_motor.getFirmwareVersion()
         r_version = self._right_motor.getFirmwareVersion()
 
-        logger.info(f"{self.getName()} firmware versions: {l_version}/{r_version}")
+        logger.info(f"{self.getName()} firmware versions: {r_version}")
 
-        l_ok = (l_version != 0 and (l_status is None or l_status == REVLibError.kOk)) or RobotBase.isSimulation()
+        # l_ok = (l_version != 0 and (l_status is None or l_status == REVLibError.kOk)) or RobotBase.isSimulation()
         r_ok = (r_version != 0 and (r_status is None or r_status == REVLibError.kOk)) or RobotBase.isSimulation()
 
-        if not l_ok:
-            logger.warning(f"{self.getName()} (left) firmware version: {l_version}, status: {l_status}")
+        # if not l_ok:
+        #     logger.warning(f"{self.getName()} (left) firmware version: {l_version}, status: {l_status}")
 
         if not r_ok:
             logger.warning(f"{self.getName()} (right) firmware version: {r_version}, status: {r_status}")
 
-        return l_ok, r_ok
+        return r_ok
 
     @property
     def angle(self) -> degrees:
-        return self._left_encoder.getPosition()
+        return self._right_encoder.getPosition()
 
     @property
     def angular_velocity(self) -> degrees_per_second:
-        return self._left_encoder.getVelocity()
+        return self._right_encoder.getVelocity()
 
     def _adjust_intake_angle(self, angle: degrees) -> degrees:
         """
@@ -400,7 +400,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
     def pivot_up(self):
         # Set encoders to zero and go up ~90 degrees
-        logger.info(f"Intake: Pivot up, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+        logger.info(f"Intake: Pivot up, currently at l/r: {self._right_encoder.getPosition()}")
         logger.info(f"Intake: Pivot up. Position goal before command is: {self._position_goal}")
 
         self.set_position_goal(PivotConstants.RETRACTED_ANGLE)
@@ -413,19 +413,19 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
     def pivot_down(self):
         # Set encoders to 90 degrees and go down
-        logger.info(f"Intake: Pivot down, currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
+        logger.info(f"Intake: Pivot down, currently at l/r: {self._right_encoder.getPosition()}")
         logger.info(f"Intake: Pivot down. Position goal before command is: {self._position_goal}")
 
         self.set_position_goal(PivotConstants.DEPLOYED_ANGLE)
 
     def set_position_goal(self, goal: degrees) -> None:
         if self._position_goal != goal:
-            logger.info(f"Intake: Setting goal position to {goal}. currently at l/r: {self._left_encoder.getPosition()}/{self._right_encoder.getPosition()}")
-            logger.info(f"Intake: current PID controller setpoint before command is: {self._left_pid_controller.getSetpoint()}/{self._right_pid_controller.getSetpoint()}")
+            logger.info(f"Intake: Setting goal position to {goal}. currently at l/r: {self._right_encoder.getPosition()}")
+            logger.info(f"Intake: current PID controller setpoint before command is: {self._right_pid_controller.getSetpoint()}")
 
             self._position_goal = goal
 
-            self._left_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
+            #  self._left_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
             self._right_pid_controller.setSetpoint(goal, SparkBase.ControlType.kPosition, ClosedLoopSlot(0))
             # TODO: What about velocity goal?
             #       https://docs.revrobotics.com/revlib/spark/closed-loop/getting-started-with-pid-tuning
@@ -462,7 +462,7 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
     def stop(self) -> None:
         logger.info(f"Intake Pivot: Stop command was called")
-        self._left_motor.stopMotor()
+        # self._left_motor.stopMotor()
         self._right_motor.stopMotor()
 
     def periodic(self) -> None:
@@ -530,34 +530,34 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         'important' difference is 'update_sim' is called at a period >= 10 ms instead
         of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
         """
-        if self._robot.isEnabled() and self._left_sim_pivot is not None and self._left_sim_pivot is not None:
+        if self._initialized and self._robot.isEnabled() and self._right_sim_pivot is not None and self._right_sim_pivot is not None:
             LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
 
-            left_output = self._left_sim_motor.getAppliedOutput()
+            # left_output = self._left_sim_motor.getAppliedOutput()
             right_output = self._right_sim_motor.getAppliedOutput()
 
             # First pass, set the encoder positions to the initial setting
-            if self._left_sim_initial is None:
-                self._left_encoder.setPosition(PivotConstants.RETRACTED_ANGLE)
-                self._left_sim_initial = self._left_encoder.getPosition()
+            # if self._left_sim_initial is None:
+            #     self._left_encoder.setPosition(PivotConstants.RETRACTED_ANGLE)
+            #     self._left_sim_initial = self._left_encoder.getPosition()
 
             if self._right_sim_initial is None:
                 self._right_encoder.setPosition(PivotConstants.RETRACTED_ANGLE)
                 self._right_sim_initial = self._right_encoder.getPosition()
 
             input_voltage = RobotController.getInputVoltage()  # TODO: Can we use BatterySim?
-            left_applied_output = left_output * input_voltage
+            # left_applied_output = left_output * input_voltage
             right_applied_output = right_output * input_voltage
 
             # TODO: Can we use BatterySim?
             # logger.info("pivot iterate")
-            if left_applied_output != 0.0:
-                self._left_sim_motor.iterate(left_applied_output, input_voltage, self._period)
+            # if left_applied_output != 0.0:
+            #     self._left_sim_motor.iterate(left_applied_output, input_voltage, self._period)
 
             if right_applied_output != 0.0:
                 self._right_sim_motor.iterate(right_applied_output, input_voltage, self._period)
 
-            self._left_sim_pivot.setInputVoltage(left_applied_output)
+            # self._left_sim_pivot.setInputVoltage(left_applied_output)
             self._left_sim_pivot.update(self._period)
 
             self._right_sim_pivot.setInputVoltage(right_applied_output)
@@ -566,24 +566,23 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
             # Set the simulated encoder
             # self._left_sim_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
             # self._right_sim_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
-            self._left_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
+            # self._left_encoder.setPosition(self._left_sim_pivot.getAngleDegrees())
             self._right_encoder.setPosition(self._right_sim_pivot.getAngleDegrees())
 
-            pivot = self._left_sim_pivot.getAngleDegrees()
+            pivot = self._right_sim_pivot.getAngleDegrees()
 
             # And simulate current drain
-            RoboRioSim.setVInVoltage(BatterySim.calculate([self._left_sim_pivot.getCurrentDraw(),
-                                                           self._right_sim_pivot.getCurrentDraw()]))
+            RoboRioSim.setVInVoltage(BatterySim.calculate([self._right_sim_pivot.getCurrentDraw()]))
             LogTracer.recordTotal()
 
     def updateInputs(self, inputs: DualMechanismIO.DualMechanismIOInputs) -> None:
         if not self.is_initialized:
             return
-        inputs.mechanism_1_connected = self._l_is_connected
-        inputs.mechanism_1_position = self._adjust_intake_angle(self._left_encoder.getPosition())
-        inputs.mechanism_1_speed = self._left_encoder.getVelocity()
-        inputs.mechanism_1_applied_voltage = self._left_motor.getBusVoltage()
-        inputs.mechanism_1_supply_current = self._left_motor.getOutputCurrent()
+        # inputs.mechanism_1_connected = self._l_is_connected
+        # inputs.mechanism_1_position = self._adjust_intake_angle(self._left_encoder.getPosition())
+        # inputs.mechanism_1_speed = self._left_encoder.getVelocity()
+        # inputs.mechanism_1_applied_voltage = self._left_motor.getBusVoltage()
+        # inputs.mechanism_1_supply_current = self._left_motor.getOutputCurrent()
 
         inputs.mechanism_2_connected = self._r_is_connected
         inputs.mechanism_2_position = self._adjust_intake_angle(self._right_encoder.getPosition())
@@ -628,20 +627,20 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
 
             self._inputs.mechanism_1_position = position
             self._inputs.mechanism_2_position = position
-            self._left_encoder.setPosition(position)
+            # self._left_encoder.setPosition(position)
             self._right_encoder.setPosition(position)
 
             if RobotBase.isSimulation():
-                self._left_sim_encoder.setPosition(position)
+                # self._left_sim_encoder.setPosition(position)
                 self._right_sim_encoder.setPosition(position)
 
     def set_voltage(self, voltage: volts) -> None:
         """
         Set the drive voltage
         """
-        if voltage != self._left_motor.getAppliedOutput() or voltage != self._right_motor.getAppliedOutput():
+        if  voltage != self._right_motor.getAppliedOutput():
             logger.info(f"Intake: Setting voltage to {voltage}")
-            self._left_motor.setVoltage(voltage)
+            # self._left_motor.setVoltage(voltage)
             self._right_motor.setVoltage(voltage)
 
     def sys_id_routine(self, subsystem: Subsystem) -> Command:
@@ -699,5 +698,6 @@ class RevIntakePivot(Subsystem, DualMechanismIO):
         TODO: Good thing for a base class, don't you think
         """
         # For Rev Robotics, the faults are a bitmask
-        handle_faults("Pivot-Left Motor", state, self._left_motor, clear=clear, notify=notify)
+        # handle_faults("Pivot-Left Motor", state, self._left_motor, clear=clear, notify=notify)
         handle_faults("Pivot-Right Motor", state, self._right_motor, clear=clear, notify=notify)
+
