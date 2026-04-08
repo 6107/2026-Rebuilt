@@ -35,7 +35,7 @@ class RotationMechanismIO:
         mechanism_speed: float = 0.0            # Inches / second
         mechanism_applied_voltage: volts = 0.0
         mechanism_supply_current: amperes = 0.0
-        mechanism_torque_amps: amperes = 0.0
+        # mechanism_torque_amps: amperes = 0.0  # TODO: Figure this out or drop it
 
     def __init__(self, name: str) -> None:
         self.name = name

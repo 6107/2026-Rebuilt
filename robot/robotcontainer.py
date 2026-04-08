@@ -148,9 +148,8 @@ class RobotContainer:
             # Right Pivot Motor should be Inverted
             try:
                 self.intake_pivot = IntakePivot(self,
-                                                DeviceID.INTAKE_LEFT_PIVOT_DEVICE_ID,
                                                 DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                                False, True)
+                                                True)
             except Exception as _e:
                 logger.exception(f"Exception during Intake Pivot initialization: {_e}")
 
