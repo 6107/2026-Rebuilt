@@ -344,21 +344,21 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         LogTracer.record("Closed Loop Control")
         Logger.recordOutput("Climber/goal", self._position_goal)
-        Logger.recordOutput("Climber/ClosedLoop", self._closed_loop)
+        # Logger.recordOutput("Climber/ClosedLoop", self._closed_loop)
         LogTracer.recordTotal()
 
-        # Update SmartDashboard for this subsystem at a rate slower than the period
-        counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 37 == 0 and
-                                  self._robot.isEnabled()):
-            self.dashboard_periodic()
+        # # Update SmartDashboard for this subsystem at a rate slower than the period
+        # counter = self._robot.counter
+        # if counter % 100 == 0 or (self._robot.counter % 37 == 0 and
+        #                           self._robot.isEnabled()):
+        #     self.dashboard_periodic()
 
     def dashboard_initialize(self) -> None:
         """
         Configure the SmartDashboard for this subsystem
         """
         # SmartDashboard.putNumber("Climber/position", 0.0)
-        SmartDashboard.putNumber("Climber/goal", 0.0)
+        # SmartDashboard.putNumber("Climber/goal", 0.0)
         # SmartDashboard.putNumber("Climber/speed", 0.0)
 
     def dashboard_periodic(self) -> None:
@@ -366,7 +366,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         Called from periodic function to update dashboard elements for this subsystem
         """
         # SmartDashboard.putNumber("Climber/position", self.position)
-        SmartDashboard.putNumber("Climber/goal", self._position_goal)
+        # SmartDashboard.putNumber("Climber/goal", self._position_goal)
         # SmartDashboard.putNumber("Climber/speed", self._inputs.mechanism_speed)
         # SmartDashboard.putBoolean("Climber/closed-loop", self._closed_loop)
 
@@ -380,7 +380,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         inputs.mechanism_applied_voltage = self._motor.getBusVoltage()
         inputs.mechanism_supply_current = self._motor.getOutputCurrent()
-        # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
+        # TODO: Figure this out or drop it -> inputs.mechanism_torque_amps = self._motor.get
 
     def set_position(self, position: inches) -> None:
         """
