@@ -134,7 +134,14 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
             # default_auto_added = True
             chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
         else:
-            chooser.addOption(auto, AutoBuilder.buildAuto(auto))
+            try:
+                chooser.addOption(auto, AutoBuilder.buildAuto(auto))
+
+            except FileNotFoundError as fe:
+                logger.error(f"AutoBuilder add option File not found exception: {e}")
+
+            except Exception as e:
+                logger.error(f"AutoBuilder add option exception: {e}")
 
     # if not default_auto_added:
     #     chooser.setDefaultOption("None", cmd.none())
