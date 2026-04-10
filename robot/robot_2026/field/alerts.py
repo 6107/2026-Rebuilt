@@ -52,8 +52,8 @@ class RobotAlerts:
         if RobotBase.isReal() and not os.path.exists("/U/logs"):
             self.usbAlert.set(True)
 
-        self._preflight_alert = Alert("preflight checking not complete",
-                                      Alert.AlertType.kError)
+        # self._preflight_alert = Alert("Preflight checking not complete",
+        #                               Alert.AlertType.kError)
         # preflight checklist
         AlertLogger.registerGroup("preflight")
         self._preflight = PreflightChecklist()
@@ -72,7 +72,7 @@ class RobotAlerts:
         self.climber_disabled_alert.set(missing_or_disabled(self._container.climber))
         self.intake_disabled_alert.set(missing_or_disabled(self._container.intake_pivot))  # Controls entire system
 
-        self._preflight_alert.set(not self._preflight.is_complete())
+        # self._preflight_alert.set(not self._preflight.is_complete())
 
     def preflight_update(self) -> None:
         self._preflight.update()
