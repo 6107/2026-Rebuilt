@@ -71,9 +71,9 @@ class PreflightChecklist:
             PreflightChecklist.PreflightCheck(
                 "Autonomous is Selected", "Preflight/Autonomous", True
             ),
-            PreflightChecklist.PreflightCheck(
-                "Autonomous Ending is Selected", "Preflight/AutoEnds", True
-            ),
+            # PreflightChecklist.PreflightCheck(
+            #     "Autonomous Ending is Selected", "Preflight/AutoEnds", True
+            # ),
             PreflightChecklist.PreflightCheck(
                 "Robot in correct autonomous position", "Preflight/AutoLoc", True
             ),

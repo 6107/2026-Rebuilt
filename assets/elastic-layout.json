@@ -77,7 +77,7 @@
             "x": 0.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 448.0,
+            "height": 320.0,
             "type": "Alerts",
             "properties": {
               "topic": "/SmartDashboard/Alerts",
@@ -188,6 +188,19 @@
               "robot_color": 4294198070,
               "trajectory_color": 4294967295,
               "show_robot_outside_widget": true
+            }
+          },
+          {
+            "title": "Drive Rate Limiter",
+            "x": 64.0,
+            "y": 320.0,
+            "width": 192.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Drive Rate Limiter",
+              "period": 0.06,
+              "sort_options": false
             }
           }
         ]
@@ -627,19 +640,6 @@
             "properties": {
               "topic": "/SmartDashboard/Alerts",
               "period": 0.06
-            }
-          },
-          {
-            "title": "Autonomous-End",
-            "x": 896.0,
-            "y": 256.0,
-            "width": 448.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Autonomous-EndGame",
-              "period": 0.06,
-              "sort_options": false
             }
           }
         ]

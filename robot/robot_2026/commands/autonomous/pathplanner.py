@@ -126,15 +126,20 @@ def build_auto_chooser(default_auto_name: str = "") -> LoggedDashboardChooser:
 
     chooser = LoggedDashboardChooser("Autonomous")
 
-    default_auto_added = False
+    # default_auto_added = False
 
     for auto in auto_list:
         auto = auto.removesuffix(".auto")
         if auto == default_auto_name:
-            default_auto_added = True
+            # default_auto_added = True
             chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
         else:
             chooser.addOption(auto, AutoBuilder.buildAuto(auto))
+
+    # if not default_auto_added:
+    #     chooser.setDefaultOption("None", cmd.none())
+    # else:
+    #     chooser.addOption("None", cmd.none())
 
     return chooser
 

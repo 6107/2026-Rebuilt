@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.8,
-        "y": 2.5
+        "x": 5.864829030006978,
+        "y": 2.511113049546407
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.955801376998774,
-        "y": 2.016367950838311
+        "x": 6.0206304070057515,
+        "y": 2.027481000384718
       },
       "isLocked": true,
       "linkedName": "N2-A2-N2"
@@ -144,7 +144,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.42,
+    "maxVelocity": 4.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 720.0,
@@ -152,13 +152,13 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 3.0,
+    "velocity": 2.0,
     "rotation": -110.0
   },
   "reversed": false,
   "folder": "Neutral-Paths",
   "idealStartingState": {
-    "velocity": 3.0,
+    "velocity": 2.0,
     "rotation": -29.999999999999996
   },
   "useDefaultConstraints": true

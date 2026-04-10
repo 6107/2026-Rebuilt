@@ -782,9 +782,7 @@ class RobotContainer:
 
         # Auto-started end-of-autonomous mode command (Climb the ladder 1 - Rung)
         self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
-
-        # SmartDashboard.putData("Chosen Auto", self.auto_chooser)
-        # SmartDashboard.putData("Chosen Auto End Game", self._auto_end_chooser)
+        # self._auto_end_chooser.addOption("Do nothing", self.get_do_nothing(stop=False))
 
     def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
         """

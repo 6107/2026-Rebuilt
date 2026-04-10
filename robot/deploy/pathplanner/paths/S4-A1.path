@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.6,
+        "x": 3.55,
         "y": 0.7
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.8020393559928443,
-        "y": 0.6693202146690522
+        "x": 2.752039355992844,
+        "y": 0.6693202146690521
       },
       "isLocked": true,
       "linkedName": "S4"
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.42,
+    "maxVelocity": 4.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 720.0,
