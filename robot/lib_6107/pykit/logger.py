@@ -107,7 +107,10 @@ class Logger:
         :param value: The value to record.
         """
         if cls.running:
-            cls.outputTable.put(key, value, unit=unit)
+            try:
+                cls.outputTable.put(key, value, unit=unit)
+            except Exception as _e:
+                pass
 
     @classmethod
     def recordMetadata(cls, key: str, value: str):

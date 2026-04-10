@@ -182,11 +182,12 @@ class RebuiltField(Field):
         """
         Returns the distance from the robot to the hub in meters, based on the hub estimator
         """
-        location = self.hub_location
-        if location is not None:
-            location.distance((pose3d_from2d(self.hub_pose) + SHOOTER_LOCATION)
-                              .toPose2d().translation())
-        return None
+        # location = self.hub_location
+        # if location is not None:
+        #     location.distance((pose3d_from2d(self.hub_pose) + SHOOTER_LOCATION)
+        #                       .toPose2d().translation())
+        # return None
+        return 0.0
 
     #############################################################
     #  Status and Triggers important to the match

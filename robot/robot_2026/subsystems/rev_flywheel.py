@@ -137,11 +137,11 @@ class RevFlywheel(RevRpmSubsystem):
 
     @property
     def aimed_at_hub(self) -> bool:
-        return self._inputs.aimed_at_hub
+        return False    # self._inputs.aimed_at_hub
 
     @property
     def rpm_at_goal(self) -> bool:
-        return self._inputs.rpm_at_goal
+        return False  # self._inputs.rpm_at_goal
 
     def updateInputs(self, inputs: FlywheelIO.FlywheelIOIOInputs) -> None:
         # Handles base class IO inputs directly here

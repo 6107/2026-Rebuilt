@@ -132,27 +132,30 @@ class LogTable:
         :param value: The value to be logged.
         :param typeStr: An optional custom type string.
         """
-        if hasattr(value, "WPIStruct"):
-            # Handle WPILib struct types - serialize and add schema
-            self.addStructSchema(value, set())
-            log_value = LogValue(
-                wpistruct.pack(value),
-                "struct:" + wpistruct.getTypeName(value.__class__),
-            )
-        elif (
-                hasattr(value, "__iter__")
-                and len(value) > 0
-                and hasattr(value[0], "WPIStruct")
-        ):
-            # Handle arrays of struct types
-            self.addStructSchema(value[0], set())
-            log_value = LogValue(
-                wpistruct.packArray(value),
-                "struct:" + wpistruct.getTypeName(value[0].__class__) + "[]",
-            )
-        else:
-            log_value = LogValue(value, typeStr, unit)
-        self.putValue(key, log_value)
+        try:
+            if hasattr(value, "WPIStruct"):
+                # Handle WPILib struct types - serialize and add schema
+                self.addStructSchema(value, set())
+                log_value = LogValue(
+                    wpistruct.pack(value),
+                    "struct:" + wpistruct.getTypeName(value.__class__),
+                )
+            elif (
+                    hasattr(value, "__iter__")
+                    and len(value) > 0
+                    and hasattr(value[0], "WPIStruct")
+            ):
+                # Handle arrays of struct types
+                self.addStructSchema(value[0], set())
+                log_value = LogValue(
+                    wpistruct.packArray(value),
+                    "struct:" + wpistruct.getTypeName(value[0].__class__) + "[]",
+                )
+            else:
+                log_value = LogValue(value, typeStr, unit)
+            self.putValue(key, log_value)
+        except Exception as e:
+            pass                # Get around None Issue
 
     def putValue(self, key: str, log_value: LogValue):
         """
