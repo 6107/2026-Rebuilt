@@ -105,8 +105,9 @@ def event_active() -> bool:
     """
     Is a registered event or competition active?
     """
-    global __events
-    return any(event.active for event in __events)
+    return True
+    # global __events
+    # return any(event.active for event in __events)
 
 
 competition_active = event_active  # Events and completions are the same
