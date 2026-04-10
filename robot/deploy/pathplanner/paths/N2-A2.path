@@ -47,7 +47,15 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.4218009478672971,
-      "rotationDegrees": -90.0
+      "rotationDegrees": -71.82856239278847
+    },
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 0.0
+    },
+    {
+      "waypointRelativePos": 1.824999999999997,
+      "rotationDegrees": -127.9002953421348
     }
   ],
   "constraintZones": [

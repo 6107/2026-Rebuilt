@@ -159,7 +159,7 @@
   "folder": "Neutral-Paths",
   "idealStartingState": {
     "velocity": 0.0,
-    "rotation": 29.999999999999996
+    "rotation": -179.2635709589041
   },
   "useDefaultConstraints": true
 }
