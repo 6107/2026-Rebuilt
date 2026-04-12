@@ -99,8 +99,10 @@ class LoggedRobot(IterativeRobotBase):
             userCodeStart = RobotController.getFPGATime()
             self._loopFunc()
             userCodeEnd = RobotController.getFPGATime()
-
-            # Run logger post-user code (save outputs to log)
-            Logger.periodicAfterUser(
-                userCodeEnd - userCodeStart, userCodeStart - periodicBeforeStart
-            )
+            # try:     # HACK: Exception work around when in match (FMS Active)
+            #     # Run logger post-user code (save outputs to log)
+            #     Logger.periodicAfterUser(
+            #         userCodeEnd - userCodeStart, userCodeStart - periodicBeforeStart
+            #     )
+            # except Exception as e:
+            #     pass

@@ -43,15 +43,18 @@ class LoggedPowerDistribution:
         return cls.instance
 
     def saveToTable(self, table: LogTable):
-        table.put("Voltage", self.distribution.getVoltage())
-        table.put("TotalCurrent", self.distribution.getTotalCurrent())
-        table.put("TotalPower", self.distribution.getTotalPower())
-        table.put("TotalEnergy", self.distribution.getTotalEnergy())
-        table.put("Temperature", self.distribution.getTemperature())
+        try:   # HACK: Exception work around when in match (FMS Active)
+            table.put("Voltage", self.distribution.getVoltage())
+            table.put("TotalCurrent", self.distribution.getTotalCurrent())
+            table.put("TotalPower", self.distribution.getTotalPower())
+            table.put("TotalEnergy", self.distribution.getTotalEnergy())
+            table.put("Temperature", self.distribution.getTemperature())
 
-        channelCurrets = []
-        for channel in range(self.distribution.getNumChannels()):
-            channelCurrets.append(self.distribution.getCurrent(channel))
+            channelCurrets = []
+            for channel in range(self.distribution.getNumChannels()):
+                channelCurrets.append(self.distribution.getCurrent(channel))
 
-        table.put("ChannelCurrentsList", channelCurrets)
-        table.put("ChannelCurrentsTotal", sum(channelCurrets))
+            table.put("ChannelCurrentsList", channelCurrets)
+            table.put("ChannelCurrentsTotal", sum(channelCurrets))
+        except Exception as e:
+            pass
