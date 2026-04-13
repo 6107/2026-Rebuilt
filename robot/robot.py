@@ -89,7 +89,12 @@ class MyRobot(LoggedRobot):
                     os.makedirs(usb_logs, exist_ok=True)
                     Logger.addDataReciever(WPILOGWriter())
                 else:
-                    fallback_dir = os.path.abspath("pyLogs")
+                    current_dir = os.getcwd()
+                    if current_dir in ("", "/"):
+                        current_dir = "/home/lvuser"
+
+                    fallback = os.path.join(current_dir, "pyLogs")
+                    fallback_dir = os.path.abspath(fallback)
                     os.makedirs(fallback_dir, exist_ok=True)
                     Logger.addDataReciever(WPILOGWriter(filename=None,
                                                         path=fallback_dir))
