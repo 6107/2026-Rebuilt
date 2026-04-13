@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import random
 from tempfile import gettempdir
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
     from wpiutil.log import DataLog
 
 ASCOPE_FILENAME = "ascope-log-path.txt"
+
+logger = logging.getLogger(__name__)
 
 
 class WPILOGWriter(LogDataReciever):
@@ -86,6 +89,8 @@ class WPILOGWriter(LogDataReciever):
         )
         self.autoRename = filename is None
 
+        logger.info(f"wpilogwriter: folder: '{self.folder}', filename: '{self.filename}'")
+
     def start(self) -> None:
         """
         Initializes the writer by creating the log file and preparing to write data.
@@ -93,21 +98,28 @@ class WPILOGWriter(LogDataReciever):
         # Create folder if necessary
         if not os.path.exists(self.folder):
             try:
+                logger.info(f"wpilogwriter.start: attempting to create folder: '{self.folder}'")
                 os.makedirs(self.folder)
+
             except PermissionError as e:
                 print(f"[WPILogWriter] Failed to create log folder! ({e})")
+                logger.exception(f"wpilogwriter.start: failed to create folder: '{self.folder}': {e}")
                 return
 
         # Initialize the WPILOG file
         fullPath = os.path.join(self.folder, self.filename)
+        logger.info(f"[WPILogWriter] Creating WPILOG file at {fullPath}")
         print(f"[WPILogWriter] Creating WPILOG file at {fullPath}")
         if os.path.exists(fullPath):
+            logger.info("[WPILogWriter] File exists, overwriting")
             print("[WPILogWriter] File exists, overwriting")
             os.remove(fullPath)
         try:
             self.log = DataLogWriter(fullPath, wpilogconstants.extraHeader)
+
         except PermissionError as e:
             print(f"[WPILogWriter] Failed to open WPILOG file! ({e})")
+            logger.exception(f"[WPILogWriter] Failed to open WPILOG file! ({e})")
             return
 
         self.isOpen = True
@@ -124,6 +136,7 @@ class WPILOGWriter(LogDataReciever):
         self.entryUnits: dict[str, str] = {}
         self.logDate = None
         self.logMatchText = ""
+        logger.info("[WPILogWriter] at end of start method")
 
     def end(self) -> None:
         """

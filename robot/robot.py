@@ -115,7 +115,9 @@ class MyRobot(LoggedRobot):
                 Logger.setReplaySource(WPILOGReader(log_path))
                 Logger.addDataReciever(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
 
+        logger.info("Before call to Logger.start()")
         Logger.start()
+        logger.info("After call to Logger.start()")
 
         self._counter = 0  # Updated on each periodic call. Can be used to logging/smartdashboard updates
 
