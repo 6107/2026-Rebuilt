@@ -64,11 +64,11 @@ class ClimberConstants:
     #
     CLIMBER_POS_FACTOR = (SPOOL_DIAMETER * math.pi) / GEAR_RATIO  # 0.157
 
-    CLIMBER_MIN_HEIGHT: inches = 0.3
-    CLIMBER_MAX_HEIGHT: inches = 10.0    # Actually is 8 inches due to dynamic spool size
+    CLIMBER_MIN_HEIGHT: inches = 0.0
+    CLIMBER_MAX_HEIGHT: inches = 8.375    # Actually is 8 inches due to dynamic spool size
 
-    CLIMBER_RETRACTED_SETPOINT = 0.0    # Fully retracted to the 8" mark
-    CLIMBER_EXTENDED_SETPOINT = -12.833 # Fully extended with a slightly snug line
+    CLIMBER_RETRACTED_SETPOINT = 0.3    # Fully retracted to the 8" mark
+    CLIMBER_EXTENDED_SETPOINT = 10.0    # Actually is 8 inches due to dynamic spool size
     CLIMBER_TOLERANCE = 0.75
 
     CLIMBER_ROOT_X: meters = inchesToMeters(.5)  # Bottom left corner of robot is (0, 0)
