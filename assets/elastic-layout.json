@@ -86,10 +86,10 @@
           },
           {
             "title": "MatchTime",
-            "x": 512.0,
-            "y": 0.0,
-            "width": 512.0,
-            "height": 256.0,
+            "x": 192.0,
+            "y": 320.0,
+            "width": 320.0,
+            "height": 128.0,
             "type": "Match Time",
             "properties": {
               "topic": "/AdvantageKit/DriverStation/MatchTime",
@@ -101,61 +101,10 @@
             }
           },
           {
-            "title": "ABOUT TO CHANGE",
-            "x": 256.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 192.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Game/HubAboutToChange",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "ACTIVE",
-            "x": 512.0,
-            "y": 256.0,
-            "width": 320.0,
-            "height": 192.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Game/HubActive",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "WonAuto",
-            "x": 832.0,
-            "y": 256.0,
-            "width": 192.0,
-            "height": 192.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Game/WonAuto",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
             "title": "Voltage",
             "x": 0.0,
             "y": 448.0,
-            "width": 1024.0,
+            "width": 512.0,
             "height": 128.0,
             "type": "Voltage View",
             "properties": {
@@ -171,10 +120,10 @@
           },
           {
             "title": "Field",
-            "x": 1024.0,
+            "x": 1216.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 576.0,
+            "height": 640.0,
             "type": "Field",
             "properties": {
               "topic": "/SmartDashboard/Field",
@@ -192,7 +141,7 @@
           },
           {
             "title": "Drive Rate Limiter",
-            "x": 64.0,
+            "x": 0.0,
             "y": 320.0,
             "width": 192.0,
             "height": 128.0,
@@ -201,6 +150,19 @@
               "topic": "/SmartDashboard/Drive Rate Limiter",
               "period": 0.06,
               "sort_options": false
+            }
+          },
+          {
+            "title": "Front Camera",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 704.0,
+            "height": 640.0,
+            "type": "Camera Stream",
+            "properties": {
+              "topic": "/CameraPublisher/pv-6107-frc_Port_1181_Input_MJPEG_Server",
+              "period": 0.06,
+              "rotation_turns": 0
             }
           }
         ]
@@ -1134,6 +1096,27 @@
               "max_value": 5676.0,
               "divisions": 3,
               "update_continuously": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vision",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "pv-6107-frc_Port_1181_Input_MJPEG_Server",
+            "x": 640.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Camera Stream",
+            "properties": {
+              "topic": "/CameraPublisher/pv-6107-frc_Port_1181_Input_MJPEG_Server",
+              "period": 0.06,
+              "rotation_turns": 0
             }
           }
         ]
