@@ -16,6 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+import math
 from typing import Optional
 
 from commands2 import cmd, Command, Subsystem
@@ -42,15 +43,15 @@ logger = logging.getLogger(__name__)
 class ClimberConstants:
     TARGET_RPM: revolutions_per_minute = 10
 
-    PROPORTIONAL_COEFFICIENT = 1.0    # kP
+    PROPORTIONAL_COEFFICIENT = 2.0    # kP
     INTEGRAL_COEFFICIENT     = 0.0  # kI
     DERIVATIVE_COEFFICIENT   = 0.2  # kD
 
     LIMIT_CURRENT: amperes = 35
 
     GEAR_RATIO = 25.0
-    DRIVE_INPUT_MIN: float = -0.3  # [-1.0 .. 1.0]
-    DRIVE_INPUT_MAX: float = 1.0  # [-1.0 .. 1.0]
+    DRIVE_INPUT_MIN: float = -1.0  # [-1.0 .. 1.0]
+    DRIVE_INPUT_MAX: float = 0.3  # [-1.0 .. 1.0]
 
     SPOOL_DIAMETER: inches = 1.25
 
@@ -58,10 +59,13 @@ class ClimberConstants:
     # and since we are using the internal encoder, turning that on will set the encoder to 0 at that
     # offset. The position compensation factor is set so that 5" hits the 5" mark, but to go the
     # full 8", the setpoint below is used (so it is not in inches)
-    CLIMBER_POS_FACTOR = 2.25        # TODO: Need to look this up with Rev Client 2.0
+    #
+    # Position Factor = ((Wheel Diameter in inches) * PI) / Gear Ration
+    #
+    CLIMBER_POS_FACTOR = (SPOOL_DIAMETER * math.pi) / GEAR_RATIO  # 0.157
 
-    CLIMBER_MIN_HEIGHT: inches = 0.0
-    CLIMBER_MAX_HEIGHT: inches = 8.375
+    CLIMBER_MIN_HEIGHT: inches = 0.3
+    CLIMBER_MAX_HEIGHT: inches = 10.0    # Actually is 8 inches due to dynamic spool size
 
     CLIMBER_RETRACTED_SETPOINT = 0.0    # Fully retracted to the 8" mark
     CLIMBER_EXTENDED_SETPOINT = -12.833 # Fully extended with a slightly snug line
