@@ -22,7 +22,7 @@ from typing import Optional
 from commands2 import cmd, Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, \
-    SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
+    SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim, FeedbackSensor
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
     SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
@@ -43,9 +43,10 @@ logger = logging.getLogger(__name__)
 class ClimberConstants:
     TARGET_RPM: revolutions_per_minute = 10
 
-    PROPORTIONAL_COEFFICIENT = 2.0    # kP
-    INTEGRAL_COEFFICIENT     = 0.0  # kI
-    DERIVATIVE_COEFFICIENT   = 0.2  # kD
+    PROPORTIONAL_COEFFICIENT = 6.0  # kP - If you’re not where you want to be, get there.
+    INTEGRAL_COEFFICIENT     = 0.0  # kI - If you haven’t been where you want to be for a while, apply more effort
+                                    #      to get there”, since it really isn’t about speed.
+    DERIVATIVE_COEFFICIENT   = 0.2  # kD - If you’re getting close to where you want to be, slow down.
 
     LIMIT_CURRENT: amperes = 35
 
@@ -213,12 +214,12 @@ class RevClimber(Subsystem, RotationMechanismIO):
         #    inches/rev) / 60 seconds.  Value is: 0.0002122065907891938
         #velocity_factor = (ClimberConstants.SPOOL_DIAMETER / math.pi) / (ClimberConstants.GEAR_RATIO * 60.0)
         #config.encoder.velocityConversionFactor(velocity_factor)
-
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
             config.closedLoop
             # .IMaxAccum(0.03, slot=slot0)
             # .IZone(3, slot=slot0)
+            .setFeedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(p=ClimberConstants.PROPORTIONAL_COEFFICIENT,  # Slot 0 for position control
                  i=ClimberConstants.INTEGRAL_COEFFICIENT,
                  d=ClimberConstants.DERIVATIVE_COEFFICIENT,
@@ -260,7 +261,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
             self._position_goal = position
             self._pid_controller.setSetpoint(position, SparkLowLevel.ControlType.kPosition,
                                              ClosedLoopSlot(ClosedLoopSlot.kSlot0))
-            logger.info(f"Climber position set to {position}")
+            logger.info(f"Climber position set to {position}    ******")
 
     def at_min(self) -> bool:
         return self._inputs.mechanism_position <= ClimberConstants.CLIMBER_MIN_HEIGHT + \

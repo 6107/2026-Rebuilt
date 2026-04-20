@@ -179,8 +179,10 @@ class RobotContainer:
         #
         try:
             self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
+
         except Exception as _e:
             logger.exception(f"Exception during Intake Initialization: {_e}")
+            self.climber = None
 
         # Add subsystems that got initialized
         for sub in (self.intake_pivot, self.intake_roller, self.indexer,

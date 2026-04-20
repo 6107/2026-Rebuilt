@@ -137,8 +137,15 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        return super().isFinished() or \
-            self._climber.position >= self._position_goal - ClimberConstants.CLIMBER_TOLERANCE
+
+        super_finished = super().isFinished()
+        climber_finished = self._climber.position >= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+        logger.info(f"Climber retract: super: {super_finished}, climber: {climber_finished}, "
+        f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
+        return super_finished or climber_finished
+
+        # return super().isFinished() or \
+        #     self._climber.position >= self._position_goal - ClimberConstants.CLIMBER_TOLERANCE
 
 
 class ExtendClimber(ClimberBaseCommand):  # change the name for your command
@@ -168,9 +175,11 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        return super().isFinished() or \
-            self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
-
+        super_finished = super().isFinished()
+        climber_finished = self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+        logger.info(f"Climber Extend: super: {super_finished}, climber: {climber_finished}, "
+        f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
+        return super_finished or climber_finished
 
 class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
     """
