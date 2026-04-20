@@ -40,19 +40,19 @@ components = [
 
 # Other pip packages to install
 requires = [
+    "lib_6107==2026.0.1.0",
     "robotpy-pathplannerlib==2026.1.2",
     "photonlibpy==2026.3.2",
     "limelightlib-python==0.9.6",
     "pyntcore==2026.2.2",
     "chardet== 7.3.0",
     "phoenix6==26.1.3",
-    #     "robotpy-pykit==1.0.5",
-    "robotpy-rev==2026.0.4"
+    "robotpy-rev==2026.0.4",
+    "robotpy-hal==2026.2.2",
 ]
 
 # List of paths to include
 include_paths = [
-    "lib_6107",
     "robot_2026",
     "deploy"
 ]

@@ -24,6 +24,13 @@ from typing import Any, Callable, Dict, List, Optional
 from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
+from lib_6107.commands.vision.track_tag_command import TrackTagCommand
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from lib_6107.subsystems.pykit.robot_state import RobotState
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from lib_6107.util.numerical_chooser import IntegerEditBox
+from lib_6107.util.phoenix6_telemetry import Telemetry
 from ntcore import NetworkTableInstance
 from phoenix6 import swerve
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
@@ -34,14 +41,6 @@ from wpimath.units import meters, meters_per_second, radians_per_second, rotatio
 import constants
 from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
     ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
-from lib_6107.commands.camera.track_tag_command import TrackTagCommand
-from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from lib_6107.subsystems.pykit.robot_state import RobotState
-from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from lib_6107.util.numerical_chooser import IntegerEditBox
-from lib_6107.util.phoenix6_telemetry import Telemetry
 from robot_2026.commands.autonomous import pathplanner
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber, TweekDownClimber, TweekUpClimber
 from robot_2026.field.alerts import RobotAlerts
@@ -79,7 +78,7 @@ class RobotContainer:
         self._max_angular_rate: radians_per_second = rotationsToRadians(0.75)  # 3/4 of a rotation per second max angular velocity
 
         # Alliance support
-        self._is_red_alliance: bool = RobotBase.isSimulation()  # Coordinate system based off of blue being to the 'left'
+        self._is_red_alliance: bool = self.simulation  # Coordinate system based off of blue being to the 'left'
         self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
         self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
         #
@@ -101,11 +100,6 @@ class RobotContainer:
         if constants.CALIBRATION_CONTROLLER_PORT > 0 and constants.CALIBRATION_CONTROLLER_PORT not in self._controllers:
             self._calibration_controller: CommandXboxController = CommandXboxController(constants.CALIBRATION_CONTROLLER_PORT)
             self._controllers.append((self._calibration_controller, constants.SHOOTER_CONTROLLER_PORT))
-
-        ########################################################
-        # Subsystem initialization
-        #
-        period = robot.getPeriod() or DEFAULT_ROBOT_FREQUENCY
 
         ##########################################
         # Subsystem Initialization

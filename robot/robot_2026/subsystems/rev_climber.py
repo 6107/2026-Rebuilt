@@ -21,21 +21,20 @@ from typing import Optional
 
 from commands2 import cmd, Command, Subsystem
 from commands2.sysid import SysIdRoutine
-from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, SparkMaxConfig, \
-    SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim, FeedbackSensor
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.util.competition import event_active
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
+from rev import ClosedLoopSlot, FeedbackSensor, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, \
+    SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
+from robot_2026.util.logtracer import LogTracer
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
     SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, inches, inchesToMeters, kilograms, meters, revolutions_per_minute, seconds, volts
-
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
-from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
-from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
-from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +93,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self.setName(self.__class__.__name__)
         self._container = container
         self._robot = container.robot
-        self._period: seconds = container.robot.getPeriod()
+        self._period: seconds = container.robot.period
         self._device_id = can_device_id
         self._inverted = inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
@@ -117,7 +116,8 @@ class RevClimber(Subsystem, RotationMechanismIO):
             logger.error("Climber encoder 'setPosition' Error, %d", status)
 
         # Support simulation
-        if RobotBase.isSimulation():
+        self._is_simulation = RobotBase.isSimulation()
+        if self._is_simulation:
             motor_model = DCMotor.NEO(1)
             self._sim_motor = SparkMaxSim(self._motor, motor_model)
             self._sim_encoder = SparkRelativeEncoderSim(self._motor)
@@ -176,7 +176,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         logger.info(f"{self.getName()} firmware version: {version}")
 
-        ok = (version != 0 and (status is None or status == REVLibError.kOk)) or RobotBase.isSimulation()
+        ok = (version != 0 and (status is None or status == REVLibError.kOk)) or self._is_simulation
 
         if not ok:
             logger.warning(f"{self.getName()} firmware version: {version}, status: {status}")
