@@ -21,21 +21,20 @@ from typing import Optional
 from commands2 import cmd, Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.util.competition import event_active
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkClosedLoopController, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkRelativeEncoder, SparkRelativeEncoderSim
+from robot_2026.util.logtracer import LogTracer
 from wpilib import RobotBase, RobotController, SmartDashboard
 from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
 from wpilib.sysid import State
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
     meters, radians, revolutions_per_minute, seconds, volts
-
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
-from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
-from lib_6107.util.competition import event_active
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
-from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +99,7 @@ class RevIntakePivot(Subsystem, RotationMechanismIO):
         self.setName("IntakePivot")
         self._container = container
         self._robot = container.robot
-        self._period: seconds = container.robot.getPeriod()
+        self._period: seconds = container.robot.period
         self._device_id = can_device_id
         self._inverted = inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
@@ -125,8 +124,9 @@ class RevIntakePivot(Subsystem, RotationMechanismIO):
 
         # Support simulation
         self._sim_initial = None
+        self._is_simulation = RobotBase.isSimulation()
 
-        if RobotBase.isSimulation():
+        if self._is_simulation:
             gearbox = DCMotor.NEO(1)
             self._sim_motor = SparkFlexSim(self._motor, gearbox)
 
@@ -293,7 +293,7 @@ class RevIntakePivot(Subsystem, RotationMechanismIO):
 
         logger.info(f"{self.getName()} firmware versions: {version}")
 
-        ok = (version != 0 and (status is None or status == REVLibError.kOk)) or RobotBase.isSimulation()
+        ok = (version != 0 and (status is None or status == REVLibError.kOk)) or self._is_simulation
 
         if not ok:
             logger.warning(f"{self.getName()} (right) firmware version: {version}, status: {status}")

@@ -20,26 +20,25 @@ import os
 from typing import Optional
 
 from commands2 import cmd, Command, CommandScheduler
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
+from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
+from lib_6107.commands.drivetrain.gotopoint import GoToPoint
+from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
+from lib_6107.commands.vision.approach_tag import ApproachTag
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.auto import RobotConfig
 from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
 from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
-from wpilib import DriverStation, getDeployDirectory
-from wpimath.kinematics import ChassisSpeeds
-
-from lib_6107.commands.camera.approach_tag import ApproachTag
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
-from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
-from lib_6107.commands.drivetrain.gotopoint import GoToPoint
-from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from robot_2026.commands.autonomous.auto_climber_command import AutoClimberSequence
 from robot_2026.commands.climber.climber_commands import ExtendClimber
 from robot_2026.commands.climber.climber_commands import RetractClimber
 from robot_2026.commands.intake.intake_commands import IntakeCollectFuel
 from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+from wpilib import DriverStation, getDeployDirectory
+from wpimath.kinematics import ChassisSpeeds
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ def configure_auto_builder(drivetrain: DriveSubsystem, container: 'RobotContaine
                               #        and does a log for each time called'.
                               lambda speeds, feedforwards: drivetrain.set_control(
                                   drivetrain.apply_robot_speeds
-                                  .with_speeds(ChassisSpeeds.discretize(speeds, container.robot.getPeriod()))
+                                  .with_speeds(ChassisSpeeds.discretize(speeds, container.robot.period))
                                   .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
                                   .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
                               ),

@@ -25,14 +25,6 @@ from typing import Optional
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
-from ntcore import NetworkTableInstance
-from pathplannerlib.pathfinding import LocalADStar, Pathfinding
-from phoenix6 import SignalLogger
-from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, RobotBase, SmartDashboard, Timer
-from wpimath.units import seconds
-
-import constants
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.nt4Publisher import NT4Publisher
@@ -41,6 +33,14 @@ from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
+from ntcore import NetworkTableInstance
+from pathplannerlib.pathfinding import LocalADStar, Pathfinding
+from phoenix6 import SignalLogger
+from rev import StatusLogger
+from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
+from wpimath.units import seconds
+
+import constants
 from robot_2026.util.logtracer import LogTracer
 from robotcontainer import RobotContainer
 
@@ -53,6 +53,9 @@ each mode, as described in the TimedRobot documentation. If you change the name 
 the package after creating this project, you must also update the build.gradle file in the
 project.
 """
+
+ROBOT_PERIOD: seconds = 0.333
+
 class MyRobot(LoggedRobot):
     """
     Our default robot class
@@ -62,7 +65,7 @@ class MyRobot(LoggedRobot):
     """
     def __init__(self):
         # Initialize our base class, choosing the default scheduler period
-        super().__init__()
+        super().__init__(period=ROBOT_PERIOD)
 
         Logger.recordMetadata("Robot", type(self).__name__)
         Logger.recordMetadata("Team", "6107")
@@ -134,7 +137,6 @@ class MyRobot(LoggedRobot):
 
         self.field: Optional[wpilib.Field2d] = None
         self._stats: RobotStatistics = RobotStatistics(self)
-        self._is_simulation = RobotBase.isSimulation()
 
         self._command_scheduler: CommandScheduler | None = None
 
@@ -377,7 +379,7 @@ class MyRobot(LoggedRobot):
 
         self._stats.clear("auto-duration")
 
-        if RobotBase.isSimulation():
+        if self._is_simulation:
             select_tab("Autonomous")
 
     def autonomousPeriodic(self) -> None:
@@ -409,7 +411,7 @@ class MyRobot(LoggedRobot):
             moving_avg = self._stats.get("auto-duration")
             if moving_avg is not None:
                 # What percentage of time are we using up before the next periodic tick event
-                average_percent = (moving_avg.average / self.getPeriod()) * 100
+                average_percent = (moving_avg.average / self._period) * 100
                 SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", average_percent)
 
         self._stats.add("auto-duration", time.monotonic() - start)
@@ -457,7 +459,7 @@ class MyRobot(LoggedRobot):
 
         self._stats.clear("teleop-duration")
 
-        if RobotBase.isSimulation():
+        if self._is_simulation:
             select_tab("Teleop")
 
     def teleopPeriodic(self) -> None:
@@ -474,7 +476,7 @@ class MyRobot(LoggedRobot):
             moving_avg = self._stats.get("teleop-duration")
             if moving_avg is not None:
                 # What percentage of time are we using up before the next periodic tick event
-                average_percent = (moving_avg.average / self.getPeriod()) * 100
+                average_percent = (moving_avg.average / self._period) * 100
 
                 SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", average_percent)
 

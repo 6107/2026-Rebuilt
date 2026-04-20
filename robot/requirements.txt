@@ -16,6 +16,7 @@
 # ------------------------------------------------------------------------ #
 wpilib                  == 2026.2.2
 robotpy                 == 2026.2.2  # Main module and CLI for the robotics platform
+robotpy-hal             == 2026.2.2
 robotpy-apriltag        == 2026.2.2
 robotpy-commands-v2     == 2026.2.2
 robotpy-pathplannerlib  == 2026.1.2
@@ -32,8 +33,10 @@ limelightlib-python     == 0.9.6
 chardet                 == 7.3.0
 
 # AdvantageKit support
-# robotpy-pykit           == 1.0.5
 robotpy-pykit-watch     == 1.0.0
+
+# CyberJagzz Library
+lib_6107 == 2026.0.0.2
 
 # ###############################################################################
 # # Following are for OpenTelemetry support. None of the files below

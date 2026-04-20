@@ -24,8 +24,17 @@ from typing import Optional, Sequence, Tuple
 
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
+from lib_6107.pykit.autolog import autolog_output
+from lib_6107.pykit.logger import Logger
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
+from lib_6107.subsystems.pykit.robot_state import RobotState
 from phoenix6 import SignalLogger, swerve, units, utils
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
+from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
+from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
+from robot_2026.subsystems.swervedrive.constants import DriveConstants
+from robot_2026.util.logtracer import LogTracer
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -37,15 +46,6 @@ from wpimath.units import degrees, meters, meters_per_second, radians_per_second
 
 from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
     WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
-from lib_6107.pykit.autolog import autolog_output
-from lib_6107.pykit.logger import Logger
-from lib_6107.subsystems.gyro.gyro import Gyro
-from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
-from lib_6107.subsystems.pykit.robot_state import RobotState
-from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
-from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
-from robot_2026.subsystems.swervedrive.constants import DriveConstants
-from robot_2026.util.logtracer import LogTracer
 
 try:
     import navx
@@ -132,7 +132,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
 
         self._container = container
         self._robot = container.robot
-        self._period: seconds = container.robot.getPeriod()
+        self._period: seconds = container.robot.period
         self._physics_controller = None
         self._is_simulation = RobotBase.isSimulation()
 
@@ -195,7 +195,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         # The gyro/IMU sensor
         self._gyro: Optional[Gyro] = Gyro.create("Pigeon2",
                                                  GYRO_REVERSED,
-                                                 update_frequency=ODOMETRY_FREQUENCY,
+                                                 update_frequency=1.0 / self._period,
                                                  inst=self.pigeon2)
         self._gyro.initialize()
 
@@ -504,7 +504,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         Change in alliance occurred before match started. If simulation is
         supported, then 'physics.py' handles this.
         """
-        if not RobotBase.isSimulation():
+        if not self._is_simulation:
             return Pose2d(0, 0, 0)
 
         initial_pose = Pose2d(0, 0, Rotation2d.fromDegrees(self.gyro.yaw))
