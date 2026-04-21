@@ -111,7 +111,10 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
         # Set up the encoder
         self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
-        self._encoder.setPosition(0.0)
+        status: REVLibError = self._encoder.setPosition(0.0)
+
+        if status != REVLibError.kOk:
+            logger.error("Climber encoder 'setPosition' Error, %d", status)
 
         # Support simulation
         if RobotBase.isSimulation():
@@ -249,7 +252,10 @@ class RevClimber(Subsystem, RotationMechanismIO):
 
     @property
     def position(self) -> float:
-        return self._inputs.mechanism_position
+        pos1, pos2 = self._encoder.getPosition(), self._inputs.mechanism_position
+        logger.info(f"{self.getName()} encoder position: {pos1}, mech position: {pos2}")
+        return self._encoder.getPosition()
+        # TODO:  Get this to work return self._inputs.mechanism_position
 
     @property
     def position_meters(self) -> float:
@@ -387,18 +393,18 @@ class RevClimber(Subsystem, RotationMechanismIO):
         inputs.mechanism_supply_current = self._motor.getOutputCurrent()
         # TODO: Figure this out or drop it -> inputs.mechanism_torque_amps = self._motor.get
 
-    def set_position(self, position: inches) -> None:
-        """
-        Set the desired encoder position. This is primarily for Autonomous mode when
-        we are running with a closed loop system
-
-        Args:
-            position (rotations +/-): The desired number of rotations
-        """
-        # Limit to max/min
-        position = max(min(position, ClimberConstants.CLIMBER_MAX_HEIGHT),
-                       ClimberConstants.CLIMBER_MIN_HEIGHT)
-        self._encoder.setPosition(position)
+    # def set_position(self, position: inches) -> None:
+    #     """
+    #     Set the desired encoder position. This is primarily for Autonomous mode when
+    #     we are running with a closed loop system
+    #
+    #     Args:
+    #         position (rotations +/-): The desired number of rotations
+    #     """
+    #     # Limit to max/min
+    #     position = max(min(position, ClimberConstants.CLIMBER_MAX_HEIGHT),
+    #                    ClimberConstants.CLIMBER_MIN_HEIGHT)
+    #     self._encoder.setPosition(position)
 
     def set_voltage(self, voltage: volts) -> None:
         """

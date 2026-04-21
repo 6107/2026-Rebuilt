@@ -519,7 +519,7 @@ class RobotContainer:
 
         # Y Button - Reset Telemetry
         # controller.y().onTrue(TODO COMMAND(self.robot_drive, x=1.0, y=4.0, heading=0))
-        controller.y().onTrue(PrintCommand("Y BUMPER PRESS = TODO"))
+        controller.y().onTrue(PrintCommand("Y BUTTON PRESS = TODO"))
 
         # # POV-UP: Drive forward at 1/2 speed
         # controller.povUp().whileTrue(

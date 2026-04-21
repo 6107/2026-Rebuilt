@@ -140,8 +140,10 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
 
         super_finished = super().isFinished()
         climber_finished = self._climber.position >= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+
         logger.info(f"Climber retract: super: {super_finished}, climber: {climber_finished}, "
-        f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
+                    f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
+
         return super_finished or climber_finished
 
         # return super().isFinished() or \
@@ -177,8 +179,10 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
         """
         super_finished = super().isFinished()
         climber_finished = self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+
         logger.info(f"Climber Extend: super: {super_finished}, climber: {climber_finished}, "
-        f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
+                    f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
+
         return super_finished or climber_finished
 
 class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
@@ -210,8 +214,14 @@ class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
+        super_finished = super().isFinished()
+        climber_finished = self._climber.position >= self._position_goal
+
+        logger.info(f"TweekUpClimber: super: {super_finished}, climber: {climber_finished}, "
+                    f"pos: {self._climber.position}, goal: {self._position_goal}")
+
         return super().isFinished() or \
-            self._climber.position <= self._position_goal
+            self._climber.position >= self._position_goal
 
 
 class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
@@ -244,5 +254,11 @@ class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
+        super_finished = super().isFinished()
+        climber_finished = self._climber.position <= self._position_goal
+
+        logger.info(f"TweekDownClimber: super: {super_finished}, climber: {climber_finished}, "
+                    f"pos: {self._climber.position}, goal: {self._position_goal}")
+
         return super().isFinished() or \
             self._climber.position <= self._position_goal
