@@ -253,7 +253,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
     @property
     def position(self) -> float:
         pos1, pos2 = self._encoder.getPosition(), self._inputs.mechanism_position
-        logger.info(f"{self.getName()} encoder position: {pos1}, mech position: {pos2}")
+        # logger.info(f"{self.getName()} encoder position: {pos1}, mech position: {pos2}")
         return self._encoder.getPosition()
         # TODO:  Get this to work return self._inputs.mechanism_position
 
