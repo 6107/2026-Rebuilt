@@ -16,7 +16,7 @@ class LoggedRobot(IterativeRobotBase):
     to automatically handle the logging of robot data and periodic loops.
     """
 
-    default_period = 0.02  # seconds
+    default_period = 0.03  # seconds
 
     def printOverrunMessage(self):
         """Prints a message when the main loop overruns."""
