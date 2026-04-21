@@ -74,7 +74,7 @@ class ClimberBaseCommand(BaseCommand):  # change the name for your command
             self._running = True
 
             if self._climber.enabled:
-                logger.info(f"{self.__class__.__name__}: execute")
+                logger.info(f"{self.__class__.__name__}: execute, position: {self._climber.position}, goal: {self._position_goal}")
                 self._climber.position = self._position_goal
             else:
                 send_notification(Notification(NotificationLevel.WARNING,
@@ -137,17 +137,8 @@ class RetractClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-
-        super_finished = super().isFinished()
-        climber_finished = self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
-
-        logger.info(f"Climber retract: super: {super_finished}, climber: {climber_finished}, "
-                    f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
-
-        return super_finished or climber_finished
-
-        # return super().isFinished() or \
-        #     self._climber.position >= self._position_goal - ClimberConstants.CLIMBER_TOLERANCE
+        return super().isFinished() or \
+            self._climber.position <= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
 
 
 class ExtendClimber(ClimberBaseCommand):  # change the name for your command
@@ -177,13 +168,9 @@ class ExtendClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        super_finished = super().isFinished()
-        climber_finished = self._climber.position >= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
+        return  super().isFinished() or \
+            self._climber.position >= self._position_goal + ClimberConstants.CLIMBER_TOLERANCE
 
-        logger.info(f"Climber Extend: super: {super_finished}, climber: {climber_finished}, "
-                    f"pos: {self._climber.position}, goal: {self._position_goal}, toll: {ClimberConstants.CLIMBER_ROOT_X}")
-
-        return super_finished or climber_finished
 
 class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
     """
@@ -192,10 +179,10 @@ class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
     """
 
     def __init__(self, container: 'RobotContainer'):
-        self._start_point = container.climber.position
-        self._increment = -0.25
+        self._increment = 0.25
+        self._tweek_tolerance = 0.02
 
-        super().__init__(container, self._start_point - self._increment)
+        super().__init__(container, 0)
 
     def initialize(self) -> None:
         """
@@ -205,6 +192,7 @@ class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
         super().initialize()
 
         # Reset the climbing subsystem.
+        self._position_goal = self._container.climber.position + self._increment
         self._running = False
 
     def isFinished(self) -> bool:
@@ -214,14 +202,8 @@ class TweekUpClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        super_finished = super().isFinished()
-        climber_finished = self._climber.position >= self._position_goal
-
-        logger.info(f"TweekUpClimber: super: {super_finished}, climber: {climber_finished}, "
-                    f"pos: {self._climber.position}, goal: {self._position_goal}")
-
         return super().isFinished() or \
-            self._climber.position >= self._position_goal
+            self._climber.position >= self._position_goal - self._tweek_tolerance
 
 
 class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
@@ -229,12 +211,11 @@ class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
     This command, while it runs, will retract the climber an extra 1/4 inch (which)
     may be less depending on the current location.
     """
-
     def __init__(self, container: 'RobotContainer'):
-        self._start_point = container.climber.position
         self._increment = 0.25
+        self._tweek_tolerance = 0.02
 
-        super().__init__(container, self._start_point + self._increment)
+        super().__init__(container, 0)
 
     def initialize(self) -> None:
         """
@@ -245,6 +226,7 @@ class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
         super().initialize()
 
         # Reset the climbing subsystem.
+        self._position_goal = self._container.climber.position - self._increment
         self._running = False
 
     def isFinished(self) -> bool:
@@ -254,11 +236,5 @@ class TweekDownClimber(ClimberBaseCommand):  # change the name for your command
 
         :returns: whether the command has finished.
         """
-        super_finished = super().isFinished()
-        climber_finished = self._climber.position <= self._position_goal
-
-        logger.info(f"TweekDownClimber: super: {super_finished}, climber: {climber_finished}, "
-                    f"pos: {self._climber.position}, goal: {self._position_goal}")
-
         return super().isFinished() or \
-            self._climber.position <= self._position_goal
+            self._climber.position <= self._position_goal + self._tweek_tolerance
