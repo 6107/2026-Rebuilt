@@ -50,7 +50,7 @@ from robot_2026.generated.tuner_constants import TunerConstants
 # from robot_2026.subsystems.ctre_indexer import RevIntakeIndexer as IntakeIndexer
 from robot_2026.subsystems.rev_climber import RevClimber as Climber
 from robot_2026.subsystems.rev_flywheel import RevFlywheel as Shooter
-from robot_2026.subsystems.rev_pivot import RevIntakePivot as IntakePivot
+from robot_2026.subsystems.ctre_pivot import CtreIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
 

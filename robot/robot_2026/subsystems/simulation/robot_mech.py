@@ -18,7 +18,7 @@
 import constants
 import math
 from commands2 import Subsystem
-from robot_2026.subsystems.rev_pivot import PivotConstants
+from robot_2026.subsystems.ctre_pivot import PivotConstants
 from robot_2026.util.logtracer import LogTracer
 from wpilib import Color, Color8Bit, DriverStation, Mechanism2d, RobotBase, SmartDashboard
 from wpimath.kinematics import ChassisSpeeds

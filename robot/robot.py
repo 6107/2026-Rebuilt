@@ -64,6 +64,8 @@ class MyRobot(LoggedRobot):
         # Initialize our base class, choosing the default scheduler period
         super().__init__()
 
+        self.period = self.getPeriod()
+
         Logger.recordMetadata("Robot", type(self).__name__)
         Logger.recordMetadata("Team", "6107")
         Logger.recordMetadata("Year", "2026")
