@@ -169,10 +169,10 @@ class RobotContainer:
 
             # ##########################################
             #   SHOOTER
-            try:
-                self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-            except Exception as _e:
-                logger.exception(f"Exception during Shooter initialization: {_e}")
+            # try:
+            #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+            # except Exception as _e:
+            #     logger.exception(f"Exception during Shooter initialization: {_e}")
 
         ##########################################
         #   CLIMBER
