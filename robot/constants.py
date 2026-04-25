@@ -19,6 +19,8 @@
 
 import math
 import os
+
+from dataclasses import dataclass
 from enum import Enum, IntEnum, unique
 
 from wpilib import RobotBase
@@ -28,75 +30,33 @@ from wpimath.trajectory import TrapezoidProfileRadians
 from wpimath.units import degreesToRadians, hertz, inchesToMeters, kilograms, lbsToKilograms, meters, meters_per_second, \
     radians, radians_per_second, rotationsToRadians, seconds
 
-from lib_6107.constants import *
+from lib_6107.constants import RobotConstants, CameraType, NetworkConstants
 from robot_2026.generated.tuner_constants import TunerConstants  # Use Tuner X constants if available
 
 
-class RobotModes(Enum):
-    """Enum for robot modes."""
-    REAL = 1
-    SIMULATION = 2
-    REPLAY = 3
+@dataclass(slots=True)
+class MyRobotConstants(RobotConstants):
+    """
+    Update for fields unique to the 2026-Rebuilt robot
+    """
+    ROBOT_MASS: kilograms = lbsToKilograms(60)
 
-SIM_MODE = (
-    RobotModes.REPLAY if "LOG_PATH" in os.environ and os.environ["LOG_PATH"] != ""
-    else RobotModes.SIMULATION
-)
-ROBOT_MODE = RobotModes.REAL if RobotBase.isReal() else SIM_MODE
+    ROBOT_CHASSIS_X_WIDTH: meters = inchesToMeters(27)
+    ROBOT_CHASSIS_Y_WIDTH: meters = inchesToMeters(27)
 
-##################################################################
-# Robot Constants
-ROBOT_MASS: kilograms = lbsToKilograms(60)
-# CHASSIS    = Matter(geometry.Translation3d(0, 0, units.inchesToMeters(8)), ROBOT_MASS)        TODO: Figure this out
+    ###########################
+    # Robot periodic rate
+    ROBOT_PERIOD: seconds = 0.0333
 
-# Robot size (including bumpers). Defaults, use PathPlanner to set actual value to
-#                                 use if PathPlanner is supported
-ROBOT_BUMPER_WIDTH: meters = inchesToMeters(4)
-ROBOT_CHASSIS_WIDTH: meters = inchesToMeters(27)  # Outside, assume square chassis
-ROBOT_X_WIDTH_DEFAULT: meters = ROBOT_CHASSIS_WIDTH + (2 * ROBOT_BUMPER_WIDTH)
-ROBOT_Y_WIDTH_DEFAULT: meters = ROBOT_CHASSIS_WIDTH + (2 * ROBOT_BUMPER_WIDTH)
-
-###############################################################################
-# Device CAN bus IDs
-DRIVER_CONTROLLER_PORT = 0
-SHOOTER_CONTROLLER_PORT = 1
-CALIBRATION_CONTROLLER_PORT = 2  # Set to < 0 to disable initialization
-
-DEFAULT_FREQUENCY: hertz = 50.0
-ODOMETRY_FREQUENCY: hertz = 100.0  # Primarily for yaw
+    ###########################
+    # Drivetrain  (often overridden in real-robot based on Tuner-X constants)
+    MAX_SPEED: meters_per_second = TunerConstants.speed_at_12_volts
+    MAX_ANGULAR_VELOCITY: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
 
 #################################################################
 # Autonomous End Game Timing
 
 AUTONOMOUS_END_TRIGGER_TIME = 10
-
-#################################################################
-# Drive subsystem related constants
-#
-# Maximum speed of the robot in meters per second, used to limit acceleration. The
-# Minimum speed is used to keep the robot from moving at a very low rate
-
-MAX_SPEED: meters_per_second = TunerConstants.speed_at_12_volts  # TODO: Measure this
-MIN_SPEED: meters_per_second = 0.002
-MAX_ANGULAR_SPEED: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
-MAX_ANGULAR_ACCELERATION: radians_per_second = rotationsToRadians(0.75)  # Actually is radians/second^2
-
-# Constraint for the motion profiled robot angle controller
-THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_SPEED,
-                                                                   MAX_ANGULAR_ACCELERATION)
-# TODO: Do we need an 'Autonomous Mode' max speed, max accel, max_angular, ...
-
-WHEEL_RADIUS: meters = TunerConstants._wheel_radius
-WHEEL_DIAMETER: meters = WHEEL_RADIUS * 2
-WHEEL_CIRCUMFERENCE: meters = WHEEL_DIAMETER * math.pi
-
-MAX_WHEEL_LINEAR_VELOCITY: meters_per_second = 1.0
-
-# Hold time on motor brakes when disabled
-WHEEL_LOCK_TIME: seconds = 3  # seconds
-
-# Joystick Deadband
-JOYSTICK_DEADBAND = 0.1
 
 GYRO_REVERSED = False  # (affects field-relative driving)
 
@@ -133,7 +93,6 @@ class DeviceID(IntEnum):
 
     GYRO_DEVICE_ID = TunerConstants._pigeon_id
 
-
     # Intake Subsystem
     INTAKE_INDEXER_DEVICE_ID = 30
     INTAKE_LEFT_PIVOT_DEVICE_ID = 31
@@ -149,41 +108,31 @@ class DeviceID(IntEnum):
 #################################################################################
 # IP Address Assignments.  Not used in code, but kept here for recording purposes
 #                          and are the 'At Home' assigned values
-TEAM = "61.07"
+@dataclass(slots=True)
+class MyNetworkConstants(NetworkConstants):
 
-ROBORIO_STATIC = f"10.{TEAM}.2"
-ROBOT_RADIO_STATIC = f"10.{TEAM}.1"
-AP_RADIO_STATIC = f"10.{TEAM}.4"
+    RADIO_2_MAC_ADDRESS = "48:DA:35:B0:B1:E0"  # Not used, but helps us tell them apart since we have two available
+    RADIO_2_WIFI_PWD = "NameNumber"
 
-RADIO_2_MAC_ADDRESS = "48:DA:35:B0:B1:E0"       # Not used, but helps us tell them apart
-RADIO_2_WIFI_PWD = "NameNumber"
+    # Following are for recording purposes only. Also not used..
+    # PHOTONVISION_STATIC = f"10.{super().TEAM}.11"
+    # LIMELIGHT_STATIC = f"10.{super().TEAM}.12"
+    # LIMELIGHT_ALT_STATIC = f"10.{super().TEAM}.13"
+    #
+    # # mDNS (DNS names are case-insensitive)
+    # TEAM_LAPTOP_MDMS = f"{super().TEAM}-frc.local"
+    #
+    # PHOTON_VISION_NAME = "pf-6107-frc"
+    # PHOTONVISION_MDMS = f"{PHOTON_VISION_NAME}.local"
+    # LIMELIGHT_MDMS = "limelight.local"  # TODO: Make unique, add team #
+    # LIMELIGHT_ALT_MDMS = "limelight-alt.local"  # TODO: Make unique, add team #
 
-DRIVER_STATION_STATIC = f"10.{TEAM}.5"
-DRIVER_STATION_ALT_STATIC = f"10.{TEAM}.6"
-
-PHOTONVISION_STATIC = f"10.{TEAM}.11"
-LIMELIGHT_STATIC = f"10.{TEAM}.12"
-LIMELIGHT_ALT_STATIC = f"10.{TEAM}.13"
-
-# mDNS (DNS names are case-insensitive)
-
-ROBORIO_MDMS = f"roboRIO-{TEAM}-frc.local"
-TEAM_LAPTOP_MDMS = f"{TEAM}-frc.local"
-CHIPS_LAPTOP_MDNS = ".local"
-
-PHOTON_VISION_NAME = "pf-6107-frc"
-PHOTONVISION_MDMS = f"{PHOTON_VISION_NAME}.local"
-LIMELIGHT_MDMS = "limelight.local"  # TODO: Make unique, add team #
-LIMELIGHT_ALT_MDMS = "limelight-alt.local"  # TODO: Make unique, add team #
-
-# USB
-ROBORIO_USB_STATIC = "172.22.11.2"
 
 #################################################################################
-# Camera configurations
+# Camera configurations     TODO: Move this to subsystems
 
 FRONT_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_NONE,   # CAMERA_TYPE_PHOTONVISION,
+    "Type"     : CameraType.NONE,   # CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(-11.0),
@@ -196,8 +145,9 @@ FRONT_CAMERA_INFO = {
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
 }
 
+# TODO: Transform into a re-usable class
 REAR_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_NONE, # CAMERA_TYPE_LIMELIGHT,
+    "Type"     : CameraType.NONE, # CameraTypes.CAMERA_TYPE_LIMELIGHT,
     "Label"    : "rear",
     "Name"     : "LimeLight",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(2.5),
@@ -209,7 +159,7 @@ REAR_CAMERA_INFO = {
 }
 
 LEFT_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_NONE,
+    "Type"     : CameraType.NONE,
     "Label"    : "left",
     "Name"     : "",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(0),
@@ -221,7 +171,7 @@ LEFT_CAMERA_INFO = {
 }
 
 RIGHT_CAMERA_INFO = {
-    "Type"     : CAMERA_TYPE_NONE,
+    "Type"     : CameraType.NONE,
     "Label"    : "right",
     "Name"     : "",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(0),
@@ -231,25 +181,6 @@ RIGHT_CAMERA_INFO = {
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
 }
-
-# Vision Pose filter limits
-# TODO: Look into the april tag heights and how Z_ERROR is actually used and obtained and
-#       see if we can calculate it from the field data on startup to be 1/2 meter above the
-#       maximum
-MAX_VISION_AMBIGUITY = 0.3
-MAX_VISION_Z_ERROR: meters = 1.5  # 0.75
-
-# Adjusted automatically based on distance and # of tags
-LINEAR_STD_DEV_BASELINE: meters = 0.02
-ANGULAR_STD_DEV_BASELINE: radians = 0.06
-
-# Multipliers to apply for MegaTag 2 observations
-LINEAR_STD_DEV_MEGATAG2_FACTOR: float = 0.5  # More stable than full 3D solve
-ANGULAR_STD_DEV_MEGATAG2_FACTOR: float = math.inf  # No rotation data available
-
-# Vision Pipeline for Apriltags. The pipelines need to be manually
-# set up in the camera and should use the following pipeline number. (0..9).
-APRILTAGS_PIPELINE = 0  # TODO: Need to set this up in all our cameras
 
 #################################################################################
 # OPENTelemetry Support

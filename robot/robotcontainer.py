@@ -15,35 +15,20 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-import json
 import logging
-import os
-import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List,Tuple, Optional
 
-from commands2 import button, Command, InstantCommand, PrintCommand, RunCommand, Subsystem
+from commands2 import Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
-from lib_6107.commands.vision.track_tag_command import TrackTagCommand
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from lib_6107.subsystems.pykit.robot_state import RobotState
-from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from lib_6107.util.numerical_chooser import IntegerEditBox
-from lib_6107.util.phoenix6_telemetry import Telemetry
-from ntcore import NetworkTableInstance
 from phoenix6 import swerve
-from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase, SmartDashboard, \
+from wpilib import DriverStation, SmartDashboard, \
     XboxController
-from wpimath.geometry import Pose2d, Rotation2d, Rotation3d
-from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
+from wpimath.geometry import Pose2d, Rotation2d
 
-import constants
-from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, \
-    ROBOT_X_WIDTH_DEFAULT, ROBOT_Y_WIDTH_DEFAULT
-from robot_2026.commands.autonomous import pathplanner
+from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO
+
 from robot_2026.commands.climber.climber_commands import ExtendClimber, RetractClimber, TweekDownClimber, TweekUpClimber
-from robot_2026.field.alerts import RobotAlerts
 from robot_2026.field.field_2026 import RebuiltField as Field
 from robot_2026.generated.tuner_constants import TunerConstants
 # from robot_2026.subsystems.ctre_indexer import RevIntakeIndexer as IntakeIndexer
@@ -52,11 +37,18 @@ from robot_2026.subsystems.rev_flywheel import RevFlywheel as Shooter
 from robot_2026.subsystems.ctre_pivot import CtreIntakePivot as IntakePivot
 from robot_2026.subsystems.rev_roller import RevIntakeRoller as IntakeRoller
 from robot_2026.subsystems.simulation.robot_mech import RobotMech
+from robot_2026.util.alerts import MyRobotAlerts
+
+from lib_6107.robotcontainer import RobotContainer
+from lib_6107.commands.vision.track_tag_command import TrackTagCommand
+from lib_6107.pykit.logger import Logger
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from lib_6107.util.numerical_chooser import IntegerEditBox
 
 logger = logging.getLogger(__name__)
 
 
-class RobotContainer:
+class MyRobotContainer(RobotContainer):
     """
     This class is where the bulk of the robot should be declared. Since Command-based is a
     "declarative" paradigm, very little robot logic should actually be handled in the :class:`.Robot`
@@ -66,206 +58,33 @@ class RobotContainer:
     def __init__(self, robot: 'MyRobot') -> None:
         # The robot's subsystems
 
-        self.start_time = time.time()
-        self.robot = robot
-        self.network_table = NetworkTableInstance.getDefault()
-
-        self.simulation = RobotBase.isSimulation()
-
-        # Phoenix6 max settings and telemetry support. During the actual drive command or the
-        # arcade_drive function, we apply any scale factor to limit speed
-        self._max_speed: meters_per_second = constants.MAX_SPEED  # speed_at_12_volts desired top speed
-        self._max_angular_rate: radians_per_second = rotationsToRadians(0.75)  # 3/4 of a rotation per second max angular velocity
-
-        # Alliance support
-        self._is_red_alliance: bool = self.simulation  # Coordinate system based off of blue being to the 'left'
-        self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
-        self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
-        #
-        # TODO: Alliance changes do not seem to work here. Rely on old polling method
-        # prefixes = ["FMSInfo/IsRedAlliance", "FMSInfo/IsRedAlliance"]
-        # self.alliance_change_listener = NetworkTableListener.createListener(self.network_table,
-        #                                                                     prefixes,
-        #                                                                     EventFlags.kValueAll,
-        #                                                                     self._on_alliance_change)
-        # The driver's controller
-        self._driver_controller: CommandXboxController = CommandXboxController(constants.DRIVER_CONTROLLER_PORT)
-
-        # Shooter's controller
-        self._shooter_controller: CommandXboxController = CommandXboxController(constants.SHOOTER_CONTROLLER_PORT)
-
-        self._controllers = [(self._driver_controller, constants.DRIVER_CONTROLLER_PORT),
-                             (self._shooter_controller, constants.SHOOTER_CONTROLLER_PORT)]
-
-        if constants.CALIBRATION_CONTROLLER_PORT > 0 and constants.CALIBRATION_CONTROLLER_PORT not in self._controllers:
-            self._calibration_controller: CommandXboxController = CommandXboxController(constants.CALIBRATION_CONTROLLER_PORT)
-            self._controllers.append((self._calibration_controller, constants.SHOOTER_CONTROLLER_PORT))
-
         ##########################################
-        # Subsystem Initialization
+        #  Subsystems (fully initialized in base class when it calls into
+        #  the subsystem_init() function.  First declare everything that we will create
+        #  later in the subsystem_init() function
         #
-        # The robot core code will already call the periodic() function
-        # as needed, but having our own list (iterated in order) allows us to move much of
-        # the other subsystem 'tasks' into a generic loop.
-        self.subsystems: List[Subsystem] = []
+        self._field: Field = None
 
-        ##########################################
-        #  Drivetrain
-        #
-        # self.robot_drive = DriveSubsystem(self, **drive_kwargs)
-        self.robot_drive = TunerConstants.create_drivetrain(self)
-        self.subsystems.append(self.robot_drive)
-
-        ##########################################
-        #   VISION
-        #
+        self.robot_drive = None
         self._cameras: Dict[str, Any] = {}
-        self._field: Field = Field()
-
-        camera_subsystems = self._init_vision_subsystems()
-        self.subsystems.extend(camera_subsystems)
-
-        ##########################################
         self.intake_pivot: IntakePivot | None = None
         self.intake_roller: IntakeRoller | None = None
         # self.indexer: IntakeIndexer | None = None
-        self.indexer = None
+        self.indexer: None = None
         self.flywheel: Shooter | None = None
         self.climber: Climber | None = None
 
-        if self.simulation:        # Currently in sim only
-            ##########################################
-            # NOTE: Disable subsystems that will not be in the next competition
-            ##########################################
-            #   INTAKE (Pivot & Rollers)
-            #
-            # Right Pivot Motor should be Inverted
-            try:
-                self.intake_pivot = IntakePivot(self,
-                                                DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                                True)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Pivot initialization: {_e}")
+        self._shooter_rpm_chooser: IntegerEditBox | None = None
+        self._intake_rpm_chooser: IntegerEditBox | None = None
+        self._indexer_rpm_chooser: IntegerEditBox | None = None
 
-            ###########################################
-            #   Roller / rolly-grabbers
-            try:
-                self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Roller initialization: {_e}")
-
-            # ##########################################
-            # #   INDEXER
-            # try:
-            #     self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
-            # except Exception as _e:
-            #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
-
-            # ##########################################
-            #   SHOOTER
-            # try:
-            #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-            # except Exception as _e:
-            #     logger.exception(f"Exception during Shooter initialization: {_e}")
+        # Now let the base class handle most of the rest of the work
+        super().__init__(robot)
 
         ##########################################
-        #   CLIMBER
+        #   ALERTS, overwrite it with ours (which are derived from the base alerts
         #
-        try:
-            self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
-
-        except Exception as _e:
-            logger.exception(f"Exception during Intake Initialization: {_e}")
-            self.climber = None
-
-        # Add subsystems that got initialized
-        for sub in (self.intake_pivot, self.intake_roller, self.indexer,
-                    self.flywheel, self.climber):
-
-            if sub is not None and sub.is_connected:
-                self.subsystems.append(sub)
-
-            elif sub is not None:
-                logging.warning(f"Subsystem {sub} not connected to robot or failed to initialize")
-
-        ##########################################
-        # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
-        if self.simulation:
-            self._mechanism_2d = RobotMech(self)
-            self.subsystems.append(self._mechanism_2d)
-
-        ##########################################
-        #   ALERTS
-        #
-        self._alerts = RobotAlerts(self)
-
-        ##########################################
-        #   TELEMETRY
-        #
-        # Disabled since we are using pykit for now. Kept here in case we need it for some
-        # tuning with other tools
-        self._phoenix_telemetry: Telemetry | None = None
-
-        # Register telemetry support if not running pykit/AdvantageScope
-        # self._phoenix_telemetry = Telemetry(self._max_speed)
-        # if self._phoenix_telemetry is not None:
-        #     self.robot_drive.register_telemetry(lambda state: self._phoenix_telemetry.telemeterize(state))
-
-        ##########################################
-        #   PathPlanner.  Do this last since it may pull in commands that need the previously
-        #                 initialized subsystems.
-        # Init the Auto chooser.  PathPlanner init will fill in our choices
-        try:
-            self.auto_chooser: LoggedDashboardChooser | None = pathplanner.configure_auto_builder(self.robot_drive,
-                                                                                                  self,
-                                                                                                  "")
-        except FileNotFoundError:
-            logger.warning("PathPlanner 'autos' directory does not exist")
-            self.auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
-
-        self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
-
-        if self.flywheel is not None:
-            self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
-                                                       initial_value=0,
-                                                       minimum_value=0,
-                                                       maximum_value=5676)
-            SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
-
-        if self.intake_roller is not None:
-            self._intake_rpm_chooser = IntegerEditBox("Intake RPM",
-                                                       initial_value=0,
-                                                       minimum_value=0,
-                                                       maximum_value=5676)
-            SmartDashboard.putData(self._intake_rpm_chooser.name, self._intake_rpm_chooser)
-
-        if self.indexer is not None:
-            self._indexer_rpm_chooser = IntegerEditBox("Indexer RPM",
-                                                       initial_value=0,
-                                                       minimum_value=0,
-                                                       maximum_value=5676)
-            SmartDashboard.putData(self._indexer_rpm_chooser.name, self._indexer_rpm_chooser)
-
-        # Set our robot width and then use pathplanner as the basis if it was provided to vefify
-        self._robot_x_width: meters = ROBOT_X_WIDTH_DEFAULT
-        self._robot_y_width: meters = ROBOT_Y_WIDTH_DEFAULT
-
-        if self.simulation:
-            try:
-                path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
-
-                with open(path, 'r') as f:
-                    settings = json.loads(f.read())
-
-                    x_width = settings.get("robotWidth", self._robot_x_width)
-                    y_width = settings.get("robotWidth", self._robot_y_width)
-
-                    margin: meters = 0.10
-                    assert x_width - margin <= self._robot_x_width <= x_width + margin, "PathPlanner robot x-width not valid"
-                    assert y_width - margin <= self._robot_y_width <= y_width + margin, "PathPlanner robot y-width not valid"
-
-            except FileNotFoundError:
-                pass
+        self._alerts: MyRobotAlerts = MyRobotAlerts(self)
 
         ########################################################
         # Configure the button bindings
@@ -319,115 +138,141 @@ class RobotContainer:
         #
         # self.robot_drive.setDefaultCommand(drive_cmd)
 
-    @property
-    def max_speed(self) -> meters_per_second:
-        return self._max_speed * self.robot_drive.drive_scale_factor
-
-    @property
-    def max_angular_rate(self) -> radians_per_second:
-        return self._max_angular_rate * self.robot_drive.drive_scale_factor
-
-    @property
-    def robot_x_width(self) -> meters:
-        return self._robot_x_width
-
-    @property
-    def robot_y_width(self) -> meters:
-        return self._robot_y_width
-
-    @property
-    def field2d(self) -> Field2d:  # The field with a diagram
-        return self.robot.field
-
-    @property
-    def field(self) -> Field:  # The field with all the coordinates and helper properits
-        return self._field
-
-    def camera(self, label: str) -> Optional[VisionSubsystem]:
-        return self._cameras.get(label)
-
-    @property
-    def alliance_location(self) -> int:
+    @staticmethod
+    def create(robot: 'Robot') -> RobotContainer:
         """
-        Alliance location/position as defined by FMS or chooser.
-
-        Valid values are 1, 2, 3.
+        This is passed into the base 'Robot' class's robotInit to be initialized
+        near the end of that initialization section.
         """
-        return self._alliance_location
+        return MyRobotContainer(robot)
 
-    @property
-    def is_red_alliance(self) -> bool:
+    def subsystem_init(self) -> Tuple[Subsystem]:
         """
-        Are we in the red alliance?
-
-        The coordinate system is based on the Blue Alliance being to the left (lower x-axis).
-        This method provides an 'if' capable function that can be called by routines that need
-        a coordinate transformation if we are in the red alliance.
+        Create all subsystems for this years robot
         """
-        return self._is_red_alliance
+        self._field: Field = Field()
+        subsystems: List[Subsystem] = []
 
-    def check_alliance(self) -> None:
-        """
-        Support alliance changes up until we start the competition. Default is the blue
-        alliance and this function is called during 'disable_periodic' and at the init functions
-        for both the Autonomous and Teleop stages.
+        ##########################################
+        #  Drivetrain
+        #
+        # self.robot_drive = DriveSubsystem(self, **drive_kwargs)
+        self.robot_drive = TunerConstants.create_drivetrain(self)
+        subsystems.append(self.robot_drive)
 
-        Once 'match_started' is True, we are locked into the alliance.
-        """
-        if not self.robot.match_started:
-            # Note that if 'None' is returned for the alliance, we assume Blue
-            is_red = DriverStation.getAlliance() == DriverStation.Alliance.kRed
-            location = DriverStation.getLocation()
+        ##########################################
+        #   VISION
+        #
+        self._cameras: Dict[str, Any] = {}
 
-            # Do not change location if not valid
-            if location not in (1, 2, 3):
-                if location is not None:
-                    logger.error(f"Invalid alliance location value: {location}")
+        camera_subsystems = self._init_vision_subsystems()
+        subsystems.extend(camera_subsystems)
 
-                location = self._alliance_location
+        ##########################################
+        self.intake_pivot: IntakePivot | None = None
+        self.intake_roller: IntakeRoller | None = None
+        # self.indexer: IntakeIndexer | None = None
 
-            if self._is_red_alliance != is_red or self._alliance_location != location:
-                # Change of alliance. Update any subsystem or other object that needs
-                # to know.
-                self._is_red_alliance = is_red
-                self._alliance_location = location
+        self.indexer = None
+        self.flywheel: Shooter | None = None
+        self.climber: Climber | None = None
 
-                for callback in self._alliance_change_callbacks:
-                    callback(is_red, location)
+        if self.simulation:  # Currently in sim only
+            ##########################################
+            # NOTE: Disable subsystems that will not be in the next competition
+            ##########################################
+            #   INTAKE (Pivot & Rollers)
+            #
+            # Right Pivot Motor should be Inverted
+            try:
+                self.intake_pivot = IntakePivot(self,
+                                                DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+                                                True)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Pivot initialization: {_e}")
 
-    def register_alliance_change_callback(self, callback: Callable[[bool, int], None]) -> None:
-        """
-        For subsystems and objects that need to know about alliance changes before the
-        match begins.
-        """
-        self._alliance_change_callbacks.append(callback)
+            ###########################################
+            #   Roller / rolly-grabbers
+            try:
+                self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
+            except Exception as _e:
+                logger.exception(f"Exception during Intake Roller initialization: {_e}")
 
-    def set_start_time(self) -> None:  # call in teleopInit and autonomousInit in the robot
-        self.start_time = time.time()
+            # ##########################################
+            # #   INDEXER
+            # try:
+            #     self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
+            # except Exception as _e:
+            #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
 
-    def get_elapsed_time(self) -> float:
-        """
-        Called when we want to know the start/elapsed time for status and debug messages
-        """
-        return time.time() - self.start_time
+            # ##########################################
+            #   SHOOTER
+            # try:
+            #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
+            # except Exception as _e:
+            #     logger.exception(f"Exception during Shooter initialization: {_e}")
 
-    def elapsed_time(self) -> float:
-        return time.time() - self.start_time
+        ##########################################
+        #   CLIMBER
+        #
+        try:
+            self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
 
-    def configure_button_bindings_xbox(self, controller: button.CommandXboxController, port_id: int) -> None:
-        # Note that X is defined as forward according to WPILib convention,
-        # and Y is defined as to the left according to WPILib convention.
-        match port_id:
-            case constants.DRIVER_CONTROLLER_PORT:
-                return self._configure_driver_button_bindings_xbox(controller)
+        except Exception as _e:
+            logger.exception(f"Exception during Intake Initialization: {_e}")
+            self.climber = None
 
-            case constants.SHOOTER_CONTROLLER_PORT:
-                return self._configure_shooter_button_bindings_xbox(controller)
+        # Add subsystems that got initialized
+        for sub in (self.intake_pivot, self.intake_roller, self.indexer,
+                    self.flywheel, self.climber):
 
-            case constants.CALIBRATION_CONTROLLER_PORT:
-                # NOTE: can set calibration port to same as another controller, but the
-                #       last one called will take over any shared button bindings
-                return self._configure_calibration_button_bindings_xbox(controller)
+            if sub is not None and sub.is_connected:
+                subsystems.append(sub)
+
+            elif sub is not None:
+                logging.warning(f"Subsystem {sub} not connected to robot or failed to initialize")
+
+        ##########################################
+        # Mechanism simulation (MUST BE THE LAST SUBSYSTEM INITIALIZED)
+        if self.simulation:
+            self._mechanism_2d = RobotMech(self)
+            subsystems.append(self._mechanism_2d)
+
+        if self.flywheel is not None:
+            self._shooter_rpm_chooser = IntegerEditBox("Shooter RPM",
+                                                       initial_value=0,
+                                                       minimum_value=0,
+                                                       maximum_value=5676)
+            SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
+
+        if self.intake_roller is not None:
+            self._intake_rpm_chooser = IntegerEditBox("Intake RPM",
+                                                       initial_value=0,
+                                                       minimum_value=0,
+                                                       maximum_value=5676)
+            SmartDashboard.putData(self._intake_rpm_chooser.name, self._intake_rpm_chooser)
+
+        if self.indexer is not None:
+            self._indexer_rpm_chooser = IntegerEditBox("Indexer RPM",
+                                                       initial_value=0,
+                                                       minimum_value=0,
+                                                       maximum_value=5676)
+            SmartDashboard.putData(self._indexer_rpm_chooser.name, self._indexer_rpm_chooser)
+
+        return (subsystem for subsystem in subsystems)
+
+    def _init_vision_subsystems(self) -> List[Subsystem]:
+        camera_subsystems = []
+        # TODO: Do we need to prioritize the cameras so some cameras get serviced first in a multi-vision robot
+        for camera_info in (FRONT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, LEFT_CAMERA_INFO):
+
+            camera_subsystem = VisionSubsystem.create(camera_info, self.robot_drive,
+                                                      self._field)
+            if camera_subsystem is not None:
+                camera_subsystems.append(camera_subsystem)
+                self._cameras[camera_info["Label"]] = camera_subsystem
+
+        return camera_subsystems
 
     def _configure_driver_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
@@ -551,7 +396,7 @@ class RobotContainer:
         # Start Button
         # TODO -> add support : controller.start().onTrue(cmd.runOnce(lambda: self.robot_drive.resetGyroToInitial))
 
-    def _configure_shooter_button_bindings_xbox(self, controller: CommandXboxController) -> None:
+    def _configure_operator_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """
         Use this method to define your button->command mappings. Buttons can be created by
         instantiating a :GenericHID or one of its subclasses (Joystick or XboxController),
@@ -712,53 +557,6 @@ class RobotContainer:
                                                               threshold=0.5)
             right_bumper_pressed.whileTrue(track_any_tag)
 
-    def _init_vision_subsystems(self) -> List[Subsystem]:
-        camera_subsystems = []
-        # TODO: Do we need to prioritize the cameras so some cameras get serviced first in a multi-vision robot
-        for camera_info in (FRONT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, LEFT_CAMERA_INFO):
-
-            camera_subsystem = VisionSubsystem.create(camera_info, self.robot_drive,
-                                                      self._field)
-            if camera_subsystem is not None:
-                camera_subsystems.append(camera_subsystem)
-                self._cameras[camera_info["Label"]] = camera_subsystem
-
-        return camera_subsystems
-
-    def disable_pid_subsystems(self) -> None:
-        """
-        Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
-        This should be called on robot disable to prevent integral windup.
-        """
-        self.robot_drive.set_motor_brake(True)
-
-    def get_autonomous_command(self) -> Command | None:
-        """
-        :returns: the command to run in autonomous
-        """
-        command = self.auto_chooser.getSelected()
-        return command
-
-    def get_autonomous_end_game_command(self) -> Optional[Command]:
-        """
-        :returns: the command to run at the end of autonomous
-        """
-        return self._auto_end_chooser.getSelected()
-
-    def configure_speed_limiter(self):
-        """
-        Overall speed limitation scaling factor
-        """
-        self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
-
-        # you can also set the default option, if needed
-        self._limit_chooser.addOption("10%", 0.1)
-        self._limit_chooser.addOption("20%", 0.2)
-        self._limit_chooser.addOption("40%", 0.4)
-        self._limit_chooser.setDefaultOption("60%", 0.6)
-        self._limit_chooser.addOption("80%", 0.8)
-        self._limit_chooser.addOption("100%", 1.0)
-
     def configure_additional_autos(self):
         """
         Add to dashboard "'"Chosen" dialog that allows us to select which 'automation'
@@ -766,7 +564,6 @@ class RobotContainer:
 
         TODO:  THIS IS JUST A TEST.  USE PATHPLANNER FOR ALL AUTONOMOUS MODE PATHS
         """
-        self.auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
 
         # Put sys IDs to run as automation (if not in competition)
         # if not DriverStation.isFMSAttached() and not self.simulation:
@@ -791,9 +588,6 @@ class RobotContainer:
 
         return PrintCommand("Do-Nothing Command")
 
-    def disable_periodic(self) -> None:
-        self._alerts.preflight_update()
-
     def robotPeriodic(self) -> None:
         """
         This is called from Robot.robotPeriodic() after the Phoenix6 signal updates
@@ -805,19 +599,7 @@ class RobotContainer:
         This should update the saved robot state that can then be used later by
         any commands.
         """
-        # Update all our I/O values. This periodic call will also call the pykit
-        # logger.
-        drive = self.robot_drive
-
-        RobotState.periodic(drive.pose,
-                            Rotation2d(drive.gyro.inputs.yaw),
-                            drive.get_robot_3d(drive.pose, Rotation3d.fromDegrees(drive.gyro.inputs.roll,
-                                                                                  drive.gyro.inputs.pitch,
-                                                                                  drive.gyro.inputs.yaw)),
-                            drive.gyro.inputs.yaw_timestamp,
-                            drive.get_angular_velocity(),
-                            drive.get_field_relative_speeds(),
-                            drive.get_module_positions())
+        # Some year specific work first
 
         # Update dashboard/pykit data related to match state
         we_won = self._field.won_autonomous
@@ -856,7 +638,5 @@ class RobotContainer:
                                           self._field.in_my_opponents_zone(pose.x) is True and
                                           self._field.in_right_zone_area(pose.y) is True)
 
-        self._alerts.update()
-        #
-        # TODO: Next returns 3d poses for all mechanisms.  Might be good for our devices as well.
-        # Logger.recordOutput("Component Poses", RobotMechanism.getPoses())
+        # Now the base class
+        super().robotPeriodic()

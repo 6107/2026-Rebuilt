@@ -100,6 +100,8 @@ class RevClimber(Subsystem, RotationMechanismIO):
         self._inputs = RotationMechanismIO.RotationMechanismIOInputs()
         self._physics_controller = None
 
+        self._is_simulation = RobotBase.isSimulation()
+
         # Set up the motor controller
         self._motor = SparkMax(can_device_id, SparkBase.MotorType.kBrushless)
         status = try_until_ok("Climber", 5,
@@ -115,8 +117,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         if status != REVLibError.kOk:
             logger.error("Climber encoder 'setPosition' Error, %d", status)
 
-        # Support simulation
-        self._is_simulation = RobotBase.isSimulation()
+        # Simulation support
         if self._is_simulation:
             motor_model = DCMotor.NEO(1)
             self._sim_motor = SparkMaxSim(self._motor, motor_model)

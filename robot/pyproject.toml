@@ -40,7 +40,7 @@ components = [
 
 # Other pip packages to install
 requires = [
-    "lib_6107==2026.0.0.2",
+    "lib_6107==2026.0.0.3",
     "robotpy-pathplannerlib==2026.1.2",
     "photonlibpy==2026.3.2",
     "limelightlib-python==0.9.6",

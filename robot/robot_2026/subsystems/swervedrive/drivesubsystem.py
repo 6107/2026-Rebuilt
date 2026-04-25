@@ -44,15 +44,10 @@ from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModu
 from wpimath.units import degrees, meters, meters_per_second, radians_per_second, rotationsToRadians, \
     seconds
 
-from constants import GYRO_REVERSED, JOYSTICK_DEADBAND, MAX_SPEED, MAX_WHEEL_LINEAR_VELOCITY, ODOMETRY_FREQUENCY, \
-    WHEEL_CIRCUMFERENCE, WHEEL_RADIUS
+from constants import MyRobotConstants
 
-try:
-    import navx
+from constants import GYRO_REVERSED
 
-    NAVX_SUPPORTED = True
-except ImportError:
-    NAVX_SUPPORTED = False
 
 # TODO: This value needs to be tested. Perform the following on a real robot
 #
@@ -153,10 +148,10 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         # The modules are created in the following order in our tuner_constants 'create_drivetrain' func
         self._swerve_modules: OrderedDict[str, SwerveModule] = OrderedDict(
             [
-                ("front-left", SwerveModule(self.modules[0], "front-left")),
-                ("front-right", SwerveModule(self.modules[1], "front-right")),
-                ("back-left", SwerveModule(self.modules[2], "back-left")),
-                ("back-right", SwerveModule(self.modules[3], "back-right"))
+                ("front-left", SwerveModule(self.modules[0], "front-left", container)),
+                ("front-right", SwerveModule(self.modules[1], "front-right", container)),
+                ("back-left", SwerveModule(self.modules[2], "back-left", container)),
+                ("back-right", SwerveModule(self.modules[3], "back-right", container))
             ])
         self._expected_swerve_states = (SwerveModuleState(), SwerveModuleState(),
                                         SwerveModuleState(), SwerveModuleState())
@@ -165,22 +160,22 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         self._last_module_positions = self.get_module_positions()  # TODO: Do we use this? From westwood
 
         # Some useful requests amd constants
-        max_speed = MAX_SPEED
-        max_angular_rate = rotationsToRadians(0.75)  # 3/4 of a rotation per second max angular velocity
+        max_speed = container.robot.robot_constants.MAX_SPEED
+        max_angular_rate = container.robot.robot_constants.MAX_ANGULAR_VELOCITY  # 3/4 of a rotation per second max angular velocity
 
         # Setting up bindings for necessary control of the Phoenix6 swerve drive platform.
         # This sets a deadband for both the speed and rotation control
         #  Use open-loop control for drive motors
         self._field_centric_drive: FieldCentric = (
             FieldCentric()
-            .with_deadband(max_speed * JOYSTICK_DEADBAND)
-            .with_rotational_deadband(max_angular_rate * JOYSTICK_DEADBAND)
+            .with_deadband(max_speed * container.robot.robot_constants.JOYSTICK_DEADBAND)
+            .with_rotational_deadband(max_angular_rate * container.robot.robot_constants.JOYSTICK_DEADBAND)
             .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
 
         self._robot_centric_drive: RobotCentric = (
             RobotCentric()
-            .with_deadband(max_speed * JOYSTICK_DEADBAND)
-            .with_rotational_deadband(max_angular_rate * JOYSTICK_DEADBAND)
+            .with_deadband(max_speed * container.robot.robot_constants.JOYSTICK_DEADBAND)
+            .with_rotational_deadband(max_angular_rate * container.robot.robot_constants.JOYSTICK_DEADBAND)
             .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
 
         self._is_field_centric = True

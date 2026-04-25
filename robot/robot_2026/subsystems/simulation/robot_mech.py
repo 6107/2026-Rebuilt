@@ -25,6 +25,7 @@ from wpimath.kinematics import ChassisSpeeds
 from wpimath.units import degrees, degrees_per_second, inchesToMeters, meters, meters_per_second, \
     revolutions_per_minute
 
+from constants import MyRobotConstants
 
 class RobotMech(Subsystem):
     """
@@ -46,7 +47,7 @@ class RobotMech(Subsystem):
 
         # Approximate robot width (y-dimension) with the intake deployed and the height (z-dimension)
         # with the intake/climber/ and other subsystems at max h
-        self._width = inchesToMeters(constants.ROBOT_X_WIDTH_DEFAULT + 6)
+        self._width = inchesToMeters(container.robot.robot_constants.ROBOT_X_WIDTH + 6)
         self._height = inchesToMeters(30)
 
         # Robot starting X offset (so it is not starting on left/bottom side of display box)
@@ -98,7 +99,7 @@ class RobotMech(Subsystem):
         # Center of bar is at 3.5" (since it's 2" thick, 2.5" to 4.5")               # TODO: Verify location/size
         chassis_ligamentroot_chassis = self._mech.getRoot("chassis_root", self._start_x, inchesToMeters(3.5))
         self.chassis_ligament = chassis_ligamentroot_chassis.appendLigament("chassis",
-                                                                            constants.ROBOT_CHASSIS_WIDTH,
+                                                                            self._container.robot.robot_constants.ROBOT_CHASSIS_X_WIDTH,
                                                                             0,
                                                                             20,
                                                                             self._color_chassis)
@@ -107,32 +108,32 @@ class RobotMech(Subsystem):
         # Rear Wheel
         self.root_rear_wheel = self._mech.getRoot("rear_wheel",
                                                   self._start_x + inchesToMeters(5),
-                                                  constants.WHEEL_RADIUS)
+                                                  self._container.robot.robot_constants.WHEEL_RADIUS)
 
         self.rear_wheel_ligament = self.root_rear_wheel.appendLigament("rear_spoke",
-                                                                       constants.WHEEL_RADIUS,
+                                                                       self._container.robot.robot_constants.WHEEL_RADIUS,
                                                                        0,
                                                                        6,
                                                                        self._color_wheel)
 
         self.rear_wheel_ligament_2 = self.root_rear_wheel.appendLigament("rear_spoke_2",
-                                                                         constants.WHEEL_RADIUS,
+                                                                         self._container.robot.robot_constants.WHEEL_RADIUS,
                                                                          180,
                                                                          6,
                                                                          self._color_wheel)
         # Front Wheel
         self.root_front_wheel = self._mech.getRoot("front_wheel",
-                                                   self._start_x + constants.ROBOT_CHASSIS_WIDTH - inchesToMeters(5),
-                                                   constants.WHEEL_RADIUS)
+                                                   self._start_x + self._container.robot.robot_constants.ROBOT_X_WIDTH - inchesToMeters(5),
+                                                   self._container.robot.robot_constants.WHEEL_RADIUS)
 
         self.front_wheel_ligament = self.root_front_wheel.appendLigament("front_spoke",
-                                                                         constants.WHEEL_RADIUS,
+                                                                         self._container.robot.robot_constants.WHEEL_RADIUS,
                                                                          0,
                                                                          6,
                                                                          self._color_wheel)
 
         self.front_wheel_ligament_2 = self.root_front_wheel.appendLigament("front_spoke_2",
-                                                                           constants.WHEEL_RADIUS,
+                                                                           self._container.robot.robot_constants.WHEEL_RADIUS,
                                                                            180,
                                                                            6,
                                                                            self._color_wheel)
@@ -145,7 +146,7 @@ class RobotMech(Subsystem):
         # it as a post: Sticks up 4" from top of drivetrain (Y=4.5).                # TODO: Verify location/size
         # We place it at the front of the chassis (X = start + 27).
         self.root_intake_mount = self._mech.getRoot("intake_mount",
-                                                    self._start_x + constants.ROBOT_CHASSIS_WIDTH,
+                                                    self._start_x + self._container.robot.robot_constants.ROBOT_X_WIDTH,
                                                     inchesToMeters(4.5))
 
         self._abs_intake_mount = 0  # Roots are 0
@@ -194,7 +195,7 @@ class RobotMech(Subsystem):
         # Butt up against intake (Right, X=32) and go Left (180 deg)
         self.root_hopper = self._mech.getRoot(
             "hopper_root",
-            self._start_x + constants.ROBOT_CHASSIS_WIDTH - inchesToMeters(2),
+            self._start_x + self._container.robot.robot_constants.ROBOT_X_WIDTH - inchesToMeters(2),
             inchesToMeters(5))
 
         self.abs_hopper = 180
@@ -317,7 +318,7 @@ class RobotMech(Subsystem):
         # Start on floor (Y=3 for 6" diam), to the right of intake
         # Intake tip is approx X=39 (start_x + 27 + ~7). Place fuel at X=45 (start_x + 40).
         self.fuel_root = self._mech.getRoot("fuel_root",
-                                            self._start_x + constants.ROBOT_CHASSIS_WIDTH + inchesToMeters(7),
+                                            self._start_x + self._container.robot.robot_constants.ROBOT_X_WIDTH + inchesToMeters(7),
                                             inchesToMeters(3))
 
         # "just make one 6" tall 6" wide bar"

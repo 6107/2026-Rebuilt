@@ -36,7 +36,7 @@ chardet                 == 7.3.0
 robotpy-pykit-watch     == 1.0.0
 
 # CyberJagzz Library
-lib_6107 == 2026.0.0.2
+lib_6107 == 2026.0.0.3
 
 # ###############################################################################
 # # Following are for OpenTelemetry support. None of the files below
