@@ -59,17 +59,6 @@ RED_START_LINE = FIELD_X_SIZE - inchesToMeters(182.11 - (47 / 2) - 2)
 BLUE_BUMP_X_CENTER = inchesToMeters(182.11)
 RED_BUMP_X_CENTER = FIELD_X_SIZE - inchesToMeters(182.11)
 
-BLUE_TEST_POSE = {
-    1: Pose2d(BLUE_START_LINE, 7.3, Rotation2d(math.pi)),
-    2: Pose2d(BLUE_START_LINE, 6.16, Rotation2d(math.pi)),
-    3: Pose2d(BLUE_START_LINE, 0.9, Rotation2d(math.pi))
-}
-RED_TEST_POSE = {
-    1: Pose2d(RED_START_LINE, 0.9, 0),
-    2: Pose2d(RED_START_LINE, 1.9, 0),
-    3: Pose2d(RED_START_LINE, 7.3, 0)
-}
-
 BLUE_HUB_X_OFFSET: meters = inchesToMeters(182.11)
 RED_HUB_X_OFFSET: meters = FIELD_X_SIZE - BLUE_HUB_X_OFFSET
 

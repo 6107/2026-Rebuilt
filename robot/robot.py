@@ -111,15 +111,18 @@ class MyRobot(Robot):
         if not self._auto_end_started:
             remaining: seconds = DriverStation.getMatchTime()
 
-            if 0 < remaining <= constants.AUTONOMOUS_END_TRIGGER_TIME:
+            if 0 < remaining <= self.robot_constants.AUTONOMOUS_END_TRIGGER_TIME:
                 self._auto_end_started = True
                 end_command = self.container.get_autonomous_end_game_command()
 
                 if end_command is not None:
                     logger.info(f"triggering autonomous end command: {end_command.getName}, {remaining} seconds left")
 
-                    self._autonomous_command.cancel()
+                    if self._autonomous_command is not None:
+                        self._autonomous_command.cancel()
+
                     self._autonomous_command = end_command
+
                     # Run it
                     end_command.schedule()
 

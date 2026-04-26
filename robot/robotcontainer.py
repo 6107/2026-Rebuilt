@@ -66,7 +66,6 @@ class MyRobotContainer(RobotContainer):
         self._field: Field = None
 
         self.robot_drive = None
-        self._cameras: Dict[str, Any] = {}
         self.intake_pivot: IntakePivot | None = None
         self.intake_roller: IntakeRoller | None = None
         # self.indexer: IntakeIndexer | None = None
@@ -163,8 +162,6 @@ class MyRobotContainer(RobotContainer):
         ##########################################
         #   VISION
         #
-        self._cameras: Dict[str, Any] = {}
-
         camera_subsystems = self._init_vision_subsystems()
         subsystems.extend(camera_subsystems)
 

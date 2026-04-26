@@ -21,16 +21,16 @@ import math
 import os
 
 from dataclasses import dataclass
-from enum import Enum, IntEnum, unique
+from enum import IntEnum, unique
 
-from wpilib import RobotBase
 from wpimath.geometry import Rotation3d, Transform3d, Translation2d, Translation3d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
-from wpimath.units import degreesToRadians, hertz, inchesToMeters, kilograms, lbsToKilograms, meters, meters_per_second, \
+from wpimath.units import degreesToRadians, inchesToMeters, kilograms, lbsToKilograms, meters, meters_per_second, \
     radians, radians_per_second, rotationsToRadians, seconds
 
-from lib_6107.constants import RobotConstants, CameraType, NetworkConstants
+from lib_6107.constants import RobotConstants, NetworkConstants
+from lib_6107.subsystems.constants import VisionSubsystemType
 from robot_2026.generated.tuner_constants import TunerConstants  # Use Tuner X constants if available
 
 
@@ -53,10 +53,9 @@ class MyRobotConstants(RobotConstants):
     MAX_SPEED: meters_per_second = TunerConstants.speed_at_12_volts
     MAX_ANGULAR_VELOCITY: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
 
-#################################################################
-# Autonomous End Game Timing
-
-AUTONOMOUS_END_TRIGGER_TIME = 10
+    ###########################
+    # Additional 2026 game constants
+    AUTONOMOUS_END_TRIGGER_TIME = 10  # Autonomous End Game Timing
 
 GYRO_REVERSED = False  # (affects field-relative driving)
 
@@ -132,7 +131,7 @@ class MyNetworkConstants(NetworkConstants):
 # Camera configurations     TODO: Move this to subsystems
 
 FRONT_CAMERA_INFO = {
-    "Type"     : CameraType.NONE,   # CAMERA_TYPE_PHOTONVISION,
+    "Type"     : VisionSubsystemType.NONE,   # CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(-11.0),
@@ -147,7 +146,7 @@ FRONT_CAMERA_INFO = {
 
 # TODO: Transform into a re-usable class
 REAR_CAMERA_INFO = {
-    "Type"     : CameraType.NONE, # CameraTypes.CAMERA_TYPE_LIMELIGHT,
+    "Type"     : VisionSubsystemType.NONE, # CameraTypes.CAMERA_TYPE_LIMELIGHT,
     "Label"    : "rear",
     "Name"     : "LimeLight",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(2.5),
@@ -159,7 +158,7 @@ REAR_CAMERA_INFO = {
 }
 
 LEFT_CAMERA_INFO = {
-    "Type"     : CameraType.NONE,
+    "Type"     : VisionSubsystemType.NONE,
     "Label"    : "left",
     "Name"     : "",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(0),
@@ -171,7 +170,7 @@ LEFT_CAMERA_INFO = {
 }
 
 RIGHT_CAMERA_INFO = {
-    "Type"     : CameraType.NONE,
+    "Type"     : VisionSubsystemType.NONE,
     "Label"    : "right",
     "Name"     : "",
     "Transform": Transform3d(Translation3d(x=inchesToMeters(0),

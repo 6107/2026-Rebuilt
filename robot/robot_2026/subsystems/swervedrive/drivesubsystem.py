@@ -31,7 +31,7 @@ from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as Swerv
 from lib_6107.subsystems.pykit.robot_state import RobotState
 from phoenix6 import SignalLogger, swerve, units, utils
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
-from robot_2026.field.field_2026 import BLUE_TEST_POSE, FIELD_X_SIZE, FIELD_Y_SIZE, RED_TEST_POSE
+from robot_2026.field.field_2026 import FIELD_X_SIZE, FIELD_Y_SIZE
 from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
 from robot_2026.subsystems.swervedrive.constants import DriveConstants
 from robot_2026.util.logtracer import LogTracer
@@ -505,7 +505,8 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         initial_pose = Pose2d(0, 0, Rotation2d.fromDegrees(self.gyro.yaw))
         if location in (1, 2, 3):
             # Use test subsystem settings if simulation
-            initial_pose = RED_TEST_POSE[location] if is_red else BLUE_TEST_POSE[location]
+            initial_pose = self._robot.simulation_constants.RED_TEST_POSE[location] if is_red \
+                else self._robot.simulation_constants.BLUE_TEST_POSE[location]
 
         self.pose = initial_pose
         return initial_pose
