@@ -34,8 +34,6 @@ from lib_6107.physics import PhysicsEngine as PhysicsEngineBase
 
 class PhysicsEngine(PhysicsEngineBase):
     """
-    Simulates a 2-wheel XRP robot using Arcade Drive joystick control.
-
     Any objects created or manipulated in this file are for simulation purposes only.
     """
     def __init__(self, physics_controller: PhysicsInterface, robot: "MyRobot"):

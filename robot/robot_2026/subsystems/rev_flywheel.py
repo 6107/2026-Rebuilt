@@ -29,8 +29,9 @@ from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoole
 from lib_6107.subsystems.rpm.rev_rpm_subsystem import RevRpmConfig, RevRpmSubsystem
 from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmMechanismIO
 from lib_6107.util.competition import event_active
+from lib_6107.pykit.logtracer import LogTracer
+
 from robot_2026.field.field_2026 import RebuiltField as Field
-from robot_2026.util.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ class RevFlywheel(RevRpmSubsystem):
         self._field: Field = container.field
 
         self._enable_chooser = LoggedNetworkBoolean("Flywheel/Enabled",
-                                                    defaultValue=event_active())
+                                                    default=event_active())
         self._initialized = True
 
     @property

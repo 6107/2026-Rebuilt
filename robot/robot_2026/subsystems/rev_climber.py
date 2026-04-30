@@ -28,7 +28,7 @@ from lib_6107.util.competition import event_active
 from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from rev import ClosedLoopSlot, FeedbackSensor, PersistMode, ResetMode, REVLibError, SparkBase, SparkLowLevel, SparkMax, \
     SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder, SparkRelativeEncoderSim
-from robot_2026.util.logtracer import LogTracer
+from lib_6107.pykit.logtracer import LogTracer
 from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, MechanismRoot2d, RobotBase, RobotController, \
     SmartDashboard
 from wpilib.simulation import BatterySim, ElevatorSim, RoboRioSim
@@ -157,7 +157,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         SmartDashboard.putData("Climber-mech", self._mech_2d)
 
         self._enable_chooser = LoggedNetworkBoolean("Climber/Enabled",
-                                                    defaultValue=event_active())
+                                                    default=event_active())
         self._initialized = True
 
     @property

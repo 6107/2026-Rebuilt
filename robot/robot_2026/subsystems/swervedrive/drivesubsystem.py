@@ -22,19 +22,6 @@ from collections import OrderedDict
 from typing import Callable
 from typing import Optional, Sequence, Tuple
 
-from commands2 import Command, Subsystem
-from commands2.sysid import SysIdRoutine
-from lib_6107.pykit.autolog import autolog_output
-from lib_6107.pykit.logger import Logger
-from lib_6107.subsystems.gyro.gyro import Gyro
-from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
-from lib_6107.subsystems.pykit.robot_state import RobotState
-from phoenix6 import SignalLogger, swerve, units, utils
-from phoenix6.swerve.requests import FieldCentric, RobotCentric
-from robot_2026.field.field_2026 import FIELD_X_SIZE, FIELD_Y_SIZE
-from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
-from robot_2026.subsystems.swervedrive.constants import DriveConstants
-from robot_2026.util.logtracer import LogTracer
 from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.filter import SlewRateLimiter
@@ -43,6 +30,21 @@ from wpimath.geometry import Pose3d
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModulePosition, SwerveModuleState
 from wpimath.units import degrees, meters, meters_per_second, radians_per_second, rotationsToRadians, \
     seconds
+from commands2 import Command, Subsystem
+from commands2.sysid import SysIdRoutine
+from phoenix6 import SignalLogger, swerve, units, utils
+from phoenix6.swerve.requests import FieldCentric, RobotCentric
+from robot_2026.field.field_2026 import FIELD_X_SIZE, FIELD_Y_SIZE
+from robot_2026.generated.tuner_constants import TunerSwerveDrivetrain
+from robot_2026.subsystems.swervedrive.constants import DriveConstants
+
+from lib_6107.pykit.autolog import autolog_output
+from lib_6107.pykit.logger import Logger
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.ctre_swervedrive import CtreSwerveModule as SwerveModule
+from lib_6107.subsystems.pykit.robot_state import RobotState
+from lib_6107.pykit.logtracer import LogTracer
+
 
 from constants import MyRobotConstants
 
@@ -767,7 +769,8 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]) -> None:
         # desaturate the states
         front_left_state, front_right_state, back_left_state, back_right_state = \
-            SwerveDrive4Kinematics.desaturateWheelSpeeds(module_states, MAX_WHEEL_LINEAR_VELOCITY)
+            SwerveDrive4Kinematics.desaturateWheelSpeeds(module_states,
+                                                         self.robot.robot_constants.MAX_WHEEL_LINEAR_VELOCITY)
 
         self._expected_swerve_states = (front_left_state, front_right_state,
                                         back_left_state, back_right_state)
@@ -802,7 +805,7 @@ class DriveSubsystem(Subsystem, TunerSwerveDrivetrain):
         velocity_setter: VelocityTorqueCurrentFOC = VelocityTorqueCurrentFOC(0, 0)
         ticks_per_revolution = 4096
         # wheel_radius: meters = WHEEL_RADIUS
-        wheel_circumference: meters = WHEEL_CIRCUMFERENCE
+        wheel_circumference: meters = self.robot.robot_constants.WHEEL_CIRCUMFERENCE
 
         for index, module in enumerate(self.modules):
             drive_motor = module.drive_motor

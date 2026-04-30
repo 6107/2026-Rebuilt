@@ -18,30 +18,26 @@
 import logging
 from typing import Optional
 
-from commands2 import cmd, Subsystem
-from commands2.command import Command
-from commands2.sysid import SysIdRoutine
+from commands2 import Subsystem
 
-from phoenix6 import SignalLogger, swerve, units, utils, StatusCode, StatusSignal
+from phoenix6 import StatusCode, StatusSignal
 from phoenix6.hardware import TalonFX
 from phoenix6.configs import TalonFXConfiguration, CurrentLimitsConfigs, MotorOutputConfigs
 from phoenix6.signals import InvertedValue
+from phoenix6.units import volt, ampere, rotations_per_second, rotation
 
-from wpilib import RobotBase, RobotController, SmartDashboard
-from wpilib.simulation import BatterySim, RoboRioSim, SingleJointedArmSim
-from wpilib.sysid import State
-from wpimath.system.plant import DCMotor
-from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inches, inchesToMeters, kilograms, \
-    meters, radians, revolutions_per_minute, seconds, volts
+from wpilib import SmartDashboard
+from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians, inchesToMeters, kilograms, \
+    meters, radians, revolutions_per_minute, seconds
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
 from lib_6107.util.competition import event_active
-from lib_6107.util.phoenix6_utils import try_until_ok, handle_faults
+from lib_6107.util.phoenix6_utils import try_until_ok
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 
-from robot_2026.util.logtracer import LogTracer
+from lib_6107.pykit.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +183,7 @@ class CtreIntakePivot(Subsystem, RotationMechanismIO):
         # SmartDashboard.putData("Right-Pivot", mech_2d)
 
         self._enable_chooser = LoggedNetworkBoolean("Intake/Enabled",
-                                                    defaultValue=event_active())
+                                                    default=event_active())
         self._initialized = True
 
     @staticmethod

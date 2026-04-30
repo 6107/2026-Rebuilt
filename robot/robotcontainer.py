@@ -145,7 +145,7 @@ class MyRobotContainer(RobotContainer):
         """
         return MyRobotContainer(robot)
 
-    def subsystem_init(self) -> Tuple[Subsystem]:
+    def subsystem_init(self) -> Tuple[Subsystem, ...]:
         """
         Create all subsystems for this years robot
         """
@@ -256,9 +256,9 @@ class MyRobotContainer(RobotContainer):
                                                        maximum_value=5676)
             SmartDashboard.putData(self._indexer_rpm_chooser.name, self._indexer_rpm_chooser)
 
-        return (subsystem for subsystem in subsystems)
+        return tuple(subsystems)
 
-    def _init_vision_subsystems(self) -> List[Subsystem]:
+    def _init_vision_subsystems(self) -> Tuple[Subsystem, ...]:
         camera_subsystems = []
         # TODO: Do we need to prioritize the cameras so some cameras get serviced first in a multi-vision robot
         for camera_info in (FRONT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO, LEFT_CAMERA_INFO):
@@ -269,7 +269,7 @@ class MyRobotContainer(RobotContainer):
                 camera_subsystems.append(camera_subsystem)
                 self._cameras[camera_info["Label"]] = camera_subsystem
 
-        return camera_subsystems
+        return tuple(camera_subsystems)
 
     def _configure_driver_button_bindings_xbox(self, controller: CommandXboxController) -> None:
         """

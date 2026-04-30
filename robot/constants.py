@@ -17,9 +17,6 @@
 #
 # Constants for source in this subdirectory will go here
 
-import math
-import os
-
 from dataclasses import dataclass
 from enum import IntEnum, unique
 
@@ -27,7 +24,7 @@ from wpimath.geometry import Rotation3d, Transform3d, Translation2d, Translation
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
 from wpimath.units import degreesToRadians, inchesToMeters, kilograms, lbsToKilograms, meters, meters_per_second, \
-    radians, radians_per_second, rotationsToRadians, seconds
+    radians_per_second, rotationsToRadians, seconds
 
 from lib_6107.constants import RobotConstants, NetworkConstants
 from lib_6107.subsystems.constants import VisionSubsystemType

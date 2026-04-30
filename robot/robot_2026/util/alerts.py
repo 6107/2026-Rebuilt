@@ -17,16 +17,11 @@
 
 import os
 
-from wpilib import Alert, DriverStation, RobotBase
-
-from robot_2026.util.preflight import PreflightChecklist
-
-from lib_6107.pykit.alertlogger import AlertLogger
+from wpilib import Alert
 from lib_6107.util.alerts import RobotAlerts
 
 class MyRobotAlerts(RobotAlerts):
-    def __init__(self, container: 'RobotContainer'):
-
+    def __init__(self, container: "RobotContainer"):
         super().__init__(container)
 
         if container.flywheel is not None:
