@@ -196,14 +196,14 @@ class MyRobotContainer(RobotContainer):
                 logger.exception(f"Exception during Intake Roller initialization: {_e}")
 
             # ##########################################
-            # #   INDEXER
+            # #   INDEXER (hardware not ready)
             # try:
             #     self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
             # except Exception as _e:
             #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
 
             # ##########################################
-            #   SHOOTER
+            #   SHOOTER/FLYWHEEL (hardware not ready)
             # try:
             #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
             # except Exception as _e:
