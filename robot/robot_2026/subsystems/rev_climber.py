@@ -19,10 +19,11 @@ import logging
 import math
 from typing import Optional
 
-from commands2 import cmd, Command, Subsystem
+from commands2 import cmd, Command
 from commands2.sysid import SysIdRoutine
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
+from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
 from lib_6107.util.competition import event_active
 from lib_6107.util.rev_utils import handle_faults, try_until_ok
@@ -81,26 +82,17 @@ class ClimberConstants:
     CARRIAGE_MASS: kilograms = 1.0  # The part that extends up
 
 #@autologgable_output
-class RevClimber(Subsystem, RotationMechanismIO):
+class RevClimber(SubsystemBase, RotationMechanismIO):
 
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool) -> None:
-        self._initialized = False
-
-        Subsystem.__init__(self)
+        SubsystemBase.__init__(self, container, "Climber", "Climber")
         RotationMechanismIO.__init__(self, "Climber")
 
         # General attributes
-        self.setName(self.__class__.__name__)
-        self._container = container
-        self._robot = container.robot
-        self._period: seconds = container.robot.period
         self._device_id = can_device_id
         self._inverted = inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
         self._inputs = RotationMechanismIO.RotationMechanismIOInputs()
-        self._physics_controller = None
-
-        self._is_simulation = RobotBase.isSimulation()
 
         # Set up the motor controller
         self._motor = SparkMax(can_device_id, SparkBase.MotorType.kBrushless)
@@ -183,10 +175,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
             logger.warning(f"{self.getName()} firmware version: {version}, status: {status}")
 
         return ok
-
-    @property
-    def is_initialized(self) -> bool:
-        return self._initialized
 
     @property
     def enabled(self) -> bool:
@@ -286,60 +274,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
         logger.info(f"Climber Retract: Setting position to {ClimberConstants.CLIMBER_RETRACTED_SETPOINT}")
         self.position = ClimberConstants.CLIMBER_RETRACTED_SETPOINT
 
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
-        """
-        Initialize any simulation only needed parameters
-        """
-        self._physics_controller = physics_controller
-
-    def simulationPeriodic(self) -> None:
-        """
-        This method is called periodically by the CommandScheduler (after the periodic
-        function). It is useful for updating subsystem-specific state that needs to be
-        maintained for simulations, such as for updating simulation classes and setting
-        simulated sensor readings.
-
-        Unlike the physics 'update_sim', it is not called with the current time (now)
-        or the amount of time since 'update_sim' was called (tm_diff).  It is called
-        just after the 'periodic' call and before the 'update_sim' is called. One other
-        'important' difference is 'update_sim' is called at a period >= 10 ms instead
-        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
-        """
-        if self._robot.isEnabled() and self.is_initialized:
-            LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
-
-            voltage = self._sim_motor.getAppliedOutput() * RobotController.getBatteryVoltage()
-
-            self._sim_climber.setInputVoltage(voltage)
-            self._sim_climber.update(self._period)
-
-            # Set the simulated encoder
-            self._sim_encoder.setPosition(self._sim_climber.getPosition())
-
-            # And simulate current drain
-            RoboRioSim.setVInVoltage(BatterySim.calculate([self._sim_climber.getCurrentDraw()]))
-            LogTracer.recordTotal()
-
-    # def update_sim(self, now: float, tm_diff: float) -> None:
-    #     """
-    #     Called when the simulation parameters for the program need to be updated.
-    #     This function is called from the '_simulationPeriodic' function of the
-    #     robotpy core routine and is called at a period >= 10 mS. Note that the
-    #     CommandScheduler also has an 'simulationPeriodic' function that it calls
-    #     into all Command2 based subsystems at its update period which has a
-    #     default rate of 20 mS.
-    #
-    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
-    #     that function uses pykit's logging method, you should use those values in
-    #     your simulation.
-    #
-    #     :param now:     The current time as a float
-    #     :param tm_diff: The amount of time that has passed since the last
-    #                     time that this function was called
-    #     """
-    #     if not self.is_initialized:
-    #         return
-
     def periodic(self) -> None:
         if not self.is_initialized:
             return
@@ -358,29 +292,6 @@ class RevClimber(Subsystem, RotationMechanismIO):
         Logger.recordOutput("Climber/goal", self._position_goal)
         # Logger.recordOutput("Climber/ClosedLoop", self._closed_loop)
         LogTracer.recordTotal()
-
-        # # Update SmartDashboard for this subsystem at a rate slower than the period
-        # counter = self._robot.counter
-        # if counter % 100 == 0 or (self._robot.counter % 37 == 0 and
-        #                           self._robot.isEnabled()):
-        #     self.dashboard_periodic()
-
-    def dashboard_initialize(self) -> None:
-        """
-        Configure the SmartDashboard for this subsystem
-        """
-        # SmartDashboard.putNumber("Climber/position", 0.0)
-        # SmartDashboard.putNumber("Climber/goal", 0.0)
-        # SmartDashboard.putNumber("Climber/speed", 0.0)
-
-    def dashboard_periodic(self) -> None:
-        """
-        Called from periodic function to update dashboard elements for this subsystem
-        """
-        # SmartDashboard.putNumber("Climber/position", self.position)
-        # SmartDashboard.putNumber("Climber/goal", self._position_goal)
-        # SmartDashboard.putNumber("Climber/speed", self._inputs.mechanism_speed)
-        # SmartDashboard.putBoolean("Climber/closed-loop", self._closed_loop)
 
     def updateInputs(self, inputs: RotationMechanismIO.RotationMechanismIOInputs) -> None:
         if not self.is_initialized:
@@ -413,7 +324,7 @@ class RevClimber(Subsystem, RotationMechanismIO):
         """
         self._motor.setVoltage(voltage)
 
-    def sys_id_routine(self, subsystem: Subsystem) -> Command:
+    def sys_id_routine(self, subsystem: SubsystemBase) -> Command:
         """
         Model the behavior of the climber (for better control) by sweeping through the max and min heights.
         """
@@ -458,3 +369,34 @@ class RevClimber(Subsystem, RotationMechanismIO):
         """
         # For Rev Robotics, the faults are a bitmask
         handle_faults("Climber", state, self._motor, clear=clear, notify=notify)
+
+    ###########################################################
+    # Simulation Support
+
+    def simulationPeriodic(self) -> None:
+        """
+        This method is called periodically by the CommandScheduler (after the periodic
+        function). It is useful for updating subsystem-specific state that needs to be
+        maintained for simulations, such as for updating simulation classes and setting
+        simulated sensor readings.
+
+        Unlike the physics 'update_sim', it is not called with the current time (now)
+        or the amount of time since 'update_sim' was called (tm_diff).  It is called
+        just after the 'periodic' call and before the 'update_sim' is called. One other
+        'important' difference is 'update_sim' is called at a period >= 10 ms instead
+        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
+        """
+        if self._robot.isEnabled() and self.is_initialized:
+            LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+
+            voltage = self._sim_motor.getAppliedOutput() * RobotController.getBatteryVoltage()
+
+            self._sim_climber.setInputVoltage(voltage)
+            self._sim_climber.update(self._period)
+
+            # Set the simulated encoder
+            self._sim_encoder.setPosition(self._sim_climber.getPosition())
+
+            # And simulate current drain
+            RoboRioSim.setVInVoltage(BatterySim.calculate([self._sim_climber.getCurrentDraw()]))
+            LogTracer.recordTotal()

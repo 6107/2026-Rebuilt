@@ -24,17 +24,7 @@ from wpimath.units import seconds
 from constants import MyRobotConstants
 from robotcontainer import MyRobotContainer
 
-from lib_6107.constants import RobotModes, ROBOT_MODE
-from lib_6107.robotcontainer import RobotContainer
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.loggedrobot import LoggedRobot
-from lib_6107.pykit.networktables.nt4Publisher import NT4Publisher
-from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader
-from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robot import Robot
-from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.statistics import RobotStatistics
 
 # Setup Logging
 logger = logging.getLogger(__name__)

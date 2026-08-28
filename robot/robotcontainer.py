@@ -145,6 +145,10 @@ class MyRobotContainer(RobotContainer):
         """
         return MyRobotContainer(robot)
 
+    @property
+    def field(self) -> Field:
+        return self._field
+
     def subsystem_init(self) -> Tuple[Subsystem, ...]:
         """
         Create all subsystems for this years robot
@@ -155,7 +159,6 @@ class MyRobotContainer(RobotContainer):
         ##########################################
         #  Drivetrain
         #
-        # self.robot_drive = DriveSubsystem(self, **drive_kwargs)
         self.robot_drive = TunerConstants.create_drivetrain(self)
         subsystems.append(self.robot_drive)
 
@@ -174,50 +177,31 @@ class MyRobotContainer(RobotContainer):
         self.flywheel: Shooter | None = None
         self.climber: Climber | None = None
 
-        if self.simulation:  # Currently in sim only
-            ##########################################
-            # NOTE: Disable subsystems that will not be in the next competition
-            ##########################################
-            #   INTAKE (Pivot & Rollers)
-            #
-            # Right Pivot Motor should be Inverted
-            try:
-                self.intake_pivot = IntakePivot(self,
-                                                DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                                True)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Pivot initialization: {_e}")
+        ##########################################
+        # NOTE: Disable subsystems that will not be in the next competition
+        ##########################################
+        #   INTAKE (Pivot & Rollers)
+        #
+        # Right Pivot Motor should be Inverted
+        self.intake_pivot = IntakePivot(self,
+                                        DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
+                                        True)
 
-            ###########################################
-            #   Roller / rolly-grabbers
-            try:
-                self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
-            except Exception as _e:
-                logger.exception(f"Exception during Intake Roller initialization: {_e}")
+        ###########################################
+        #   Roller / rolly-grabbers
+        self.intake_roller = IntakeRoller(self, DeviceID.INTAKE_ROLLER_DEVICE_ID, True)
 
-            # ##########################################
-            # #   INDEXER (hardware not ready)
-            # try:
-            #     self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
-            # except Exception as _e:
-            #     logger.exception(f"Exception during Intake Indexer initialization: {_e}")
-
-            # ##########################################
-            #   SHOOTER/FLYWHEEL (hardware not ready)
-            # try:
-            #     self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
-            # except Exception as _e:
-            #     logger.exception(f"Exception during Shooter initialization: {_e}")
+        # ##########################################
+        # #   INDEXER (hardware not ready)
+        # self.indexer = IntakeIndexer(self, DeviceID.INTAKE_INDEXER_DEVICE_ID, False)
+        # ##########################################
+        #   SHOOTER/FLYWHEEL (hardware not ready)
+        # self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)
 
         ##########################################
         #   CLIMBER
         #
-        try:
-            self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
-
-        except Exception as _e:
-            logger.exception(f"Exception during Intake Initialization: {_e}")
-            self.climber = None
+        self.climber = Climber(self, DeviceID.CLIMBER_DEVICE_ID, True)
 
         # Add subsystems that got initialized
         for sub in (self.intake_pivot, self.intake_roller, self.indexer,

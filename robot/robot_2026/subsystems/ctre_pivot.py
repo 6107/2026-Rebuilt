@@ -18,8 +18,6 @@
 import logging
 from typing import Optional
 
-from commands2 import Subsystem
-
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.hardware import TalonFX
 from phoenix6.configs import TalonFXConfiguration, CurrentLimitsConfigs, MotorOutputConfigs
@@ -33,6 +31,7 @@ from wpimath.units import amperes, degrees, degrees_per_second, degreesToRadians
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 from lib_6107.subsystems.pykit.rotation_mechanism_io import RotationMechanismIO
+from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.util.competition import event_active
 from lib_6107.util.phoenix6_utils import try_until_ok
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
@@ -67,7 +66,7 @@ class PivotConstants:
     PIVOT_MASS: kilograms = 1.0  # TODO: Verify
 
 #@autologgable_output
-class CtreIntakePivot(Subsystem, RotationMechanismIO):
+class CtreIntakePivot(SubsystemBase, RotationMechanismIO):
     """
     Intake Pivot Motor.
 
@@ -95,24 +94,16 @@ class CtreIntakePivot(Subsystem, RotationMechanismIO):
     """
 
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool) -> None:
-        self._initialized = False
-
-        Subsystem.__init__(self)
+        SubsystemBase.__init__(self, container, "IntakePivot", "IntakePivot")
         RotationMechanismIO.__init__(self, "IntakePivot")
 
         # General attributes
-        self.setName("IntakePivot")
-        self._container = container
-        self._robot = container.robot
-        self._period: seconds = container.robot.getPeriod()
         self._device_id = can_device_id
         self._inverted = inverted
         self._closed_loop = True        # Autonomous runs as a closed loop
         self._inputs = RotationMechanismIO.RotationMechanismIOInputs()
 
         self._position_goal = PivotConstants.RETRACTED_ANGLE
-
-        self._physics_controller = None
 
         # Set up the motor controller
         self._motor = TalonFX(self._device_id, "rio")
@@ -193,10 +184,6 @@ class CtreIntakePivot(Subsystem, RotationMechanismIO):
         desired absolute angle and the parent's absolute angle.
         """
         return target_abs - parent_abs
-
-    @property
-    def is_initialized(self) -> bool:
-        return self._initialized
 
     @property
     def enabled(self) -> bool:
@@ -369,13 +356,6 @@ class CtreIntakePivot(Subsystem, RotationMechanismIO):
         SmartDashboard.putNumber("Intake/Pivot/position", self._position.value)
         # SmartDashboard.putNumber("Intake/Pivot/speed", self._inputs.mechanism_speed)
 
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
-        """
-        Initialize any simulation only needed parameters
-        """
-        self._physics_controller = physics_controller
-        # TODO: Anything
-
     # def simulationPeriodic(self) -> None:         TODO: Future
     #     """
     #     This method is called periodically by the CommandScheduler (after the periodic
@@ -430,25 +410,6 @@ class CtreIntakePivot(Subsystem, RotationMechanismIO):
         inputs.mechanism_supply_current = self._supply_current.value
         # inputs.mechanism_torque_amps: amperes = 0.0
         # TODO: Figure this out or drop it inputs.mechanism_torque_amps = self._motor.get
-
-    # def update_sim(self, now: float, tm_diff: float) -> None:
-    #     """
-    #     Called when the simulation parameters for the program need to be updated.
-    #     This function is called from the '_simulationPeriodic' function of the
-    #     robotpy core routine and is called at a period >= 10 mS. Note that the
-    #     CommandScheduler also has an 'simulationPeriodic' function that it calls
-    #     into all Command2 based subsystems at its update period which has a
-    #     default rate of 20 mS.
-    #
-    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
-    #     that function uses pykit's logging method, you should use those values in
-    #     your simulation.
-    #
-    #     :param now:     The current time as a float
-    #     :param tm_diff: The amount of time that has passed since the last
-    #                     time that this function was called
-    #     """
-    #     pass
 
     # def set_position(self, position: inches) -> None:
     #     """

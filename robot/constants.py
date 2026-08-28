@@ -54,8 +54,6 @@ class MyRobotConstants(RobotConstants):
     # Additional 2026 game constants
     AUTONOMOUS_END_TRIGGER_TIME = 10  # Autonomous End Game Timing
 
-GYRO_REVERSED = False  # (affects field-relative driving)
-
 DriveKinematics = SwerveDrive4Kinematics(
     Translation2d(TunerConstants._front_left_x_pos, TunerConstants._front_left_y_pos),
     Translation2d(TunerConstants._front_right_x_pos, TunerConstants._front_right_y_pos),

@@ -256,10 +256,16 @@ class TunerConstants:
         """
         from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem as CommandSwerveDrivetrain
 
-        modules = [TunerConstants.front_left, TunerConstants.front_right, TunerConstants.back_left,
-                   TunerConstants.back_right]
-
-        return CommandSwerveDrivetrain(TunerConstants.drivetrain_constants, modules, container, **kwargs)
+        modules = [
+            TunerConstants.front_left,
+            TunerConstants.front_right,
+            TunerConstants.back_left,
+            TunerConstants.back_right
+        ]
+        return CommandSwerveDrivetrain(TunerConstants.drivetrain_constants,
+                                       modules,
+                                       container,
+                                       **kwargs)
 
 
 class TunerSwerveDrivetrain(swerve.SwerveDrivetrain[hardware.TalonFX, hardware.TalonFX, hardware.CANcoder]
